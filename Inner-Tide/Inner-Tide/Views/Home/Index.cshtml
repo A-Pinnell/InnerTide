@@ -1,0 +1,120 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#eb9fe4">
+    <title>Task Menu — Inner Tide</title>
+    <link rel="stylesheet" href="./css/site.css">
+    <script src="./js/site.js" defer></script>
+</head>
+<body>
+    <main class="game-shell">
+        <header class="player-card profile-collapsed">
+            <div class="profile-details" id="profile-details">
+                <div class="player-copy">
+                    <strong>Chris Concept</strong>
+                    <small>30 More Pearls needed to level up!</small>
+                </div>
+                <div class="xp-track"><span></span></div>
+            </div>
+            <button class="avatar" type="button">
+                <img src="img/placeholder.webp" alt="">
+                <span class="player-level">Lv 10</span>
+            </button>
+            <div class="coin-counter">
+                <img src="img/coin.png" alt="">
+                <span id="coin-count">0</span>
+            </div>
+        </header>
+
+        <nav class="quick-tools">
+            <button class="round-button" type="button" data-message="Settings are ready to personalize.">
+                <img src="img/settings_icon.png" alt="">
+            </button>
+            <button class="round-button" type="button" data-message="You're all caught up. See you next time!">
+                <img src="img/logout_icon.png" alt="">
+            </button>
+            <button class="round-button" type="button" data-message="Thanks to everyone who helped make Inner Tide!">
+                <img src="img/credits_icon.png" alt="">
+            </button>
+        </nav>
+
+        <aside class="side-tab aquarium-tab">
+            <span>Aquarium</span><b>›</b>
+        </aside>
+
+        <h1 class="page-title" id="page-title">Task Menu</h1>
+        <section class="task-panel">
+            <div class="tabs">
+                <button class="tab" type="button" data-period="monthly"><span class="tab-label">Monthly</span></button>
+                <button class="tab active" type="button" data-period="daily"><span class="tab-label">Daily</span></button>
+                <button class="tab" type="button" data-period="weekly"><span class="tab-label">Weekly</span></button>
+            </div>
+            <div class="task-scroll" id="task-scroll">
+                <div class="task-list" id="task-list"></div>
+            </div>
+            <div class="scroll-rail"><span></span></div>
+        </section>
+
+        <button class="help-button" type="button" data-message="Choose a task, complete it, and collect your reward!">
+            <img src="img/help_icon.png" alt="">
+        </button>
+
+        <div class="elements-backdrop" id="elements-backdrop"></div>
+        <section class="elements-panel" id="elements-panel">
+            <div class="elements-actions">
+                <button class="element-action" type="button" data-elements-action="regenerate">
+                    <span class="element-action-icon element-icon"><img src="img/refresh_tasks.png" alt=""></span>
+                    <span>Regenerate Tasks</span>
+                </button>
+                <button class="element-action" type="button" data-elements-action="quizzes">
+                    <span class="element-action-icon element-icon"><img src="img/additional_quiz.png" alt=""></span>
+                    <span>Additional Quizzes</span>
+                </button>
+                <button class="element-action" type="button" data-elements-action="stats">
+                    <span class="element-action-icon element-icon"><img src="img/task_stats.png" alt=""></span>
+                    <span>Task Generation Stats</span>
+                </button>
+                <button class="element-action elements-list" type="button" disabled>
+                    <span class="element-action-icon element-icon"><img src="img/aquarium_list.png" alt=""></span>
+                    <span>Aquarium List</span>
+                </button>
+            </div>
+
+            <div class="elements-status" data-percent="55">
+                <div class="status-tank">
+                    <div class="tank-water">
+                        <span class="wave wave-back"></span>
+                        <span class="wave wave-front"></span>
+                    </div>
+                    <span class="status-percent">55%</span>
+                    <span class="tank-stand"></span>
+                </div>
+                <div class="status-copy">
+                    <strong>Aquarium Status</strong>
+                    <em>Keep it up!</em>
+                </div>
+            </div>
+
+            <button class="elements-toggle side-tab elements-tab" type="button">
+                <span>Elements</span><b>›</b>
+            </button>
+        </section>
+
+        <svg focusable="false" width="0" height="0">
+            <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">
+                <feTurbulence type="fractalNoise" baseFrequency=".004 .01" numOctaves="2" seed="4" result="water-noise">
+                    <animate attributeName="baseFrequency" values=".004 .01;.007 .014;.004 .01" dur="18s" repeatCount="indefinite" />
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="water-noise" scale="42" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </svg>
+    </main>
+</body>
+</html>
+
