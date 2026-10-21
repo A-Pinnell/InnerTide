@@ -120,10 +120,8 @@ button { font: inherit; }
 }
 
 .coin-counter {
-  position: absolute;
   z-index: 5;
   top: 50%;
-  left: calc(100% + 12px);
   display: flex;
   min-width: 94px;
   height: 48px;
@@ -702,17 +700,6 @@ button { font: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #edffff;
-  border: 4px solid rgba(48,173,228,.9);
-  background: linear-gradient(110deg, rgba(91,145,231,.73), rgba(92,164,240,.56));
-  box-shadow:
-    0 8px 28px rgba(185,91,185,.11),
-    inset 0 6px 0 rgba(255,225,250,.9),
-    inset 6px 0 0 rgba(255,210,242,.78),
-    inset 0 -7px 0 rgba(194,74,157,.42),
-    inset -7px 0 0 rgba(194,74,157,.3),
-    inset 0 0 30px rgba(255,255,255,.1);
-  text-shadow: 1px 2px 1px rgba(75,101,167,.35);
   cursor: pointer;
   transition: filter .2s ease;
 }
@@ -722,14 +709,40 @@ button { font: inherit; }
 .side-tab b { position: absolute; font-family: Arial, sans-serif; font-size: 70px; font-weight: 400; line-height: 1; }
 
 .aquarium-tab {
-  top: 0;
-  right: -1.5%;
-  bottom: 0;
-  width: 13.5%;
-  border-radius: 90px 0 0 90px;
+    top: 0;
+    right: -1.5%;
+    bottom: 0;
+    width: 13.5%;
+    color: #edffff;
+    border-radius: 90px 0 0 90px;
+    border: 4px solid rgba(48,173,228,.9);
+    background: linear-gradient(110deg, rgba(91,145,231,.73), rgba(92,164,240,.56));
+    box-shadow: 0 8px 28px rgba(185,91,185,.11), inset 0 6px 0 rgba(255,225,250,.9), inset 6px 0 0 rgba(255,210,242,.78), inset 0 -7px 0 rgba(194,74,157,.42), inset -7px 0 0 rgba(194,74,157,.3), inset 0 0 30px rgba(255,255,255,.1);
+    text-shadow: 1px 2px 1px rgba(75,101,167,.35);
 }
 
 .aquarium-tab b { left: 5%; top: 44%; }
+
+.task-tab {
+    top: 0;
+    left: -1.5%;
+    bottom: 0;
+    width: 13.5%;
+    border-radius: 0 90px 90px 0;
+    border: 4px solid rgba(48,173,228,.9);
+    background: linear-gradient( 110deg, rgba(235, 185, 225, 0.95), rgba(220, 165, 215, 0.90) );
+    box-shadow: 0 8px 28px rgba(185, 91, 185, .18), inset 0 6px 0 rgba(255, 225, 250, .90), inset 6px 0 0 rgba(255, 210, 242, .78), inset 0 -7px 0 rgba(194, 74, 157, .42), inset -7px 0 0 rgba(194, 74, 157, .30), inset 0 0 30px rgba(255,255,255,.15);
+    text-shadow: 1px 2px 1px rgba(168, 75, 143, .35);
+}
+
+.task-tab a {
+    color: #D1209B;
+}
+
+.task-tab b {
+    right: 5%;
+    bottom: 44%;
+}
 
 .elements-tab {
   top: 52.8%;
@@ -1073,3 +1086,135 @@ button { font: inherit; }
   box-shadow: none;
 }
 .elements-open .elements-toggle.elements-tab b { content: "›"; }
+
+
+/* MOST OF THE AQUARIUM CSS */
+.aquariumMenuBtn {
+    width: 110px;
+    height: 110px;
+    background: rgba(255,255,255,.4);
+    border: 2px solid rgba(255,255,255,.5);
+    border-radius: 10px;
+    backdrop-filter: blur(3px);
+    margin-bottom: 20px;
+    color: white;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.aquariumMenuBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px white;
+}
+
+#sand {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 190px;
+    background: #ead259;
+    border-radius: 50% 50% 0 0;
+}
+
+#sand2 {
+    position: absolute;
+    bottom: 40px;
+    width: 100%;
+    height: 140px;
+    background: #f2e477;
+    border-radius: 50% 50% 0 0;
+}
+
+#aquarium {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background-color: #0086B6;
+}
+
+#journalButton {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    justify-content: center;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: pointer;
+    transition: .3s;
+}
+
+.journalText {
+    position: relative;
+    font-size: 4rem;
+    color: #bc9600;
+    text-shadow: 0 5px 10px rgba(0,0,0,.3);
+}
+
+.journalText b {
+    position: absolute;
+    left: 50%;
+    top: -50%;
+    transform: translateX(-50%);
+}
+
+#journalButton:hover {
+    transform: translateX(-50%) scale(1.05);
+}
+
+#coinCounterTask {
+    left: calc(100% + 12px);
+    position: absolute;
+}
+
+#coinCounterAquarium {
+    position: initial;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    right: 5%;
+}
+
+#storeCoinDiv {
+    position: absolute;
+    top: 5%;
+    right: 5%;
+}
+
+#storeBtn {
+    width: 110px;
+    height: 110px;
+    background: rgba(255,255,255,.35);
+    border-radius: 10px;
+    color: white;
+    font-size: 22px;
+    text-align: center;
+    transition: all 0.4s ease;
+}
+
+#storeBtn:hover {
+    color: black;
+}
+
+.menu-buttons {
+    position: absolute;
+    left: 210px;
+    top: 40px;
+}
+
+#storeBtn .expanded {
+    width: 400px;
+    height: 400px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+}
+

@@ -25,6 +25,7 @@ const taskData = {
   ]
 };
 
+// Task Menu Variables
 const bedIcon = '<svg viewBox="0 0 64 48"><path d="M5 8h8v17h46v17h-6v-6H11v6H5V8Zm9 17v-9h15a8 8 0 0 1 8 9H14Z"/></svg>';
 const taskList = document.querySelector("#task-list");
 const taskScroll = document.querySelector("#task-scroll");
@@ -40,7 +41,11 @@ const coinCount = document.querySelector("#coin-count");
 const aquariumStatus = document.querySelector(".elements-status");
 const aquariumTank = document.querySelector(".status-tank");
 const aquariumPercentLabel = document.querySelector(".status-percent");
+
 let coinBalance = 0;
+
+// Aquarium Menu Variables
+const storeBtn = document.querySelector("#storeBtn");
 
 function setAquariumPercent(percent) {
   const numericPercent = Number(percent);
@@ -278,3 +283,9 @@ renderTasks("daily");
 positionTabCarousel("daily");
 setAquariumPercent(aquariumStatus.dataset.percent);
 window.setAquariumPercent = setAquariumPercent;
+
+if (storeBtn) {
+    storeBtn.addEventListener("click", () => {
+        storeBtn.classList.toggle("expanded");
+    });
+}

@@ -26,7 +26,7 @@
                 <img src="img/placeholder.webp" alt="">
                 <span class="player-level">Lv 10</span>
             </button>
-            <div class="coin-counter">
+            <div class="coin-counter" id="coinCounterTask">
                 <img src="img/coin.png" alt="">
                 <span id="coin-count">0</span>
             </div>
@@ -45,7 +45,7 @@
         </nav>
 
         <aside class="side-tab aquarium-tab">
-            <span>Aquarium</span><b>›</b>
+            <a asp-area="" asp-controller="Aquarium" asp-action="Index"> <span> Aquarium </span><b>›</b> </a>
         </aside>
 
         <h1 class="page-title" id="page-title">Task Menu</h1>
