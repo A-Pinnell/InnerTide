@@ -8,11 +8,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#eb9fe4">
+    <script>
+        if (new URLSearchParams(window.location.search).get("from") === "aquarium") {
+            document.documentElement.classList.add("task-menu-return");
+        }
+    </script>
     <title>Task Menu — Inner Tide</title>
     <link rel="stylesheet" href="./css/site.css">
     <script src="./js/site.js" defer></script>
 </head>
-<body>
+<body class="task-menu-page">
     <main class="game-shell">
         <header class="player-card profile-collapsed">
             <div class="profile-details" id="profile-details">
@@ -117,4 +122,3 @@
     </main>
 </body>
 </html>
-
