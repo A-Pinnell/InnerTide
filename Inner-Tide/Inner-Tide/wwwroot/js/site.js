@@ -31,7 +31,7 @@ const taskList = document.querySelector("#task-list");
 const taskScroll = document.querySelector("#task-scroll");
 const tabsContainer = document.querySelector(".tabs");
 const gameShell = document.querySelector(".game-shell");
-const aquariumToggle = document.querySelector(".elements-toggle");
+const elementsToggle = document.querySelector(".elements-toggle");
 const aquariumPanel = document.querySelector("#elements-panel");
 const aquariumBackdrop = document.querySelector("#elements-backdrop");
 const playerCard = document.querySelector(".player-card");
@@ -41,11 +41,44 @@ const coinCount = document.querySelector("#coin-count");
 const aquariumStatus = document.querySelector(".elements-status");
 const aquariumTank = document.querySelector(".status-tank");
 const aquariumPercentLabel = document.querySelector(".status-percent");
+const coinStorageKey = "innerTide.coinBalance";
 
-let coinBalance = 0;
+function loadCoinBalance() {
+    const storedBalance = window.localStorage.getItem(coinStorageKey);
+    if (storedBalance === null) return 0;
+
+    const balance = Number(storedBalance);
+    if (storedBalance === "" || !Number.isSafeInteger(balance) || balance < 0) {
+        throw new TypeError("Stored coin balance must be a non-negative safe integer.");
+    }
+    return balance;
+}
+
+let coinBalance = loadCoinBalance();
+if (coinCount) coinCount.textContent = String(coinBalance);
+
+function saveCoinBalance() {
+    window.localStorage.setItem(coinStorageKey, String(coinBalance));
+    if (coinCount) coinCount.textContent = String(coinBalance);
+}
 
 // Aquarium Menu Variables
 const storeBtn = document.querySelector("#storeBtn");
+const storePanel = document.querySelector("#tankStorePanel");
+const storeBackdrop = document.querySelector("#tankStoreBackdrop");
+const inventoryBtn = document.querySelector("#inventoryBtn");
+const inventoryPanel = document.querySelector("#tankInventoryPanel");
+const inventoryBackdrop = document.querySelector("#tankInventoryBackdrop");
+const editorBtn = document.querySelector("#editorBtn");
+const editorToolbar = document.querySelector("#editorToolbar");
+const editorCloseButton = document.querySelector("#editorCloseButton");
+const editorSwitchLayer = document.querySelector("#editorSwitchLayer");
+const editorMoreItems = document.querySelector("#editorMoreItems");
+const editorLayerNumber = document.querySelector("#editorLayerNumber");
+const editorForegroundLabel = document.querySelector("#editorForegroundLabel");
+const editorForegroundNumber = document.querySelector("#editorForegroundNumber");
+const editorInventoryPanel = document.querySelector("#editorInventoryPanel");
+const editorInventoryBackdrop = document.querySelector("#editorInventoryBackdrop");
 
 function setAquariumPercent(percent) {
     const numericPercent = Number(percent);
@@ -62,10 +95,6 @@ function setAquariumPercent(percent) {
 function animateCoinReward(taskRow, amount) {
     const source = taskRow.querySelector(".task-reward").getBoundingClientRect();
     const target = coinCounter.getBoundingClientRect();
-    const awardCoin = () => {
-        coinBalance += 1;
-        coinCount.textContent = String(coinBalance);
-    };
     const animateCoinArrival = () => {
         coinCounter.classList.remove("coin-arrived");
         void coinCounter.offsetWidth;
@@ -79,9 +108,10 @@ function animateCoinReward(taskRow, amount) {
         }
     };
 
+    coinBalance += amount;
+    saveCoinBalance();
+
     if (typeof Element.prototype.animate !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        coinBalance += amount;
-        coinCount.textContent = String(coinBalance);
         return;
     }
 
@@ -118,7 +148,6 @@ function animateCoinReward(taskRow, amount) {
 
         animation.finished.then(() => {
             coin.remove();
-            awardCoin();
             animateCoinArrival();
         }, () => coin.remove());
     });
@@ -255,7 +284,7 @@ if (gameShell) {
         } else {
             aquariumTank.style.setProperty("--water-level", "0%");
         }
-        aquariumToggle.querySelector("b").textContent = open ? "›" : "‹";
+        elementsToggle.querySelector("b").textContent = open ? "‹" : "›";
     }
 
     function setProfileOpen(open) {
@@ -266,7 +295,7 @@ if (gameShell) {
     profileToggle.addEventListener("click", () => {
         setProfileOpen(!playerCard.classList.contains("profile-open"));
     });
-    aquariumToggle.addEventListener("click", () => {
+    elementsToggle.addEventListener("click", () => {
         setaquariumOpen(!gameShell.classList.contains("elements-open"));
     });
     aquariumBackdrop.addEventListener("click", () => setaquariumOpen(false));
@@ -329,8 +358,154 @@ if (document.body.classList.contains("task-menu-page") && new URLSearchParams(wi
     });
 }
 
-if (storeBtn) {
-    storeBtn.addEventListener("click", () => {
-        storeBtn.classList.toggle("expanded");
+let closeActiveAquariumMenu = null;
+
+function initializeAquariumMenu(button, panel, backdrop, catalogPrefix) {
+    if (!button || !panel || !backdrop) return;
+
+    const tabs = panel.querySelector(".store-tabs");
+    let setOpen;
+
+    function setCategory(category) {
+        const tabsInPanel = [...tabs.querySelectorAll(".store-tab")];
+        tabsInPanel.forEach(tab => {
+            const selected = tab.dataset.category === category;
+            tab.classList.toggle("active", selected);
+            tab.setAttribute("aria-selected", String(selected));
+            tab.dataset.position = selected ? "center" : category === "fish" ? "right" : "left";
+        });
+
+        panel.querySelectorAll(".store-catalog").forEach(catalog => {
+            catalog.hidden = catalog.id !== `${catalogPrefix}${category[0].toUpperCase()}${category.slice(1)}`;
+        });
+    }
+
+    setOpen = (open, restoreFocus = true) => {
+        button.setAttribute("aria-expanded", String(open));
+
+        if (open) {
+            if (closeActiveAquariumMenu) {
+                closeActiveAquariumMenu();
+            }
+            closeActiveAquariumMenu = () => setOpen(false, false);
+            panel.hidden = false;
+            backdrop.hidden = false;
+            void panel.offsetWidth;
+            panel.classList.add("is-open");
+            backdrop.classList.add("is-open");
+            tabs.querySelector(".store-tab.active")?.focus();
+            return;
+        }
+
+        panel.classList.remove("is-open");
+        backdrop.classList.remove("is-open");
+        closeActiveAquariumMenu = null;
+        window.setTimeout(() => {
+            if (!panel.classList.contains("is-open")) {
+                panel.hidden = true;
+                backdrop.hidden = true;
+            }
+        }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
+        if (restoreFocus) button.focus();
+    };
+
+    button.setAttribute("aria-expanded", "false");
+    setCategory("fish");
+    button.addEventListener("click", () => {
+        setOpen(button.getAttribute("aria-expanded") !== "true");
+    });
+    backdrop.addEventListener("click", () => setOpen(false));
+    tabs.addEventListener("click", event => {
+        const tab = event.target instanceof Element ? event.target.closest(".store-tab") : null;
+        if (tab && tabs.contains(tab)) setCategory(tab.dataset.category);
+    });
+    window.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !panel.hidden) setOpen(false);
+    });
+}
+
+initializeAquariumMenu(storeBtn, storePanel, storeBackdrop, "store");
+initializeAquariumMenu(inventoryBtn, inventoryPanel, inventoryBackdrop, "inventory");
+
+if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && editorMoreItems && editorLayerNumber && editorForegroundLabel && editorForegroundNumber && editorInventoryPanel && editorInventoryBackdrop) {
+    let editorOpen = false;
+    let editorInventoryOpen = false;
+    let selectedEditorLayer = 1;
+
+    function setEditorLayer(layer) {
+        selectedEditorLayer = layer;
+        editorLayerNumber.textContent = String(layer);
+        editorForegroundNumber.textContent = String(layer);
+        editorSwitchLayer.setAttribute("aria-label", `Switch to foreground ${layer % 3 + 1}`);
+    }
+
+    function setEditorInventoryOpen(open, restoreFocus = true) {
+        editorInventoryOpen = open;
+        editorMoreItems.setAttribute("aria-expanded", String(open));
+
+        if (open) {
+            if (closeActiveAquariumMenu) closeActiveAquariumMenu();
+            editorInventoryPanel.hidden = false;
+            editorInventoryBackdrop.hidden = false;
+            void editorInventoryPanel.offsetWidth;
+            editorInventoryPanel.classList.add("is-open");
+            editorInventoryBackdrop.classList.add("is-open");
+            editorInventoryPanel.querySelector(".store-tab.active")?.focus();
+            return;
+        }
+
+        editorInventoryPanel.classList.remove("is-open");
+        editorInventoryBackdrop.classList.remove("is-open");
+        window.setTimeout(() => {
+            if (!editorInventoryOpen) {
+                editorInventoryPanel.hidden = true;
+                editorInventoryBackdrop.hidden = true;
+            }
+        }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
+        if (restoreFocus && editorOpen) editorMoreItems.focus();
+    }
+    setEditorLayer(selectedEditorLayer);
+
+    function setEditorOpen(open, restoreFocus = true) {
+        editorOpen = open;
+        editorBtn.setAttribute("aria-expanded", String(open));
+
+        if (open) {
+            if (closeActiveAquariumMenu) closeActiveAquariumMenu();
+            editorToolbar.hidden = false;
+            editorToolbar.removeAttribute("inert");
+            editorToolbar.setAttribute("aria-hidden", "false");
+            void editorToolbar.offsetWidth;
+            editorToolbar.classList.add("is-visible");
+            document.body.classList.add("editor-mode");
+            editorCloseButton.focus();
+            return;
+        }
+
+        if (editorInventoryOpen) setEditorInventoryOpen(false, false);
+        editorToolbar.classList.remove("is-visible");
+        editorToolbar.setAttribute("inert", "");
+        editorToolbar.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("editor-mode");
+        window.setTimeout(() => {
+            if (!editorOpen) editorToolbar.hidden = true;
+        }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700);
+        if (restoreFocus) editorBtn.focus();
+    }
+
+    editorBtn.addEventListener("click", () => setEditorOpen(!editorOpen));
+    editorCloseButton.addEventListener("click", () => setEditorOpen(false));
+    editorSwitchLayer.addEventListener("click", () => {
+        setEditorLayer(selectedEditorLayer % 3 + 1);
+    });
+    editorMoreItems.addEventListener("click", () => setEditorInventoryOpen(!editorInventoryOpen));
+    editorInventoryBackdrop.addEventListener("click", () => setEditorInventoryOpen(false));
+    window.addEventListener("keydown", event => {
+        if (event.key !== "Escape") return;
+        if (editorInventoryOpen) {
+            setEditorInventoryOpen(false);
+            return;
+        }
+        if (editorOpen) setEditorOpen(false);
     });
 }
