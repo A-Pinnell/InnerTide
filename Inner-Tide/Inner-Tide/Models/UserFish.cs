@@ -15,7 +15,7 @@ namespace Inner_Tide.Models {
         [Required]
         public required string FishId { get; set; }
 
-        public string? AquariumId { get; set; }
+        public int? AquariumId { get; set; }
         public Aquarium? Aquarium { get; set; }
     }
 }

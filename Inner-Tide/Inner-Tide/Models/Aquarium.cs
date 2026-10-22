@@ -13,6 +13,9 @@ namespace Inner_Tide.Models {
         [Range(1, 15)]
         public int MaxObjects { get; set; }
 
+        [Required]
+        public int CompletionPercentage { get; set; }
+
         //Foreign Key
         [Required]
         public int UserId { get; set; }
