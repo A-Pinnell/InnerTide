@@ -3,7 +3,7 @@
 namespace Inner_Tide.Controllers {
     public class JournalsController : Controller {
         public IActionResult Index() {
-            return View();
+            return View("Index");
         }
     }
 }

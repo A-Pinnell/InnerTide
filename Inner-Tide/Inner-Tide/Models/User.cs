@@ -1,19 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace Inner_Tide.Models {
-    public class User {
-        public int UserId { get; set; }
-
-        [Required]
-        public int Username { get; set; }
-
-        [Required]
-        [EmailAddress]
-        public int Email { get; set; }
-
-        [Required] 
-        public required string Password { get; set; }
-
+    public class User : IdentityUser {
         [Range(0, 99)]
         [Required] 
         public int AccountLevel { get; set; }
