@@ -1,51 +1,66 @@
-﻿using Inner_Tide.Data;
+﻿using Azure.Identity;
+using Inner_Tide.Data;
 using Inner_Tide.Models;
+using Inner_Tide.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Inner_Tide.Controllers {
     public class UsersController : Controller {
-        // shared db connection obj
+        private readonly SignInManager<User> signInManager;
+        private readonly UserManager<User> userManager;
+
+        // Shared db connection obj
         ApplicationDbContext _context;
 
-        // constructor: every time controller instance created, pass in a db connection obj
-        public UsersController(ApplicationDbContext context) {
+        public UsersController(SignInManager<User> signInManager, UserManager<User> userManager, ApplicationDbContext context) {
+            this.signInManager = signInManager;
+            this.userManager = userManager;
             _context = context;
         }
 
         public IActionResult Index() {
-            return View("Index");
+            return View(new AccountViewModel {
+                Register = new RegisterViewModel(),
+                Login = new LoginViewModel()
+            });
         }
 
-        [HttpPost] 
-        public IActionResult Register( [Bind("Username", "Email", "Password")] User user) {
-            //IdentityUser identityUser = new IdentityUser();
-            
-            //Check if the Model State is Correct
+        [HttpPost]
+        public async Task<IActionResult> Register(AccountViewModel model) {
+            RegisterViewModel user = model.Register;
+
+            ModelState.Remove("Login.Email");
+            ModelState.Remove("Login.Password");
+
             if (!ModelState.IsValid) {
-                return View("Index");
+                return View("Index", model);
             }
 
-            ////Password Hashing
-            //var hasher = new PasswordHasher<IdentityUser>();
-            //string hash = hasher.HashPassword(identityUser, "MyPassword123!");
+            User newUser = new User {
+                UserName = user.UserName,
+                Email = user.Email,
+                CoinCount = 0,
+                AccountLevel = 1,
+                XPForNextLevel = 10
+            };
 
-            //user.Password = hash;
-            //user.CoinCount = 0;
-            //user.AccountLevel = 1;
-            //user.XPForNextLevel = 100;
+            var result = await userManager.CreateAsync(newUser, user.Password);
 
-            //// save to db using DbSet object
-            //_context.UserAccounts.Add(user);
-            //_context.SaveChanges();
+            if (result.Succeeded) {
+                return RedirectToAction("Index", "Users");
+            }
 
-            return RedirectToAction("Index", "Home");
+            foreach (var error in result.Errors) {
+                ModelState.AddModelError("", error.Description);
+            }
+
+            return View("Index", model);
         }
 
-        //[HttpPost]
-        //public IActionResult Login() User user) {
-
-        //    return RedirectToAction("Index", "Home");
-        //}
+        [HttpPost]
+        public IActionResult Login() {
+            return RedirectToAction("Index", "Users");
+        }
     }
 }

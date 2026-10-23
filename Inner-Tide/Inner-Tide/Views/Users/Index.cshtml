@@ -1,4 +1,4 @@
-﻿@model Inner_Tide.Models.User
+﻿@model Inner_Tide.ViewModels.AccountViewModel
 
 @{
 	ViewData["Title"] = "Login & Register Page";
@@ -11,55 +11,63 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#eb9fe4">
         <title>Task Menu — Inner Tide</title>
-        <link rel="stylesheet" href="./css/site.css">
+        <link rel="stylesheet" href="~/css/site.css">
         @* <script src="./js/site.js" defer></script> *@
     </head>
     <body class="task-menu-page">
         <main>
             <div id="registerContainer">
-                <form asp-action="Register" enctype="multipart/form-data">
+                <form asp-controller="Users" asp-action="Register" method="post">
                     <fieldset>
                         <h3> Register </h3>
-                        @* <div>
-                            <label asp-for="Username" class="control-label"></label>
-                            <input asp-for="Username" class="form-control" />
-                            <span asp-validation-for="Username" class="text-danger"></span>
+                        <div>
+                            <label asp-for="Register.UserName" class="control-label"></label>
+                            <input asp-for="Register.UserName" class="form-control" />
+                            <span asp-validation-for="Register.UserName" class="text-danger"></span>
                         </div>
 
                         <div>
-                            <label asp-for="Email" class="control-label"></label>
-                            <input asp-for="Email" class="form-control" />
-                            <span asp-validation-for="Email" class="text-danger"></span>
+                            <label asp-for="Register.Email" class="control-label"></label>
+                            <input asp-for="Register.Email" class="form-control" />
+                            <span asp-validation-for="Register.Email" class="text-danger"></span>
                         </div>
 
                         <div>
-                            <label asp-for="Password" class="control-label"></label>
-                            <input asp-for="Password" class="form-control" />
-                            <span asp-validation-for="Password" class="text-danger"></span>
-                        </div> *@
+                            <label asp-for="Register.Password" class="control-label"></label>
+                            <input asp-for="Register.Password" class="form-control" />
+                            <span asp-validation-for="Register.Password" class="text-danger"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Register.ConfirmPassword" class="control-label"></label>
+                            <input asp-for="Register.ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="Register.ConfirmPassword" class="text-danger"></span>
+                        </div>
 
                         <div class="form-group">
                             <input type="submit" value="Register" class="btn btn-primary" />
                         </div>
+
+                        <div asp-validation-summary="All" class="text-danger"></div>
                     </fieldset>
                 </form>
             </div>
 
             <div id="loginContainer">
-            <form asp-action="Login" enctype="multipart/form-data">
+            <form asp-controller="Users" asp-action="Login" method="post">
                     <fieldset>
                         <h3> Login </h3>
                         <div>
-                            <label asp-for="Email" class="control-label"></label>
-                            <input asp-for="Email" class="form-control" />
-                            <span asp-validation-for="Email" class="text-danger"></span>
+                            <label asp-for="Login.Email" class="control-label"></label>
+                            <input asp-for="Login.Email" class="form-control" />
+                            <span asp-validation-for="Login.Email" class="text-danger"></span>
                         </div>
 
-                        @* <div>
-                            <label asp-for="Password" class="control-label"></label>
-                            <input asp-for="Password" class="form-control" />
-                            <span asp-validation-for="Password" class="text-danger"></span>
-                        </div> *@
+                        <div>
+                            <label asp-for="Login.Password" class="control-label"></label>
+                            <input asp-for="Login.Password" class="form-control" />
+                            <span asp-validation-for="Login.Password" class="text-danger"></span>
+                        </div>
 
                         <div class="form-group">
                             <input type="submit" value="Login" class="btn btn-primary" />
