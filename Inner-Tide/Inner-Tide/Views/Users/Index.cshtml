@@ -10,7 +10,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#eb9fe4">
-        <title>Task Menu — Inner Tide</title>
+        <title> Login and Register Menu — Inner Tide</title>
         <link rel="stylesheet" href="~/css/site.css">
         @* <script src="./js/site.js" defer></script> *@
     </head>
@@ -69,13 +69,32 @@
                             <span asp-validation-for="Login.Password" class="text-danger"></span>
                         </div>
 
+                        <div class="float-end">
+                            <a asp-controller="Users" asp-action="VerifyEmail" class="text-decoration-none"> Forgot Password </a>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <label class="form-check-label">
+                                <input asp-for="Login.RememberMe" class="form-check-input"/>
+                                @Html.DisplayNameFor(a=> a.Login.RememberMe)
+                            </label>
+                        </div>
+
                         <div class="form-group">
                             <input type="submit" value="Login" class="btn btn-primary" />
                         </div>
+
+                        <div class="text-center">
+                            <a asp-controller="Home" asp-action="Index" class="text-decoration-none mt-3"> Back </a>
+                        </div>
+
+                        <div asp-validation-summary="All" class="text-danger"></div>
                     </fieldset>
                 </form>
             </div>
             
+
+            <a asp-action=""> </a>
         </main>
     </body>
 </html>

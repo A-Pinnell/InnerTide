@@ -30,6 +30,7 @@ namespace Inner_Tide.Controllers {
         public async Task<IActionResult> Register(AccountViewModel model) {
             RegisterViewModel user = model.Register;
 
+            //Ensure That the Login Form Isn't Checked
             ModelState.Remove("Login.Email");
             ModelState.Remove("Login.Password");
 
@@ -59,8 +60,36 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpPost]
-        public IActionResult Login() {
-            return RedirectToAction("Index", "Users");
+        public async Task<IActionResult> Login(AccountViewModel model) {
+            LoginViewModel user = model.Login;
+
+            //Ensure That the Register Form Isn't Checked
+            ModelState.Remove("Register.UserName");
+            ModelState.Remove("Register.Email");
+            ModelState.Remove("Register.Password");
+            ModelState.Remove("Register.ConfirmPassword");
+
+            if (!ModelState.IsValid) {
+                return View("Index", model);
+            }
+
+            var foundUser = await userManager.FindByEmailAsync(user.Email);
+
+            if (foundUser == null) {
+                ModelState.AddModelError("", "Email or Password is Incorrect");
+                return View("Index", model);
+            }
+
+            var result = await signInManager.PasswordSignInAsync(foundUser.UserName, user.Password, user.RememberMe, false);
+
+            if (result.Succeeded) {
+                return RedirectToAction("Index", "Home");
+            } else {
+                ModelState.AddModelError("", "Email or Password is Incorrect");
+
+                return View("Index", model);
+            }
+
         }
     }
 }

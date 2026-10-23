@@ -1,0 +1,31 @@
+﻿@{
+	ViewData["Title"] = "Admin Testing Page";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#eb9fe4">
+        <title> Testing Menu — Inner Tide</title>
+        <link rel="stylesheet" href="~/css/site.css">
+        @* <script src="./js/site.js" defer></script> *@
+    </head>
+    <body class="task-menu-page">
+        <main>
+
+            <h1> Testing </h1>
+
+            @if (User.Identity?.IsAuthenticated == true) {
+                <p>Logged in as: @User.Identity.Name</p>
+            } else {
+                <p>Not logged in</p>
+            }
+
+        </main>
+    </body>
+</html>
+
+
+
