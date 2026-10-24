@@ -3,7 +3,7 @@
 @inject UserManager<User> UserManager
 
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Task Menu";
 
     var coinCount = 0;
 
@@ -13,6 +13,7 @@
         coinCount = currentUser.CoinCount;
     } else {
         coinCount = 0;
+
     }
 }
 
@@ -23,7 +24,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#eb9fe4">
     <script>
-        if (new URLSearchParams(window.location.search).get("from") === "aquarium") {
+        if (["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"))) {
             document.documentElement.classList.add("task-menu-return");
         }
     </script>
@@ -47,19 +48,21 @@
             </button>
             <div class="coin-counter" id="coinCounterTask">
                 <img src="img/coin.png" alt="">
-
-                 <span id="coin-count"> @coinCount </span>
+                <span class="coin-total">
+                    <span id="coin-count"> @coinCount </span>
+                    <small>COINS</small>
+                </span>
             </div>
         </header>
 
         <nav class="quick-tools">
-            <button class="round-button" type="button" data-message="Settings are ready to personalize.">
+            <button class="round-button" type="button">
                 <img src="img/settings_icon.png" alt="">
             </button>
-            <button class="round-button" type="button" data-message="You're all caught up. See you next time!">
+            <button class="round-button" type="button">
                 <a asp-controller="Users" asp-action="Logout"> <img src="img/logout_icon.png" alt=""> </a>
             </button>
-            <button class="round-button" type="button" data-message="Thanks to everyone who helped make Inner Tide!">
+            <button class="round-button" type="button">
                 <img src="img/credits_icon.png" alt="">
             </button>
         </nav>
@@ -92,10 +95,10 @@
                     <span class="element-action-icon element-icon"><img src="img/refresh_tasks.png" alt=""></span>
                     <span>Regenerate Tasks</span>
                 </button>
-                <button class="element-action" type="button" data-elements-action="quizzes">
+                <a class="element-action" asp-area="" asp-controller="Quiz" asp-action="Index">
                     <span class="element-action-icon element-icon"><img src="img/additional_quiz.png" alt=""></span>
                     <span>Additional Quizzes</span>
-                </button>
+                </a>
                 <button class="element-action" type="button" data-elements-action="stats">
                     <span class="element-action-icon element-icon"><img src="img/task_stats.png" alt=""></span>
                     <span>Task Generation Stats</span>
@@ -137,3 +140,4 @@
     </main>
 </body>
 </html>
+

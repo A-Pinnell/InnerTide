@@ -15,6 +15,11 @@ namespace Inner_Tide.Controllers
 
         public IActionResult Index()
         {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return Redirect("/Users/Index");
+            }
+
             return View("Index");
         }
 

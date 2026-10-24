@@ -1,0 +1,65 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102c70">
+    <title>Wellness Quiz — Inner Tide</title>
+    <link rel="stylesheet" href="../css/site.css">
+    <script src="../js/site.js" defer></script>
+</head>
+<body class="question-page">
+    <main class="question-screen">
+        <div class="question-background"></div>
+        <section class="question-copy">
+            <p class="question-number">Question <span id="questionNumber">1</span></p>
+            <h1 id="questionPrompt">How often do you feel rested when you wake up?</h1>
+        </section>
+
+        <section class="answer-panel">
+            <button class="question-arrow question-previous" id="previousQuestion" type="button" disabled>
+                <span></span>
+            </button>
+            <div class="answer-track" id="answerTrack">
+                <button class="answer-choice" type="button" data-answer="0">
+                    <span class="answer-circle"></span>
+                    <span class="answer-label">Never</span>
+                </button>
+                <button class="answer-choice" type="button" data-answer="1">
+                    <span class="answer-circle"></span>
+                    <span class="answer-label">Rarely</span>
+                </button>
+                <button class="answer-choice" type="button" data-answer="2">
+                    <span class="answer-circle"></span>
+                    <span class="answer-label">Sometimes</span>
+                </button>
+                <button class="answer-choice" type="button" data-answer="3">
+                    <span class="answer-circle"></span>
+                    <span class="answer-label">Often</span>
+                </button>
+                <button class="answer-choice" type="button" data-answer="4">
+                    <span class="answer-circle"></span>
+                    <span class="answer-label">Always</span>
+                </button>
+                <img class="answer-fish" id="answerFish" src="../img/quiz-fish.png" alt="" hidden>
+            </div>
+            <button class="question-arrow question-next" id="nextQuestion" type="button">
+                <span></span>
+            </button>
+        </section>
+
+        <nav class="question-actions">
+            <button class="question-action" id="skipQuestion" type="button">Skip</button>
+            <a class="question-action" asp-area="" asp-controller="Quiz" asp-action="Index">Quit</a>
+        </nav>
+        <svg focusable="false" width="0" height="0">
+            <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">
+                <feTurbulence type="fractalNoise" baseFrequency=".004 .01" numOctaves="2" seed="4" result="water-noise">
+                    <animate attributeName="baseFrequency" values=".004 .01;.007 .014;.004 .01" dur="18s" repeatCount="indefinite" />
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="water-noise" scale="42" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </svg>
+    </main>
+</body>
+</html>
