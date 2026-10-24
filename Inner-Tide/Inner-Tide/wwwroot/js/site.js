@@ -44,7 +44,6 @@ const aquariumPercentLabel = document.querySelector(".status-percent");
 const coinStorageKey = "innerTide.coinBalance";
 
 async function loadCoinBalance() {
-
     try {
         const res = await fetch('/Users/GetCoins');
 
@@ -72,7 +71,6 @@ async function loadCoinBalance() {
     //}
     //return balance;
 }
-
 let coinBalance = 0;
 
 async function saveCoinBalance(coinAmount) {
@@ -246,9 +244,7 @@ function renderTasks(period) {
 
         const complete = () => {
             if (task.completed) return;
-            const rewardAmount = task.reward * (task.priority ? 2 : 1);
             task.completed = true;
-            animateCoinReward(row, rewardAmount);
             renderTasks(period);
         };
         row.addEventListener("click", complete);
@@ -269,6 +265,17 @@ function selectPeriod(tab) {
     positionTabCarousel(period);
     renderTasks(period);
     taskScroll.scrollTop = 0;
+}
+
+function setProfileOpen(open) {
+    playerCard.classList.toggle("profile-open", open);
+    playerCard.classList.toggle("profile-collapsed", !open);
+}
+
+if (playerCard && profileToggle) {
+    profileToggle.addEventListener("click", () => {
+        setProfileOpen(!playerCard.classList.contains("profile-open"));
+    });
 }
 
 if (gameShell) {
@@ -320,14 +327,6 @@ if (gameShell) {
         elementsToggle.querySelector("b").textContent = open ? "‹" : "›";
     }
 
-    function setProfileOpen(open) {
-        playerCard.classList.toggle("profile-open", open);
-        playerCard.classList.toggle("profile-collapsed", !open);
-    }
-
-    profileToggle.addEventListener("click", () => {
-        setProfileOpen(!playerCard.classList.contains("profile-open"));
-    });
     elementsToggle.addEventListener("click", () => {
         setaquariumOpen(!gameShell.classList.contains("elements-open"));
     });
@@ -371,6 +370,61 @@ if (taskMenuLink) {
     });
 }
 
+if (document.body.classList.contains("quiz-menu-page")) {
+    document.querySelectorAll(".quiz-card[href]").forEach(card => {
+        card.addEventListener("click", event => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+
+            const bounds = card.getBoundingClientRect();
+            card.style.setProperty("--transition-top", `${bounds.top}px`);
+            card.style.setProperty("--transition-left", `${bounds.left}px`);
+            card.style.setProperty("--transition-width", `${bounds.width}px`);
+            card.style.setProperty("--transition-height", `${bounds.height}px`);
+            card.style.setProperty("--transition-radius", getComputedStyle(card).borderRadius);
+            card.classList.add("is-transitioning");
+
+            const destination = card.href;
+            const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 900;
+            if (transitionDuration === 0) {
+                window.location.assign(destination);
+                return;
+            }
+
+            void card.offsetWidth;
+            window.requestAnimationFrame(() => {
+                card.classList.add("is-expanded");
+                window.setTimeout(() => window.location.assign(destination), transitionDuration);
+            });
+        });
+    });
+
+    document.querySelectorAll(".main-nav .nav-link").forEach(link => {
+        link.addEventListener("click", event => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+
+            const bounds = link.getBoundingClientRect();
+            link.style.setProperty("--transition-top", `${bounds.top}px`);
+            link.style.setProperty("--transition-left", `${bounds.left}px`);
+            link.style.setProperty("--transition-width", `${bounds.width}px`);
+            link.style.setProperty("--transition-height", `${bounds.height}px`);
+            link.classList.add("is-transitioning");
+
+            const destination = new URL(link.href);
+            const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 950;
+            if (link.classList.contains("nav-task")) {
+                destination.searchParams.set("from", "quiz");
+            }
+
+            window.requestAnimationFrame(() => {
+                link.classList.add("is-expanded");
+                window.setTimeout(() => window.location.assign(destination.href), transitionDuration);
+            });
+        });
+    });
+}
+
 if (document.body.classList.contains("aquarium-page")) {
     window.requestAnimationFrame(() => {
         document.body.classList.remove("aquarium-enter");
@@ -379,7 +433,7 @@ if (document.body.classList.contains("aquarium-page")) {
     });
 }
 
-if (document.body.classList.contains("task-menu-page") && new URLSearchParams(window.location.search).get("from") === "aquarium") {
+if (document.body.classList.contains("task-menu-page") && ["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"))) {
     document.body.classList.add("task-menu-enter", "task-menu-transitioning");
     void gameShell.offsetWidth;
     window.requestAnimationFrame(() => {
@@ -405,7 +459,6 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix) {
         tabsInPanel.forEach(tab => {
             const selected = tab.dataset.category === category;
             tab.classList.toggle("active", selected);
-            tab.setAttribute("aria-selected", String(selected));
             tab.dataset.position = selected ? "center" : category === "fish" ? "right" : "left";
         });
 
@@ -415,7 +468,7 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix) {
     }
 
     setOpen = (open, restoreFocus = true) => {
-        button.setAttribute("aria-expanded", String(open));
+        button.classList.toggle("is-open", open);
 
         if (open) {
             if (closeActiveAquariumMenu) {
@@ -443,10 +496,9 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix) {
         if (restoreFocus) button.focus();
     };
 
-    button.setAttribute("aria-expanded", "false");
     setCategory("fish");
     button.addEventListener("click", () => {
-        setOpen(button.getAttribute("aria-expanded") !== "true");
+        setOpen(!button.classList.contains("is-open"));
     });
     backdrop.addEventListener("click", () => setOpen(false));
     tabs.addEventListener("click", event => {
@@ -470,12 +522,11 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
         selectedEditorLayer = layer;
         editorLayerNumber.textContent = String(layer);
         editorForegroundNumber.textContent = String(layer);
-        editorSwitchLayer.setAttribute("aria-label", `Switch to foreground ${layer % 3 + 1}`);
     }
 
     function setEditorInventoryOpen(open, restoreFocus = true) {
         editorInventoryOpen = open;
-        editorMoreItems.setAttribute("aria-expanded", String(open));
+        editorMoreItems.classList.toggle("is-open", open);
 
         if (open) {
             if (closeActiveAquariumMenu) closeActiveAquariumMenu();
@@ -502,13 +553,12 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
 
     function setEditorOpen(open, restoreFocus = true) {
         editorOpen = open;
-        editorBtn.setAttribute("aria-expanded", String(open));
+        editorBtn.classList.toggle("is-open", open);
 
         if (open) {
             if (closeActiveAquariumMenu) closeActiveAquariumMenu();
             editorToolbar.hidden = false;
             editorToolbar.removeAttribute("inert");
-            editorToolbar.setAttribute("aria-hidden", "false");
             void editorToolbar.offsetWidth;
             editorToolbar.classList.add("is-visible");
             document.body.classList.add("editor-mode");
@@ -519,7 +569,6 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
         if (editorInventoryOpen) setEditorInventoryOpen(false, false);
         editorToolbar.classList.remove("is-visible");
         editorToolbar.setAttribute("inert", "");
-        editorToolbar.setAttribute("aria-hidden", "true");
         document.body.classList.remove("editor-mode");
         window.setTimeout(() => {
             if (!editorOpen) editorToolbar.hidden = true;
@@ -542,4 +591,134 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
         }
         if (editorOpen) setEditorOpen(false);
     });
+}
+
+const quizHelpButton = document.querySelector("#helpButton");
+const quizHelpTip = document.querySelector("#helpTip");
+
+document.querySelectorAll(".quiz-progress[data-progress]").forEach(progress => {
+    const value = Number(progress.dataset.progress);
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+        throw new RangeError("Quiz progress must be a number between 0 and 100.");
+    }
+
+    const percent = Math.round(value);
+    const fill = progress.querySelector("span");
+    const label = progress.querySelector("strong");
+    if (!fill || !label) {
+        throw new Error("Quiz progress requires a fill and percentage label.");
+    }
+
+    fill.style.width = `${percent}%`;
+    label.textContent = `${percent}%`;
+});
+
+if (quizHelpButton && quizHelpTip) {
+    quizHelpButton.addEventListener("click", () => {
+        const isOpen = !quizHelpTip.hidden;
+        quizHelpTip.hidden = isOpen;
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !quizHelpTip.hidden) {
+            quizHelpTip.hidden = true;
+            quizHelpButton.focus();
+        }
+    });
+}
+
+const questionScreen = document.querySelector(".question-screen");
+if (questionScreen) {
+    const questions = [
+        "How often do you feel rested when you wake up?",
+        "How often have you made time to relax this week?",
+        "How often have you felt energized during the day?"
+    ];
+    const questionNumber = questionScreen.querySelector("#questionNumber");
+    const questionPrompt = questionScreen.querySelector("#questionPrompt");
+    const answerTrack = questionScreen.querySelector("#answerTrack");
+    const answerFish = questionScreen.querySelector("#answerFish");
+    const answerButtons = Array.from(questionScreen.querySelectorAll(".answer-choice"));
+    const previousButton = questionScreen.querySelector("#previousQuestion");
+    const nextButton = questionScreen.querySelector("#nextQuestion");
+    const skipButton = questionScreen.querySelector("#skipQuestion");
+
+    if (!questionNumber || !questionPrompt || !answerTrack || !answerFish || answerButtons.length === 0 || !previousButton || !nextButton || !skipButton) {
+        throw new Error("The question screen requires its prompt, answers, and navigation controls.");
+    }
+
+    const answers = Array(questions.length).fill(null);
+    let currentQuestion = 0;
+    let questionAnimations = [];
+    let fishAnswerIndex = null;
+
+    function moveFishTo(answerIndex) {
+        if (fishAnswerIndex !== null && answerIndex !== fishAnswerIndex) {
+            questionScreen.dataset.direction = answerIndex < fishAnswerIndex ? "left" : "right";
+        }
+
+        const answerCircle = answerButtons[answerIndex]?.querySelector(".answer-circle");
+        if (!answerCircle) {
+            throw new RangeError(`Unknown quiz answer index: ${answerIndex}`);
+        }
+
+        const trackBounds = answerTrack.getBoundingClientRect();
+        const circleBounds = answerCircle.getBoundingClientRect();
+        answerFish.style.left = `${circleBounds.left - trackBounds.left + circleBounds.width / 2}px`;
+        answerFish.style.top = `${circleBounds.top - trackBounds.top + circleBounds.height / 2}px`;
+        answerFish.hidden = false;
+        fishAnswerIndex = answerIndex;
+    }
+
+    function renderQuestion(animate = false) {
+        questionNumber.textContent = String(currentQuestion + 1);
+        questionPrompt.textContent = questions[currentQuestion];
+        previousButton.disabled = currentQuestion === 0;
+        questionAnimations.forEach(animation => animation.cancel());
+        questionAnimations = [];
+        if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            questionAnimations = [questionNumber, questionPrompt].map(element => element.animate([
+                { opacity: 0, transform: "translateY(16px)", filter: "blur(3px)" },
+                { opacity: 1, transform: "translateY(0)", filter: "blur(0)" }
+            ], {
+                duration: 520,
+                easing: "cubic-bezier(.22, 1, .36, 1)"
+            }));
+        }
+
+        answerButtons.forEach(button => {
+            const selected = button.dataset.answer === answers[currentQuestion];
+            button.classList.toggle("is-selected", selected);
+        });
+
+        if (answers[currentQuestion] !== null) {
+            moveFishTo(Number(answers[currentQuestion]));
+        }
+    }
+
+    function advanceQuestion() {
+        if (currentQuestion === questions.length - 1) {
+            window.location.assign("index.html");
+            return;
+        }
+        currentQuestion += 1;
+        renderQuestion(true);
+    }
+
+    answerButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            answers[currentQuestion] = button.dataset.answer;
+            renderQuestion();
+        });
+    });
+
+    previousButton.addEventListener("click", () => {
+        if (currentQuestion === 0) return;
+        currentQuestion -= 1;
+        renderQuestion(true);
+    });
+
+    nextButton.addEventListener("click", advanceQuestion);
+    skipButton.addEventListener("click", advanceQuestion);
+    renderQuestion();
 }
