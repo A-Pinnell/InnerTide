@@ -1,5 +1,19 @@
-﻿@{
+﻿@using Inner_Tide.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<User> UserManager
+
+@{
     ViewData["Title"] = "Home Page";
+
+    var coinCount = 0;
+
+    if (User.Identity?.IsAuthenticated == true) {
+        var currentUser = await UserManager.GetUserAsync(User);
+
+        coinCount = currentUser.CoinCount;
+    } else {
+        coinCount = 0;
+    }
 }
 
 <!doctype html>
@@ -33,7 +47,8 @@
             </button>
             <div class="coin-counter" id="coinCounterTask">
                 <img src="img/coin.png" alt="">
-                <span id="coin-count">0</span>
+
+                 <span id="coin-count"> @coinCount </span>
             </div>
         </header>
 
@@ -42,7 +57,7 @@
                 <img src="img/settings_icon.png" alt="">
             </button>
             <button class="round-button" type="button" data-message="You're all caught up. See you next time!">
-                <img src="img/logout_icon.png" alt="">
+                <a asp-controller="Users" asp-action="Logout"> <img src="img/logout_icon.png" alt=""> </a>
             </button>
             <button class="round-button" type="button" data-message="Thanks to everyone who helped make Inner Tide!">
                 <img src="img/credits_icon.png" alt="">

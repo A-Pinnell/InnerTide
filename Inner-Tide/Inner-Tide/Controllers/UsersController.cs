@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Inner_Tide.Controllers {
+    public class AddCoinModel() {
+        public int Amount { get; set; }
+    }
     public class UsersController : Controller {
         private readonly SignInManager<User> signInManager;
         private readonly UserManager<User> userManager;
@@ -43,7 +46,7 @@ namespace Inner_Tide.Controllers {
                 Email = user.Email,
                 CoinCount = 0,
                 AccountLevel = 1,
-                XPForNextLevel = 10
+                XPForNextLevel = 100
             };
 
             var result = await userManager.CreateAsync(newUser, user.Password);
@@ -90,6 +93,40 @@ namespace Inner_Tide.Controllers {
                 return View("Index", model);
             }
 
+        }
+
+        public async Task<IActionResult> Logout() {
+            await signInManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddCoins([FromBody] AddCoinModel model) {
+            var user = await userManager.GetUserAsync(User);
+
+            if (user == null)
+                return Unauthorized();
+
+            user.CoinCount += model.Amount;
+
+            await userManager.UpdateAsync(user);
+
+            return Ok(new { coins = user.CoinCount });
+        }
+
+        public async Task<IActionResult> GetCoins() {
+            var user = await userManager.GetUserAsync(User);
+
+            if (user == null)
+                return Unauthorized();
+
+            int coinCoint = user.CoinCount;
+
+            string coinCountStr = coinCoint.ToString();
+
+            return Json(new {
+                coins = user.CoinCount
+            });
         }
     }
 }

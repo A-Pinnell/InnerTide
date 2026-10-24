@@ -43,23 +43,57 @@ const aquariumTank = document.querySelector(".status-tank");
 const aquariumPercentLabel = document.querySelector(".status-percent");
 const coinStorageKey = "innerTide.coinBalance";
 
-function loadCoinBalance() {
-    const storedBalance = window.localStorage.getItem(coinStorageKey);
-    if (storedBalance === null) return 0;
+async function loadCoinBalance() {
 
-    const balance = Number(storedBalance);
-    if (storedBalance === "" || !Number.isSafeInteger(balance) || balance < 0) {
-        throw new TypeError("Stored coin balance must be a non-negative safe integer.");
+    try {
+        const res = await fetch('/Users/GetCoins');
+
+        if (!res.ok) {
+            throw new Error('Failed to load coin balance.');
+        }
+
+        const data = await res.json();
+
+        coinBalance = data.coins;
+
+        if (coinCount) {
+            coinCount.textContent = coinBalance;
+        }
+
+    } catch (error) {
+        console.error(error);
     }
-    return balance;
+    //const storedBalance = window.localStorage.getItem(coinStorageKey);
+    //if (storedBalance === null) return 0;
+
+    //const balance = Number(storedBalance);
+    //if (storedBalance === "" || !Number.isSafeInteger(balance) || balance < 0) {
+    //    throw new TypeError("Stored coin balance must be a non-negative safe integer.");
+    //}
+    //return balance;
 }
 
-let coinBalance = loadCoinBalance();
-if (coinCount) coinCount.textContent = String(coinBalance);
+let coinBalance = 0;
 
-function saveCoinBalance() {
-    window.localStorage.setItem(coinStorageKey, String(coinBalance));
-    if (coinCount) coinCount.textContent = String(coinBalance);
+async function saveCoinBalance(coinAmount) {
+    try {
+        const res = await fetch('/Users/AddCoins', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ amount: coinAmount })
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to save coins.');
+        }
+
+        await loadCoinBalance();
+
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 // Aquarium Menu Variables
@@ -108,8 +142,7 @@ function animateCoinReward(taskRow, amount) {
         }
     };
 
-    coinBalance += amount;
-    saveCoinBalance();
+    saveCoinBalance(amount);
 
     if (typeof Element.prototype.animate !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         return;
@@ -312,6 +345,7 @@ if (gameShell) {
     renderTasks("daily");
     positionTabCarousel("daily");
     setAquariumPercent(aquariumStatus.dataset.percent);
+    loadCoinBalance();
     window.setAquariumPercent = setAquariumPercent;
 
     const aquariumLink = document.querySelector(".aquarium-tab a");

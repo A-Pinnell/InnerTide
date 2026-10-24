@@ -1,5 +1,20 @@
-﻿@{
+﻿@using Inner_Tide.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<User> UserManager
+
+@{
     ViewData["Title"] = "Aquarium Menu";
+
+    var coinCount = 0;
+
+    if (User.Identity?.IsAuthenticated == true) {
+        var currentUser = await UserManager.GetUserAsync(User);
+
+        coinCount = currentUser.CoinCount;
+    } else {
+        coinCount = 0;
+    }
+}
 }
 
 <!DOCTYPE html>
@@ -44,7 +59,7 @@
             <div id="storeCoinDiv">
                 <div class="coin-counter" id="coinCounterAquarium">
                     <img src="../img/coin.png" alt="">
-                    <span class="coin-total"><span id="coin-count">0</span><small>COINS</small></span>
+                    <span class="coin-total"><span id="coin-count"> @coinCount </span><small>COINS</small></span>
                 </div>
 
                 <button class="aquariumMenuBtn" id="storeBtn" type="button" aria-controls="tankStorePanel">
