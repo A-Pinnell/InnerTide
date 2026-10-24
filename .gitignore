@@ -363,6 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 /Inner-Tide/.github/copilot-instructions.md
 
-/Inner-Tide/InnerTide.Desktop
 /Inner-Tide/InnerTideCompiled
 build.bat
