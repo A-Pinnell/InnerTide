@@ -20,11 +20,6 @@ namespace Inner_Tide.Controllers
             _context = context;
         }
 
-        public IActionResult Index() {
-            if (User.Identity?.IsAuthenticated != true) {
-                return Redirect("/Users/Index");
-            }
-
         public IActionResult Index()
         {
             if (User.Identity?.IsAuthenticated != true)
