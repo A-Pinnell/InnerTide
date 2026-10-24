@@ -1,0 +1,7 @@
+Creating the server folder
+    dotnet publish "C:\Users\X-Rap\Desktop\Inner-Tide-Project\InnerTide\Inner-Tide\Inner-Tide\Inner-Tide.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o "C:\Users\X-Rap\Desktop\Inner-Tide-Project\InnerTide\Inner-Tide\InnerTide.Desktop\ServerBundle"
+
+Compress the contents in the ServerBundle folder into a zip called ServerBundle.zip and move it into the main InnerTide.Desktop folder
+
+Publishing the real deal exe
+    dotnet publish "C:\Users\X-Rap\Desktop\Inner-Tide-Project\InnerTide\Inner-Tide\InnerTide.Desktop\InnerTide.Desktop.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:AssemblyName=InnerTide -o "C:\Users\X-Rap\Desktop\Inner-Tide-Project\InnerTide\Inner-Tide\InnerTideCompiled"
