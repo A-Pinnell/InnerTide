@@ -1,28 +1,7 @@
-const taskData = {
-    daily: [
-        { title: "Get 8 Hours of Sleep", reward: 5, priority: true },
-        { title: "Get 8 Hours of Sleep", reward: 5, completed: true },
-        { title: "Get 8 Hours of Sleep", reward: 5 },
-        { title: "Get 8 Hours of Sleep", reward: 5 },
-        { title: "Get 8 Hours of Sleep", reward: 5 },
-        { title: "Get 8 Hours of Sleep", reward: 5 },
-        { title: "Get 8 Hours of Sleep", reward: 5 },
-        { title: "Get 8 Hours of Sleep", reward: 5 }
-    ],
-    monthly: [
-        { title: "Make time for a little adventure", reward: 25, priority: true },
-        { title: "Take a mindful day for yourself", reward: 20 },
-        { title: "Connect with someone you love", reward: 15 },
-        { title: "Get 8 Hours of Sleep", reward: 5, completed: true },
-        { title: "Make a little progress every day", reward: 10 }
-    ],
-    weekly: [
-        { title: "Get 8 Hours of Sleep", reward: 10, completed: true },
-        { title: "Go outside and get some fresh air", reward: 15, priority: true },
-        { title: "Make something just for fun", reward: 10 },
-        { title: "Check in with how you are feeling", reward: 10 },
-        { title: "Get 8 Hours of Sleep", reward: 5 }
-    ]
+let taskData = {
+    daily: [],
+    monthly: [],
+    weekly: []
 };
 
 // Task Menu Variables
@@ -43,6 +22,21 @@ const aquariumTank = document.querySelector(".status-tank");
 const aquariumPercentLabel = document.querySelector(".status-percent");
 const coinStorageKey = "innerTide.coinBalance";
 
+async function getTaskData() {
+    const response = await fetch('/Home/GetTasks'); 
+    taskData = await response.json();
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    console.log(taskData);
+    renderTasks("daily");
+}
+
+getTaskData();
+
+
 async function loadCoinBalance() {
     try {
         const res = await fetch('/Users/GetCoins');
@@ -62,14 +56,6 @@ async function loadCoinBalance() {
     } catch (error) {
         console.error(error);
     }
-    //const storedBalance = window.localStorage.getItem(coinStorageKey);
-    //if (storedBalance === null) return 0;
-
-    //const balance = Number(storedBalance);
-    //if (storedBalance === "" || !Number.isSafeInteger(balance) || balance < 0) {
-    //    throw new TypeError("Stored coin balance must be a non-negative safe integer.");
-    //}
-    //return balance;
 }
 let coinBalance = 0;
 
