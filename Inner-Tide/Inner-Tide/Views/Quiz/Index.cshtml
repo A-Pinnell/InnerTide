@@ -1,0 +1,101 @@
+﻿@using Inner_Tide.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<User> UserManager
+
+@{
+    ViewData["Title"] = "Quiz Menu";
+
+    var coinCount = 0;
+
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        var currentUser = await UserManager.GetUserAsync(User);
+
+        coinCount = currentUser.CoinCount;
+    }
+    else
+    {
+        coinCount = 0;
+    }
+}
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102c70">
+    <title>Quiz Menu — Inner Tide</title>
+    <link rel="stylesheet" href="../css/site.css">
+    <script src="../js/site.js" defer></script>
+</head>
+<body class="quiz-menu-page">
+    <main class="quiz-page">
+        <div class="aquarium-bubbles">
+            <span class="aquarium-bubble bubble-one"></span>
+            <span class="aquarium-bubble bubble-two"></span>
+            <span class="aquarium-bubble bubble-three"></span>
+            <span class="aquarium-bubble bubble-four"></span>
+            <span class="aquarium-bubble bubble-five"></span>
+            <span class="aquarium-bubble bubble-six"></span>
+            <span class="aquarium-bubble bubble-seven"></span>
+            <span class="aquarium-bubble bubble-eight"></span>
+        </div>
+        <nav class="main-nav">
+            <a class="nav-link nav-task" asp-area="" asp-controller="Home" asp-action="Index"><span class="nav-label">Task Menu</span><span class="nav-arrow"></span></a>
+            <a class="nav-link nav-aquarium" asp-area="" asp-controller="Aquarium" asp-action="Index"><span class="nav-label">Aquarium</span><span class="nav-arrow"></span></a>
+        </nav>
+
+        <header class="player-card profile-collapsed">
+            <div class="profile-details" id="profile-details">
+                <div class="player-copy">
+                    <strong>Chris Concept</strong>
+                    <small>30 More Pearls needed to level up!</small>
+                </div>
+                <div class="xp-track"><span></span></div>
+            </div>
+            <button class="avatar" type="button">
+                <img src="../img/placeholder.webp" alt="">
+                <span class="player-level">Lv 10</span>
+            </button>
+            <div class="coin-counter" id="coinCounterTask">
+                <img src="../img/coin.png" alt="">
+                <span class="coin-total">
+                    <span id="coin-count"> @coinCount </span>
+                    <small>COINS</small>
+                </span>
+            </div>
+        </header>
+
+        <section class="quiz-carousel">
+            <div class="quiz-track" id="quizTrack">
+                <a class="quiz-card quiz-card-orange" asp-area="" asp-controller="Quiz" asp-action="Question">
+                    <span class="card-watermark">01</span>
+                    <h1>Wellness Quiz</h1>
+                    <div class="quiz-meta">
+                        <span class="time-meta">⏳15<span class="time-unit">m</span></span>
+                        <span class="reward-meta"><img src="../img/coin.png" alt="">5</span>
+                    </div>
+                    <div class="quiz-progress" data-progress="0" role="progressbar"><span></span><strong>0%</strong></div>
+                </a>
+            </div>
+        </section>
+
+        <h1 class="page-title">
+            <span class="page-title-label">QUIZ MENU</span>
+        </h1>
+
+        <button class="help-button" id="helpButton" type="button">
+            <img src="../img/help_icon.png" alt="">
+        </button>
+        <svg focusable="false" width="0" height="0">
+            <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">
+                <feTurbulence type="fractalNoise" baseFrequency=".004 .01" numOctaves="2" seed="4" result="water-noise">
+                    <animate attributeName="baseFrequency" values=".004 .01;.007 .014;.004 .01" dur="18s" repeatCount="indefinite" />
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="water-noise" scale="42" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </svg>
+    </main>
+</body>
+</html>

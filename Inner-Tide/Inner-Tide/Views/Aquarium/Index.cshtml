@@ -15,7 +15,6 @@
         coinCount = 0;
     }
 }
-}
 
 <!DOCTYPE html>
 <html>
@@ -36,11 +35,11 @@
                 <a asp-area="" asp-controller="Home" asp-action="Index"> <span> Task Menu </span> <b> ‹ </b> </a>
             </aside>
 
-            <button class="help-button" type="button" data-message="Choose a task, complete it, and collect your reward!" aria-label="Help">
+            <button class="help-button" type="button" data-message="Choose a task, complete it, and collect your reward!">
                 <img src="../img/help_icon.png" alt="">
             </button>
 
-            <div class="aquarium-scene" aria-hidden="true">
+            <div class="aquarium-scene">
                 <div class="aquarium-bubbles">
                     <span class="aquarium-bubble bubble-one"></span>
                     <span class="aquarium-bubble bubble-two"></span>
@@ -59,10 +58,13 @@
             <div id="storeCoinDiv">
                 <div class="coin-counter" id="coinCounterAquarium">
                     <img src="../img/coin.png" alt="">
-                    <span class="coin-total"><span id="coin-count"> @coinCount </span><small>COINS</small></span>
+                    <span class="coin-total">
+                        <span id="coin-count"> @coinCount </span>
+                        <small>COINS</small>
+                    </span>
                 </div>
 
-                <button class="aquariumMenuBtn" id="storeBtn" type="button" aria-controls="tankStorePanel">
+                <button class="aquariumMenuBtn" id="storeBtn" type="button">
                     <span class="aquarium-icon-frame">
                         <img src="../img/aquarium_store.png" alt="">
                     </span>
@@ -71,13 +73,13 @@
             </div>
 
             <div class="menu-buttons">
-                <button class="aquariumMenuBtn" id="editorBtn" type="button" aria-controls="editorToolbar" aria-expanded="false">
+                <button class="aquariumMenuBtn" id="editorBtn" type="button">
                     <span class="aquarium-icon-frame">
                         <img src="../img/aquarium_editor.png" alt="">
                     </span>
                     <span class="aquarium-menu-label">Editor</span>
                 </button>
-                <button class="aquariumMenuBtn" id="inventoryBtn" type="button" aria-controls="tankInventoryPanel">
+                <button class="aquariumMenuBtn" id="inventoryBtn" type="button">
                     <span class="aquarium-icon-frame">
                         <img src="../img/aquarium_inventory.png" alt="">
                     </span>
@@ -85,81 +87,81 @@
                 </button>
             </div>
 
-            <aside class="editor-toolbar" id="editorToolbar" aria-label="Aquarium layers" aria-hidden="true" inert hidden>
-                <button class="editor-layer-heading" id="editorSwitchLayer" type="button" aria-label="Switch to foreground 2">
-                    <span class="editor-layer-stack" aria-hidden="true"><i></i><b id="editorLayerNumber">1</b></span>
+            <aside class="editor-toolbar" id="editorToolbar" inert hidden>
+                <button class="editor-layer-heading" id="editorSwitchLayer" type="button">
+                    <span class="editor-layer-stack"><i></i><b id="editorLayerNumber">1</b></span>
                     <span>Switch Layer</span>
                 </button>
-                <div class="editor-layer-list" aria-label="Items">
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <div class="editor-item-slot" aria-hidden="true"></div>
-                    <button class="editor-layer-more" id="editorMoreItems" type="button" aria-label="Open inventory" aria-controls="editorInventoryPanel" aria-expanded="false">•••</button>
+                <div class="editor-layer-list">
+                    <div class="editor-item-slot"></div>
+                    <div class="editor-item-slot"></div>
+                    <div class="editor-item-slot"></div>
+                    <div class="editor-item-slot"></div>
+                    <div class="editor-item-slot"></div>
+                    <div class="editor-item-slot"></div>
+                    <div class="editor-item-slot"></div>
+                    <div class="editor-item-slot"></div>
+                    <button class="editor-layer-more" id="editorMoreItems" type="button">•••</button>
                 </div>
-                <button class="editor-close-button" id="editorCloseButton" type="button" aria-label="Close editor"><img src="../img/close_icon.png" alt=""></button>
+                <button class="editor-close-button" id="editorCloseButton" type="button"><img src="../img/close_icon.png" alt=""></button>
             </aside>
-            <div class="editor-foreground-label" id="editorForegroundLabel" aria-live="polite"><span>FOREGROUND</span><b id="editorForegroundNumber">1</b></div>
+            <div class="editor-foreground-label" id="editorForegroundLabel"><span>FOREGROUND</span><b id="editorForegroundNumber">1</b></div>
 
             <div class="editor-inventory-backdrop" id="editorInventoryBackdrop" hidden></div>
-            <section class="editor-inventory-panel" id="editorInventoryPanel" role="dialog" aria-label="Inventory" hidden>
-                <div class="store-tabs editor-inventory-tabs" aria-label="Inventory category">
-                    <span class="store-tab active" data-position="center" role="heading" aria-level="2">Objects</span>
+            <section class="editor-inventory-panel" id="editorInventoryPanel" role="dialog" hidden>
+                <div class="store-tabs editor-inventory-tabs">
+                    <span class="store-tab active" data-position="center" role="heading">Objects</span>
                 </div>
                 <div class="editor-inventory-items">
                     <div class="store-items">
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
                     </div>
                 </div>
             </section>
 
             <div class="tank-store-backdrop" id="tankStoreBackdrop" hidden></div>
-            <section class="tank-store-panel" id="tankStorePanel" role="dialog" aria-label="Tank Store" hidden>
-                <div class="store-tabs" role="tablist" aria-label="Store categories">
-                    <button class="store-tab" id="storeObjectsTab" type="button" role="tab" aria-selected="false" aria-controls="storeObjects" data-category="objects">Objects</button>
-                    <button class="store-tab active" id="storeFishTab" type="button" role="tab" aria-selected="true" aria-controls="storeFish" data-category="fish">Fish</button>
+            <section class="tank-store-panel" id="tankStorePanel" role="dialog" hidden>
+                <div class="store-tabs" role="tablist">
+                    <button class="store-tab" id="storeObjectsTab" type="button" role="tab" data-category="objects">Objects</button>
+                    <button class="store-tab active" id="storeFishTab" type="button" role="tab" data-category="fish">Fish</button>
                 </div>
-                <div class="store-catalog" id="storeFish" role="tabpanel" aria-labelledby="storeFishTab">
+                <div class="store-catalog" id="storeFish" role="tabpanel">
                     <div class="store-items">
-                        <div class="store-item" aria-label="Fish, 25 coins"><span class="store-product fish-product"></span><span class="store-price"><img src="../img/coin.png" alt="">25</span></div>
+                        <div class="store-item"><span class="store-product fish-product"></span><span class="store-price"><img src="../img/coin.png" alt="">25</span></div>
                     </div>
                 </div>
-                <div class="store-catalog" id="storeObjects" role="tabpanel" aria-labelledby="storeObjectsTab" hidden>
+                <div class="store-catalog" id="storeObjects" role="tabpanel" hidden>
                     <div class="store-items">
-                        <div class="store-item" aria-label="Aquarium object, 25 coins"><span class="store-product object-product"></span><span class="store-price"><img src="../img/coin.png" alt="">25</span></div>
+                        <div class="store-item"><span class="store-product object-product"></span><span class="store-price"><img src="../img/coin.png" alt="">25</span></div>
                     </div>
                 </div>
             </section>
 
             <div class="tank-store-backdrop" id="tankInventoryBackdrop" hidden></div>
-            <section class="tank-store-panel" id="tankInventoryPanel" role="dialog" aria-label="Inventory" hidden>
-                <div class="store-tabs" role="tablist" aria-label="Inventory categories">
-                    <button class="store-tab" id="inventoryObjectsTab" type="button" role="tab" aria-selected="false" aria-controls="inventoryObjects" data-category="objects">Objects</button>
-                    <button class="store-tab active" id="inventoryFishTab" type="button" role="tab" aria-selected="true" aria-controls="inventoryFish" data-category="fish">Fish</button>
+            <section class="tank-store-panel" id="tankInventoryPanel" role="dialog" hidden>
+                <div class="store-tabs" role="tablist">
+                    <button class="store-tab" id="inventoryObjectsTab" type="button" role="tab" data-category="objects">Objects</button>
+                    <button class="store-tab active" id="inventoryFishTab" type="button" role="tab" data-category="fish">Fish</button>
                 </div>
-                <div class="store-catalog" id="inventoryFish" role="tabpanel" aria-labelledby="inventoryFishTab">
+                <div class="store-catalog" id="inventoryFish" role="tabpanel">
                     <div class="store-items">
-                        <div class="store-item" aria-label="Fish"><span class="store-product fish-product"></span></div>
+                        <div class="store-item"><span class="store-product fish-product"></span></div>
                     </div>
                 </div>
-                <div class="store-catalog" id="inventoryObjects" role="tabpanel" aria-labelledby="inventoryObjectsTab" hidden>
+                <div class="store-catalog" id="inventoryObjects" role="tabpanel" hidden>
                     <div class="store-items">
-                        <div class="store-item" aria-label="Aquarium object"><span class="store-product object-product"></span></div>
+                        <div class="store-item"><span class="store-product object-product"></span></div>
                     </div>
                 </div>
             </section>
@@ -168,7 +170,7 @@
                 <a class="journalText" asp-area="" asp-controller="Journals" asp-action="Index"> <span> Journals </span> <b> ˅ </b> </a>
             </div>
         </div>
-        <svg aria-hidden="true" focusable="false" width="0" height="0">
+        <svg focusable="false" width="0" height="0">
             <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">
                 <feTurbulence type="fractalNoise" baseFrequency=".004 .01" numOctaves="2" seed="4" result="water-noise">
                     <animate attributeName="baseFrequency" values=".004 .01;.007 .014;.004 .01" dur="18s" repeatCount="indefinite" />
