@@ -139,6 +139,50 @@ namespace Inner_Tide.Controllers {
 
             return NotFound();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> PurchaseShopFish(string fishId) {
+            try {
+                var user = await userManager.GetUserAsync(User);
+
+                if (user == null) {
+                    return NotFound();
+                }
+
+                var fish = await _httpClient.GetFromJsonAsync<Fish>("https://innertideapi.vercel.app/api/v1/fish/" + fishId);
+
+                if (fish == null) {
+                    return NotFound("Fish not Found");
+                }
+
+                var fishPrice = fish.Price;
+
+                if (user.CoinCount >= fishPrice) {
+                    var userFish = new UserFish {
+                        UserId = user.Id,
+                        FishId = fishId,
+                    };
+
+                    _context.UserFish.Add(userFish);
+
+                    user.CoinCount -= fishPrice;
+
+                    await _context.SaveChangesAsync();
+
+                    return Ok(new {
+                        success = true,
+                        fishId = fish.FishId,
+                        fishName = fish.Species,
+                        remainingCoins = user.CoinCount
+                    });
+                }
+
+            } catch (Exception ex) {
+
+            }
+
+            return NotFound();
+        }
     }
 }
 

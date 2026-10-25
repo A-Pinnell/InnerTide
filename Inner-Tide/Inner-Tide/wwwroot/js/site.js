@@ -421,6 +421,30 @@ if (document.body.classList.contains("quiz-menu-page")) {
     });
 }
 
+async function purchaseStoreFish(_id) { 
+    const formData = new FormData();
+    formData.append("fishId", _id);
+
+    const res = await fetch(`/Aquarium/PurchaseShopFish?fishId=${_id}`, {
+        method: 'POST',
+        body: formData
+    });
+
+    console.log("Fetched Data");
+
+    if (!res.ok) {
+        throw new Error("Failed to load items");
+    }
+
+    const result = await res.json();
+    document.querySelector('#coin-count').textContent = result.remainingCoins;
+    console.log("Updated Coins Visually");
+
+    console.log(result.remainingCoins);
+
+    renderInventoryFish();
+}
+
 async function renderStoreItems() {
     try {
 
@@ -449,10 +473,10 @@ async function renderStoreItems() {
                  src="${i.sprite}"
                  alt="${i.name}">
 
-            <p class="store-product">
-                ${i.name}
-            </p>
-        `;
+            <div>
+                <p class="store-product">${i.name} </p>
+                <span class="store-price"> <img src="../img/coin.png" alt="${i.name} Image"> ${i.price} </span>
+            </div>`;
 
             storeContainer.appendChild(item);
         });
@@ -482,8 +506,10 @@ async function renderStoreFish () {
         storeContainer.innerHTML = "";
 
         fish.forEach(f => {
-
+            //console.log(f);
             const item = document.createElement("div");
+            item.setAttribute("value", f._id)
+            item.addEventListener("click", () => purchaseStoreFish(f._id) );
             item.className = "store-item";
 
             item.innerHTML = `
@@ -491,10 +517,10 @@ async function renderStoreFish () {
                  src="${f.sprite}"
                  alt="${f.species}">
 
-            <p class="store-product">
-                ${f.species}
-            </p>
-        `;
+            <div>
+                <p class="store-product">${f.species} </p>
+                <span class="store-price"> <img src="../img/coin.png" alt="${f.species} Image"> ${f.price} </span>
+            </div>`;
 
             storeContainer.appendChild(item);
         });
