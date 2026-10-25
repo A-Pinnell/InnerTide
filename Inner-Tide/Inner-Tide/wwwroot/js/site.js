@@ -36,7 +36,6 @@ async function getTaskData() {
 
 getTaskData();
 
-
 async function loadCoinBalance() {
     try {
         const res = await fetch('/Users/GetCoins');
@@ -87,6 +86,7 @@ const storeBackdrop = document.querySelector("#tankStoreBackdrop");
 const inventoryBtn = document.querySelector("#inventoryBtn");
 const inventoryPanel = document.querySelector("#tankInventoryPanel");
 const inventoryBackdrop = document.querySelector("#tankInventoryBackdrop");
+const inventoryFish = document.querySelector("inventoryFish");
 const editorBtn = document.querySelector("#editorBtn");
 const editorToolbar = document.querySelector("#editorToolbar");
 const editorCloseButton = document.querySelector("#editorCloseButton");
@@ -171,6 +171,8 @@ function animateCoinReward(taskRow, amount) {
 }
 
 function renderTasks(period) {
+    if (!taskList) return;// Safe Guard for When on Other Pages
+
     const tasks = taskData[period];
     taskList.replaceChildren();
 
@@ -411,7 +413,52 @@ if (document.body.classList.contains("quiz-menu-page")) {
     });
 }
 
+async function renderInventoryFish() {
+
+    try {
+
+        const res = await fetch('/Aquarium/GetUserFish');
+
+        if (!res.ok) {
+            throw new Error("Failed to load fish");
+        }
+
+        const fish = await res.json();
+
+        const inventoryContainer =
+            document.querySelector("#inventoryFish .store-items");
+
+        if (!inventoryContainer) return;
+
+        inventoryContainer.innerHTML = "";
+
+        fish.forEach(f => {
+
+            const item = document.createElement("div");
+            item.className = "store-item";
+
+                item.innerHTML = `
+            <img class="fish-preview"
+                 src="${f.sprite}"
+                 alt="${f.species}">
+
+            <p class="store-product">
+                ${f.species}
+            </p>
+        `;
+
+            inventoryContainer.appendChild(item);
+        });
+
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+
 if (document.body.classList.contains("aquarium-page")) {
+    renderInventoryFish();
+
     window.requestAnimationFrame(() => {
         document.body.classList.remove("aquarium-enter");
         const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000;

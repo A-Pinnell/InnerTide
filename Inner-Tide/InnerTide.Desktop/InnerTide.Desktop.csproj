@@ -22,11 +22,4 @@
 	</ItemGroup>
 
 
-	<ItemGroup>
-		<EmbeddedResource Include="ServerBundle.zip">
-			<LogicalName>InnerTideServerBundle.zip</LogicalName>
-		</EmbeddedResource>
-	</ItemGroup>
-
-
 </Project>

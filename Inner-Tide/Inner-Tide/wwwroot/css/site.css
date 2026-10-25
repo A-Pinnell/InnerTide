@@ -3283,6 +3283,16 @@ body.question-page .question-action {
     cursor: pointer;
 }
 
-    body.question-page .question-action:hover {
-        background: rgba(0, 95, 177, .92);
-    }
+body.question-page .question-action:hover {
+    background: rgba(0, 95, 177, .92);
+}
+
+.fish-preview {
+    height: 90px;
+    width: 90px;
+}
+
+.store-item {
+    height: 150px;
+    width: 125px;
+}
