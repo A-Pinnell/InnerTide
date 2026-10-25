@@ -3287,7 +3287,7 @@ body.question-page .question-action:hover {
     background: rgba(0, 95, 177, .92);
 }
 
-.fish-preview {
+.fish-preview, .item-preview {
     height: 90px;
     width: 90px;
 }

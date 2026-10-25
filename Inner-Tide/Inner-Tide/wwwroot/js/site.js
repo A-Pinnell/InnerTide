@@ -413,6 +413,48 @@ if (document.body.classList.contains("quiz-menu-page")) {
     });
 }
 
+async function renderStoreItems() {
+    try {
+
+        const res = await fetch('/Aquarium/GetAllItems');
+
+        if (!res.ok) {
+            throw new Error("Failed to load items");
+        }
+
+        const items = await res.json();
+
+        const storeContainer =
+            document.querySelector("#storeObjects .store-items");
+
+        if (!storeContainer) return;
+
+        storeContainer.innerHTML = "";
+
+        items.forEach(i => {
+
+            const item = document.createElement("div");
+            item.className = "store-item";
+
+            item.innerHTML = `
+            <img class="item-preview"
+                 src="${i.sprite}"
+                 alt="${i.name}">
+
+            <p class="store-product">
+                ${i.name}
+            </p>
+        `;
+
+            storeContainer.appendChild(item);
+        });
+
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+
 async function renderStoreFish () {
     try {
 
@@ -447,6 +489,49 @@ async function renderStoreFish () {
         `;
 
             storeContainer.appendChild(item);
+        });
+
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+
+async function renderInventoryItems() {
+
+    try {
+
+        const res = await fetch('/Aquarium/GetUserItems');
+
+        if (!res.ok) {
+            throw new Error("Failed to load item");
+        }
+
+        const items = await res.json();
+
+        const inventoryContainer =
+            document.querySelector("#inventoryObjects .store-items");
+
+        if (!inventoryContainer) return;
+
+        inventoryContainer.innerHTML = "";
+
+        items.forEach(i => {
+
+            const item = document.createElement("div");
+            item.className = "store-item";
+
+            item.innerHTML = `
+            <img class="item-preview"
+                 src="${i.sprite}"
+                 alt="${i.name}">
+
+            <p class="store-product">
+                ${i.name}
+            </p>
+        `;
+
+            inventoryContainer.appendChild(item);
         });
 
     }
@@ -500,7 +585,9 @@ async function renderInventoryFish () {
 
 if (document.body.classList.contains("aquarium-page")) {
     renderInventoryFish();
+    renderInventoryItems();
     renderStoreFish();
+    renderStoreItems();
 
     window.requestAnimationFrame(() => {
         document.body.classList.remove("aquarium-enter");

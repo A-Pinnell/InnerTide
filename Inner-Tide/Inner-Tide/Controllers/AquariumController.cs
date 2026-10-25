@@ -84,6 +84,61 @@ namespace Inner_Tide.Controllers {
 
             return NotFound();
         }
+
+        public async Task<IActionResult> GetAllItems() {
+            try {
+                var res = await _httpClient.GetAsync("https://innertideapi.vercel.app/api/v1/item");
+
+                if (!res.IsSuccessStatusCode) {
+                    return StatusCode((int)res.StatusCode);
+                }
+
+                var json = await res.Content.ReadAsStringAsync();
+
+                var itemList = JsonSerializer.Deserialize<List<Item>>(
+                    json,
+                    new JsonSerializerOptions {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                return Json(itemList);
+            } catch (Exception ex) {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        public async Task<IActionResult> GetUserItems() {
+            try {
+                var user = await userManager.GetUserAsync(User);
+
+                if (user == null) {
+                    return NotFound();
+                }
+
+                var userItems = await _context.UserItems.Where(uf => uf.UserId == user.Id)
+                                        .Select(ui => new {
+                                            ui.UserItemId,
+                                            ui.ItemId
+                                        }).ToListAsync();
+
+                List<Item> itemList = new List<Item>();
+
+                foreach (var item in userItems) {
+                    var res = await _httpClient.GetFromJsonAsync<Item>("https://innertideapi.vercel.app/api/v1/item/" + item.ItemId);
+
+                    if (res != null) {
+                        itemList.Add(res);
+                    }
+                }//end foreach
+
+                return Json(itemList);
+
+            } catch (Exception ex) {
+
+            }
+
+            return NotFound();
+        }
     }
 }
 
