@@ -88,6 +88,10 @@ namespace Inner_Tide.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskId"));
 
+                    b.Property<string>("CategoryTag")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("CoinReward")
                         .HasColumnType("int");
 

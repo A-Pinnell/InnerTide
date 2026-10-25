@@ -23,5 +23,8 @@ namespace Inner_Tide.Models {
 
         [Required]
         public bool Completed { get; set; }
+
+        [Required]
+        public string CategoryTag { get; set; }
     }
 }

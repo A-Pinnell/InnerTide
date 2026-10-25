@@ -1,0 +1,38 @@
+﻿@using Inner_Tide.ViewModels;
+@model VerifyEmailViewModel;
+
+@{
+    ViewData["Title"] = "Verify Email Page";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#eb9fe4">
+    <title> Verify Email Menu — Inner Tide</title>
+    <link rel="stylesheet" href="~/css/site.css">
+    @* <script src="./js/site.js" defer></script> *@
+</head>
+<body class="task-menu-page">
+    <main>
+        <form asp-action="VerifyEmail" method="post">
+            <fieldset>
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <input type="submit" value="Submit" class="btn btn-success w-100 p-2" />
+                <div class="text-center mt-2">
+                    <a asp-controller="Users" asp-action="Index" class="text-decoration-none mt-3"> Back </a>
+                </div>
+
+            </fieldset>
+        </form>
+
+    </main>
+</body>
+</html>

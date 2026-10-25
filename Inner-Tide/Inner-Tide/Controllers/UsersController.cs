@@ -4,6 +4,7 @@ using Inner_Tide.Models;
 using Inner_Tide.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Inner_Tide.Controllers {
     public class AddCoinModel() {
@@ -98,6 +99,62 @@ namespace Inner_Tide.Controllers {
         public async Task<IActionResult> Logout() {
             await signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
+        }
+
+        public IActionResult VerifyEmail() {
+            return View("VerifyEmail");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyEmail(VerifyEmailViewModel model) {
+            if (!ModelState.IsValid) {
+                return View("VerifyEmail");
+            }
+
+            var user = await userManager.FindByEmailAsync(model.Email);
+
+            if (user == null) {
+                ModelState.AddModelError("", "User was not Found");
+                return View("VerifyEmail", model);
+            } else {
+                return RedirectToAction("ChangePassword", "Users", new { email = user.Email} );
+            }
+        }
+
+        public IActionResult ChangePassword(string email) {
+            if (string.IsNullOrEmpty(email)) {
+                RedirectToAction("VerifyEmail", "Users");
+            }
+
+            return View(new ChangePasswordViewModel { Email = email });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model) {
+            if (!ModelState.IsValid) {
+                return View("ChangePassword");
+            }
+
+            var user = await userManager.FindByEmailAsync(model.Email);
+
+            if (user != null) {
+                var result = await userManager.RemovePasswordAsync(user);
+
+                if (result.Succeeded) {
+                    result = await userManager.AddPasswordAsync(user, model.NewPassword);
+                    return RedirectToAction("Index", "Users");
+                } else {
+                    foreach (var error in result.Errors) {
+                        ModelState.AddModelError("", error.Description);
+                    }
+
+                    return View(model);
+                }
+
+            } else {
+                ModelState.AddModelError("", "Email Not Found");
+                return View(model);
+            }
         }
 
         [HttpPost]
