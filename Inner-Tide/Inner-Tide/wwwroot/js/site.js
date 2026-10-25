@@ -134,7 +134,7 @@ function animateCoinReward(taskRow, amount) {
 
     saveCoinBalance(amount);
 
-    if (typeof Element.prototype.animate !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (typeof Element.prototype.animate !== "function") {
         return;
     }
 
@@ -352,7 +352,7 @@ if (gameShell) {
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         gameShell.classList.add("aquarium-transition");
-        const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 950;
+        const transitionDuration = 950;
         window.setTimeout(() => window.location.assign(aquariumLink.href), transitionDuration);
     });
 }
@@ -365,7 +365,7 @@ if (taskMenuLink) {
         document.body.classList.add("task-menu-transition");
         const destination = new URL(taskMenuLink.href);
         destination.searchParams.set("from", "aquarium");
-        const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 950;
+        const transitionDuration = 950;
         window.setTimeout(() => window.location.assign(destination.href), transitionDuration);
     });
 }
@@ -385,11 +385,7 @@ if (document.body.classList.contains("quiz-menu-page")) {
             card.classList.add("is-transitioning");
 
             const destination = card.href;
-            const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 900;
-            if (transitionDuration === 0) {
-                window.location.assign(destination);
-                return;
-            }
+            const transitionDuration = 900;
 
             void card.offsetWidth;
             window.requestAnimationFrame(() => {
@@ -412,7 +408,7 @@ if (document.body.classList.contains("quiz-menu-page")) {
             link.classList.add("is-transitioning");
 
             const destination = new URL(link.href);
-            const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 950;
+            const transitionDuration = 950;
             if (link.classList.contains("nav-task")) {
                 destination.searchParams.set("from", "quiz");
             }
@@ -603,7 +599,7 @@ if (document.body.classList.contains("aquarium-page")) {
 
     window.requestAnimationFrame(() => {
         document.body.classList.remove("aquarium-enter");
-        const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1000;
+        const transitionDuration = 1000;
         window.setTimeout(() => document.body.classList.add("aquarium-ready"), transitionDuration);
     });
 }
@@ -614,7 +610,7 @@ if (document.body.classList.contains("task-menu-page") && ["aquarium", "quiz"].i
     window.requestAnimationFrame(() => {
         document.body.classList.remove("task-menu-enter");
         document.body.classList.add("task-menu-fading");
-        const transitionDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1150;
+        const transitionDuration = 1150;
         document.documentElement.classList.remove("task-menu-return");
         document.body.classList.add("task-menu-ready");
         window.setTimeout(() => document.body.classList.remove("task-menu-transitioning", "task-menu-fading"), transitionDuration);
@@ -667,7 +663,7 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix) {
                 panel.hidden = true;
                 backdrop.hidden = true;
             }
-        }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
+        }, 380);
         if (restoreFocus) button.focus();
     };
 
@@ -721,7 +717,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
                 editorInventoryPanel.hidden = true;
                 editorInventoryBackdrop.hidden = true;
             }
-        }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
+        }, 380);
         if (restoreFocus && editorOpen) editorMoreItems.focus();
     }
     setEditorLayer(selectedEditorLayer);
@@ -747,7 +743,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
         document.body.classList.remove("editor-mode");
         window.setTimeout(() => {
             if (!editorOpen) editorToolbar.hidden = true;
-        }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700);
+        }, 700);
         if (restoreFocus) editorBtn.focus();
     }
 
@@ -851,7 +847,7 @@ if (questionScreen) {
         previousButton.disabled = currentQuestion === 0;
         questionAnimations.forEach(animation => animation.cancel());
         questionAnimations = [];
-        if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (animate) {
             questionAnimations = [questionNumber, questionPrompt].map(element => element.animate([
                 { opacity: 0, transform: "translateY(16px)", filter: "blur(3px)" },
                 { opacity: 1, transform: "translateY(0)", filter: "blur(0)" }

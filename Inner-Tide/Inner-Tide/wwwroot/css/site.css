@@ -66,11 +66,7 @@ button {
         inset: -3%;
         background: url("../backgrounds/TaskMenu.png") center / cover no-repeat;
         content: "";
-        filter: url("#background-water-ripple");
         pointer-events: none;
-        transform-origin: center;
-        animation: background-drift 18s ease-in-out infinite alternate;
-        will-change: filter, transform;
     }
 
 .ambient {
@@ -724,13 +720,6 @@ button {
     flex: 0 0 auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .priority-icon,
-    .task-check {
-        animation: none;
-    }
-}
-
 .claim-chest {
     display: grid;
     width: 76%;
@@ -1094,7 +1083,7 @@ html.task-menu-return .game-shell {
     background: rgba(49, 25, 67, .48);
     backdrop-filter: blur(5px) saturate(.8);
     pointer-events: none;
-    transition: opacity .48s ease, visibility .48s;
+    transition: opacity .55s ease, visibility 0s linear .55s;
 }
 
 .elements-panel {
@@ -1111,13 +1100,14 @@ html.task-menu-return .game-shell {
     border-radius: 0 55px 55px 0;
     background: linear-gradient(90deg, rgba(125,76,174,.83), rgba(168,97,187,.82));
     box-shadow: 0 8px 28px rgba(185,91,185,.11), inset 0 6px 0 rgba(255,225,250,.9), inset 0 -7px 0 rgba(194,74,157,.42), inset -7px 0 0 rgba(194,74,157,.3), inset 0 0 30px rgba(255,255,255,.1);
-    transition: width .62s cubic-bezier(.22, 1, .36, 1), height .62s cubic-bezier(.22, 1, .36, 1), border-radius .4s ease;
+    transition: width .78s cubic-bezier(.16, 1, .3, 1), height .78s cubic-bezier(.16, 1, .3, 1), border-radius .65s ease, box-shadow .55s ease;
 }
 
 .elements-open .elements-backdrop {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
+    transition: opacity .55s ease, visibility 0s;
 }
 
 .elements-open .elements-panel {
@@ -1139,8 +1129,31 @@ html.task-menu-return .game-shell {
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .25s ease, visibility .25s;
+    transform: translate3d(-10px, 8px, 0) scale(.985);
+    transition: opacity .38s ease, transform .52s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .52s;
 }
+
+    .elements-actions > .element-action {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity .32s ease, transform .42s cubic-bezier(.16, 1, .3, 1), filter .22s ease;
+    }
+
+    .elements-actions > :nth-child(1) {
+        transition-delay: .08s;
+    }
+
+    .elements-actions > :nth-child(2) {
+        transition-delay: .13s;
+    }
+
+    .elements-actions > :nth-child(3) {
+        transition-delay: .18s;
+    }
+
+    .elements-actions > :nth-child(4) {
+        transition-delay: .23s;
+    }
 
 .element-action {
     position: relative;
@@ -1165,7 +1178,7 @@ html.task-menu-return .game-shell {
     text-decoration: none;
     white-space: normal;
     cursor: pointer;
-    transition: filter .16s ease, transform .16s ease;
+    transition: filter .22s ease, transform .22s ease;
 }
 
 button.element-action:not(:disabled):hover,
@@ -1229,7 +1242,8 @@ a.element-action:hover {
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .25s ease .05s, visibility .25s;
+    transform: translate3d(0, 10px, 0);
+    transition: opacity .42s ease, transform .58s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .58s;
 }
 
 .elements-open .elements-actions,
@@ -1237,6 +1251,25 @@ a.element-action:hover {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-delay: .12s, .12s, 0s;
+}
+
+.elements-open .elements-actions {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-delay: .08s, .08s, 0s;
+}
+
+    .elements-open .elements-actions > .element-action {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+.elements-actions > :hover {
+    transition-delay: 0s;
 }
 
 .status-tank {
@@ -1397,7 +1430,7 @@ a.element-action:hover {
     background: transparent;
     box-shadow: none;
     cursor: pointer;
-    transition: width .62s cubic-bezier(.22, 1, .36, 1), border-radius .4s ease, background .35s ease;
+    transition: width .78s cubic-bezier(.16, 1, .3, 1), border-radius .65s ease, background .5s ease;
 }
 
     .elements-toggle.elements-tab span {
@@ -1539,7 +1572,7 @@ a.element-action:hover {
         background: url("../backgrounds/Aquarium_1.png") center / cover no-repeat;
         content: "";
         filter: url("#background-water-ripple");
-        opacity: 1;
+        opacity: 0.5;
         transition: opacity .5s ease;
     }
 
@@ -1696,31 +1729,6 @@ a.element-action:hover {
         opacity: 1;
         transform: translateX(0);
     }
-
-@media (prefers-reduced-motion: reduce) {
-    .aquarium-tab,
-    .task-tab,
-    .task-menu-page::after,
-    .task-menu-page .game-shell,
-    .aquarium-page #aquarium,
-    .aquarium-scene,
-    .aquarium-bubbles,
-    .aquarium-page .task-tab,
-    .aquarium-transition .aquarium-tab span,
-    .task-menu-transition .task-tab span {
-        transition-duration: .01ms;
-        animation-duration: .01ms;
-    }
-
-    .aquarium-transition .aquarium-tab b,
-    .task-menu-transition .task-tab b {
-        transition-delay: .01ms;
-    }
-
-    .aquarium-bubble {
-        display: none;
-    }
-}
 
 #journalButton {
     position: absolute;
@@ -2836,15 +2844,6 @@ body.quiz-menu-page .help-button {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    body.quiz-menu-page *,
-    body.quiz-menu-page *::before,
-    body.quiz-menu-page *::after {
-        scroll-behavior: auto !important;
-        transition-duration: .01ms !important;
-    }
-}
-
 body.quiz-menu-page .player-card {
     top: 3%;
     right: 1.2%;
@@ -3283,9 +3282,9 @@ body.question-page .question-action {
     cursor: pointer;
 }
 
-body.question-page .question-action:hover {
-    background: rgba(0, 95, 177, .92);
-}
+    body.question-page .question-action:hover {
+        background: rgba(0, 95, 177, .92);
+    }
 
 .fish-preview, .item-preview {
     height: 90px;
@@ -3296,3 +3295,298 @@ body.question-page .question-action:hover {
     height: 150px;
     width: 125px;
 }
+
+body.users-page {
+    min-width: 320px;
+    min-height: 100vh;
+    overflow: hidden;
+    background: #071b36 url("../backgrounds/Login.png") center / cover no-repeat fixed;
+}
+
+    body.users-page .users-shell {
+        position: relative;
+        display: grid;
+        width: 100%;
+        min-height: 100vh;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        isolation: isolate;
+    }
+
+    body.users-page .users-promo {
+        position: absolute;
+        inset: 0 auto 7% 0;
+        display: flex;
+        width: 49%;
+        align-items: flex-start;
+        justify-content: flex-start;
+        pointer-events: none;
+    }
+
+        body.users-page .users-promo img {
+            position: fixed;
+            top: 2vh;
+            left: 0;
+            display: block;
+            width: 70vw;
+            height: auto;
+            margin: 0;
+            object-fit: contain;
+        }
+
+    body.users-page .auth-panel {
+        z-index: 1;
+        grid-column: 2;
+        align-self: center;
+        width: min(88%, 650px);
+        min-height: 0;
+        margin: 0 auto;
+        transition: height .52s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    body.users-page .auth-view[hidden] {
+        display: none;
+    }
+
+    body.users-page.auth-transition-ready .auth-panel {
+        position: relative;
+        overflow-x: clip;
+        overflow-y: visible;
+    }
+
+    body.users-page.auth-transition-ready .auth-view {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        transition: opacity .32s ease, transform .48s cubic-bezier(.22, 1, .36, 1);
+        will-change: opacity, transform;
+    }
+
+        body.users-page.auth-transition-ready .auth-view.is-active {
+            z-index: 1;
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-entering {
+            opacity: 0;
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-leaving {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-entering-from-right {
+            transform: translate3d(100%, 0, 0);
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-entering-from-left {
+            transform: translate3d(-100%, 0, 0);
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-leaving-to-left {
+            transform: translate3d(-100%, 0, 0);
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-leaving-to-right {
+            transform: translate3d(100%, 0, 0);
+        }
+
+    body.users-page .auth-panel fieldset {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    body.users-page .auth-field {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin: 0 0 clamp(18px, 3.1vh, 31px);
+    }
+
+        body.users-page .auth-field label {
+            margin: 0 2px 2px 0;
+            color: #fff;
+            font-size: clamp(25px, 3.5vw, 47px);
+            line-height: 1.12;
+            text-align: right;
+        }
+
+        body.users-page .auth-field input {
+            width: 100%;
+            height: clamp(58px, 11.8vh, 91px);
+            padding: 0 clamp(16px, 1.8vw, 25px);
+            border: 3px solid #050505;
+            border-radius: 25px;
+            outline: none;
+            background: #fff;
+            color: #080808;
+            font: clamp(15px, 1.55vw, 21px) "Neuropolx", sans-serif;
+            letter-spacing: .035em;
+        }
+
+            body.users-page .auth-field input::placeholder {
+                color: #171717;
+                opacity: 1;
+            }
+
+            body.users-page .auth-field input:focus-visible {
+                box-shadow: 0 0 0 4px rgba(47, 183, 255, .55);
+            }
+
+    body.users-page .auth-field-compact {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 14px;
+        margin: 0 0 clamp(14px, 2.6vh, 21px);
+    }
+
+        body.users-page .auth-field-compact label {
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        body.users-page .auth-field-compact input {
+            height: clamp(52px, 8.2vh, 64px);
+            border-radius: 17px;
+            font-size: clamp(12px, 1.1vw, 16px);
+        }
+
+    body.users-page .auth-error {
+        display: block;
+        min-height: 0;
+        color: #ffd1e8;
+        font-size: 14px;
+        text-align: right;
+    }
+
+    body.users-page .auth-summary:empty,
+    body.users-page .auth-field .auth-error:empty {
+        display: none;
+    }
+
+    body.users-page .auth-options {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: -8px 3px 20px;
+        color: #fff;
+        font-size: clamp(12px, 1vw, 15px);
+    }
+
+        body.users-page .auth-options a,
+        body.users-page .auth-switch {
+            color: #fff;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+    body.users-page .remember-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        body.users-page .remember-option input {
+            width: 17px;
+            height: 17px;
+            accent-color: #168ed6;
+        }
+
+    body.users-page .auth-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(15px, 2vw, 28px);
+    }
+
+    body.users-page .auth-submit {
+        min-width: 65%;
+        min-height: clamp(68px, 12.6vh, 96px);
+        padding: 6px 20px;
+        border: 4px solid rgba(15, 146, 218, .8);
+        border-radius: 25px;
+        background: linear-gradient(115deg, rgba(49, 106, 171, .82), rgba(6, 54, 101, .8));
+        box-shadow: inset 0 0 14px rgba(157, 218, 255, .55), 0 0 9px #08aeff, 0 0 19px rgba(22, 160, 242, .8);
+        color: #fff;
+        cursor: pointer;
+        font: clamp(30px, 4vw, 50px) "Neuropolx", sans-serif;
+        text-shadow: 0 0 8px rgba(255, 255, 255, .7);
+        transition: filter .18s ease, transform .18s ease;
+    }
+
+        body.users-page .auth-submit:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+        }
+
+    body.users-page .auth-switch {
+        flex: 0 0 auto;
+        font-size: clamp(14px, 2vw, 26px);
+        font-style: italic;
+        white-space: nowrap;
+    }
+
+    body.users-page .users-footer {
+        position: absolute;
+        right: 0;
+        bottom: 3.5%;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(14px, 2.5vw, 34px);
+        color: #fff;
+        font-size: clamp(20px, 2.5vw, 34px);
+    }
+
+        body.users-page .users-footer img {
+            display: block;
+            width: clamp(165px, 19vw, 260px);
+            height: auto;
+        }
+
+    body.users-page .users-help {
+        position: absolute;
+        right: 8px;
+        bottom: 0;
+        width: clamp(58px, 6vw, 78px);
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+
+        body.users-page .users-help img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+.startup-video {
+    position: fixed;
+    z-index: 10000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #000;
+    opacity: 1;
+    transition: opacity .45s ease;
+    pointer-events: none;
+}
+
+    .startup-video.is-finished {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .startup-video video {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+    }
+

@@ -6,95 +6,268 @@
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#eb9fe4">
-        <title> Login and Register Menu — Inner Tide</title>
-        <link rel="stylesheet" href="~/css/site.css">
-        @* <script src="./js/site.js" defer></script> *@
-    </head>
-    <body class="task-menu-page">
-        <main>
-            <div id="registerContainer">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071b36">
+    <title>Welcome — Inner Tide</title>
+    <link rel="stylesheet" href="../css/site.css">
+</head>
+
+<body class="users-page">
+    <main class="users-shell">
+        <section class="users-promo">
+            <img src="../img/login_promo.png">
+        </section>
+
+        <section class="auth-panel">
+            <div id="registerContainer" class="auth-view">
                 <form asp-controller="Users" asp-action="Register" method="post">
                     <fieldset>
-                        <h3> Register </h3>
-                        <div>
-                            <label asp-for="Register.UserName" class="control-label"></label>
-                            <input asp-for="Register.UserName" class="form-control" />
-                            <span asp-validation-for="Register.UserName" class="text-danger"></span>
+                        <div class="auth-field">
+                            <label asp-for="Register.Email">Email Address</label>
+                            <input asp-for="Register.Email" type="email" autocomplete="email" placeholder="you@email.com">
+                            <span asp-validation-for="Register.Email" class="auth-error"></span>
                         </div>
 
-                        <div>
-                            <label asp-for="Register.Email" class="control-label"></label>
-                            <input asp-for="Register.Email" class="form-control" />
-                            <span asp-validation-for="Register.Email" class="text-danger"></span>
+                        <div class="auth-field auth-field-compact">
+                            <label asp-for="Register.UserName">Username</label>
+                            <input asp-for="Register.UserName" type="text" autocomplete="username" placeholder="Choose a username">
+                            <span asp-validation-for="Register.UserName" class="auth-error"></span>
                         </div>
 
-                        <div>
-                            <label asp-for="Register.Password" class="control-label"></label>
-                            <input asp-for="Register.Password" class="form-control" />
-                            <span asp-validation-for="Register.Password" class="text-danger"></span>
+                        <div class="auth-field">
+                            <label asp-for="Register.Password">Password</label>
+                            <input asp-for="Register.Password" type="password" autocomplete="new-password" placeholder="Password">
+                            <span asp-validation-for="Register.Password" class="auth-error"></span>
                         </div>
 
-                        <div>
-                            <label asp-for="Register.ConfirmPassword" class="control-label"></label>
-                            <input asp-for="Register.ConfirmPassword" class="form-control" />
-                            <span asp-validation-for="Register.ConfirmPassword" class="text-danger"></span>
+
+
+                        <div class="auth-field auth-field-compact">
+                            <label asp-for="Register.ConfirmPassword">Confirm</label>
+                            <input asp-for="Register.ConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm password">
+                            <span asp-validation-for="Register.ConfirmPassword" class="auth-error"></span>
                         </div>
 
-                        <div class="form-group">
-                            <input type="submit" value="Register" class="btn btn-primary" />
+                        <div asp-validation-summary="All" class="auth-error auth-summary"></div>
+                        <div class="auth-actions">
+                            <button class="auth-submit" type="submit">Register</button>
+                            <a class="auth-switch" href="#login" data-auth-view="login">or Log In</a>
                         </div>
-
-                        <div asp-validation-summary="All" class="text-danger"></div>
                     </fieldset>
                 </form>
             </div>
 
-            <div id="loginContainer">
-            <form asp-controller="Users" asp-action="Login" method="post">
+            <div id="loginContainer" class="auth-view" hidden>
+                <form asp-controller="Users" asp-action="Login" method="post">
                     <fieldset>
-                        <h3> Login </h3>
-                        <div>
-                            <label asp-for="Login.Email" class="control-label"></label>
-                            <input asp-for="Login.Email" class="form-control" />
-                            <span asp-validation-for="Login.Email" class="text-danger"></span>
+                        <div class="auth-field">
+                            <label asp-for="Login.Email">Email Address</label>
+                            <input asp-for="Login.Email" type="email" autocomplete="email" placeholder="you@email.com">
+                            <span asp-validation-for="Login.Email" class="auth-error"></span>
                         </div>
 
-                        <div>
-                            <label asp-for="Login.Password" class="control-label"></label>
-                            <input asp-for="Login.Password" class="form-control" />
-                            <span asp-validation-for="Login.Password" class="text-danger"></span>
+                        <div class="auth-field">
+                            <label asp-for="Login.Password">Password</label>
+                            <input asp-for="Login.Password" type="password" autocomplete="current-password" placeholder="Password">
+                            <span asp-validation-for="Login.Password" class="auth-error"></span>
                         </div>
 
-                        <div class="float-end">
-                            <a asp-controller="Users" asp-action="VerifyEmail" class="text-decoration-none"> Forgot Password </a>
-                        </div>
-
-                        <div class="form-check mb-3">
-                            <label class="form-check-label">
-                                <input asp-for="Login.RememberMe" class="form-check-input"/>
-                                @Html.DisplayNameFor(a=> a.Login.RememberMe)
+                        <div class="auth-options">
+                            <label class="remember-option">
+                                <input asp-for="Login.RememberMe" type="checkbox">
+                                <span>Remember me</span>
                             </label>
+                            <a asp-controller="Users" asp-action="VerifyEmail">Forgot Password?</a>
                         </div>
 
-                        <div class="form-group">
-                            <input type="submit" value="Login" class="btn btn-primary" />
+                        <div asp-validation-summary="All" class="auth-error auth-summary"></div>
+                        <div class="auth-actions">
+                            <button class="auth-submit" type="submit">Log In</button>
+                            <a class="auth-switch" href="#register" data-auth-view="register">or Register</a>
                         </div>
-
-                        <div class="text-center">
-                            <a asp-controller="Home" asp-action="Index" class="text-decoration-none mt-3"> Back </a>
-                        </div>
-
-                        <div asp-validation-summary="All" class="text-danger"></div>
                     </fieldset>
                 </form>
             </div>
-            
+        </section>
 
-            <a asp-action=""> </a>
-        </main>
-    </body>
+        <footer class="users-footer">
+            <span>Dive In.</span>
+            <img src="../img/innertide_logo.png" alt="InnerTide">
+        </footer>
+
+        <button class="users-help" type="button">
+            <img src="../img/help_icon.png" alt="">
+        </button>
+    </main>
+
+    <div class="startup-video" id="startup-video">
+        <video id="startup-video-player" autoplay muted playsinline preload="auto"></video>
+    </div>
+
+    <script>
+        const startupVideoOverlay = document.querySelector("#startup-video");
+        const startupVideoPlayer = document.querySelector("#startup-video-player");
+        startupVideoPlayer.muted = true;
+        const firstBoot = sessionStorage.getItem("innerTide.booted") !== "true";
+        const startupVideos = firstBoot
+            ? ["../vid/Stallion.mp4", "../vid/Intro.mp4"]
+            : ["../vid/Stallion.mp4"];
+        let startupVideoIndex = 0;
+        let startupSequenceFinished = false;
+
+        sessionStorage.setItem("innerTide.booted", "true");
+
+        function enableStartupVideoAudio() {
+            startupVideoPlayer.muted = false;
+            document.removeEventListener("pointerdown", enableStartupVideoAudio);
+            document.removeEventListener("keydown", enableStartupVideoAudio);
+        }
+
+        document.addEventListener("pointerdown", enableStartupVideoAudio);
+        document.addEventListener("keydown", enableStartupVideoAudio);
+        function resumeStartupVideo() {
+            if (
+                !startupSequenceFinished &&
+                startupVideoIndex < startupVideos.length &&
+                document.visibilityState === "visible" &&
+                startupVideoPlayer.paused &&
+                !startupVideoPlayer.ended &&
+                startupVideoPlayer.currentSrc
+            ) {
+                startupVideoPlayer.play().catch(error => {
+                    console.error("Unable to resume startup video.", error);
+                });
+            }
+        }
+        document.addEventListener("visibilitychange", resumeStartupVideo);
+
+        function playStartupVideo() {
+            if (startupVideoIndex >= startupVideos.length) {
+                startupSequenceFinished = true;
+                document.removeEventListener("visibilitychange", resumeStartupVideo);
+                document.removeEventListener("pointerdown", enableStartupVideoAudio);
+                document.removeEventListener("keydown", enableStartupVideoAudio);
+                startupVideoOverlay.classList.add("is-finished");
+                window.setTimeout(() => startupVideoOverlay.remove(), 450);
+                return;
+            }
+
+            let hasAdvanced = false;
+            const advance = () => {
+                if (hasAdvanced) {
+                    return;
+                }
+
+                hasAdvanced = true;
+                startupVideoPlayer.removeEventListener("ended", advance);
+                startupVideoPlayer.removeEventListener("error", advance);
+                startupVideoIndex += 1;
+                playStartupVideo();
+            };
+
+            startupVideoPlayer.addEventListener("ended", advance);
+            startupVideoPlayer.addEventListener("error", advance);
+            startupVideoPlayer.src = startupVideos[startupVideoIndex];
+            startupVideoPlayer.load();
+            startupVideoPlayer.play().catch(error => {
+                console.error("Unable to autoplay startup video.", error);
+            });
+        }
+
+        playStartupVideo();
+
+        const authPanel = document.querySelector(".auth-panel");
+        const authViews = {
+            register: document.querySelector("#registerContainer"),
+            login: document.querySelector("#loginContainer")
+        };
+        let authTransitionTimeout;
+        let authEnterTimeout;
+
+        function setAuthPanelHeight(view) {
+            authPanel.style.height = `${view.scrollHeight}px`;
+        }
+
+        document.body.classList.add("auth-transition-ready");
+        const activeAuthView = Object.values(authViews).find(view => !view.hidden);
+        activeAuthView.classList.add("is-active");
+        setAuthPanelHeight(activeAuthView);
+        if ("ResizeObserver" in window) {
+            const authResizeObserver = new ResizeObserver(() => {
+                const activeView = Object.values(authViews).find(view => view.classList.contains("is-active"));
+                if (activeView) {
+                    setAuthPanelHeight(activeView);
+                }
+            });
+            Object.values(authViews).forEach(view => authResizeObserver.observe(view));
+        }
+
+        document.querySelectorAll("[data-auth-view]").forEach(link => {
+            link.addEventListener("click", event => {
+                event.preventDefault();
+                const nextView = authViews[link.dataset.authView];
+                const currentView = Object.values(authViews).find(view => view.classList.contains("is-active"));
+
+                if (!nextView || nextView === currentView) {
+                    return;
+                }
+
+                window.clearTimeout(authTransitionTimeout);
+                window.clearTimeout(authEnterTimeout);
+                Object.values(authViews).forEach(view => {
+                    if (view !== currentView && view !== nextView) {
+                        view.hidden = true;
+                        view.classList.remove(
+                            "is-active",
+                            "is-entering",
+                            "is-leaving",
+                            "is-entering-from-left",
+                            "is-entering-from-right",
+                            "is-leaving-to-left",
+                            "is-leaving-to-right"
+                        );
+                    }
+                });
+
+                const direction = currentView === authViews.register ? "left" : "right";
+                const enterDirection = direction === "left" ? "right" : "left";
+
+                nextView.hidden = false;
+                nextView.inert = false;
+                nextView.classList.remove("is-leaving", "is-leaving-to-left", "is-leaving-to-right");
+                nextView.classList.add("is-entering", `is-entering-from-${enterDirection}`);
+                void nextView.offsetWidth;
+
+                currentView.classList.remove(
+                    "is-active",
+                    "is-entering",
+                    "is-entering-from-left",
+                    "is-entering-from-right"
+                );
+                currentView.classList.add("is-leaving", `is-leaving-to-${direction}`);
+                currentView.inert = true;
+                nextView.classList.add("is-active");
+                setAuthPanelHeight(nextView);
+
+                authEnterTimeout = window.setTimeout(
+                    () => nextView.classList.remove(
+                        "is-entering",
+                        "is-entering-from-left",
+                        "is-entering-from-right"
+                    ),
+                    20
+                );
+
+                authTransitionTimeout = window.setTimeout(() => {
+                    currentView.hidden = true;
+                    currentView.inert = false;
+                    currentView.classList.remove("is-leaving", "is-leaving-to-left", "is-leaving-to-right");
+                }, 520);
+            });
+        });
+    </script>
+</body>
 </html>
+
