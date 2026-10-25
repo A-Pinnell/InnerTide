@@ -3,6 +3,7 @@ using Inner_Tide.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Inner_Tide.Controllers {
     public class AquariumController : Controller {
@@ -31,24 +32,24 @@ namespace Inner_Tide.Controllers {
 
         public async Task<IActionResult> GetAllFish() {
             try {
-
-                List<Fish> fishList = new List<Fish>();
-
                 var res = await _httpClient.GetAsync("https://innertideapi.vercel.app/api/v1/fish");
 
-                //if (res != null) {
-                //    foreach (var fish in res) {
-                //        fishList.Add(res);
-                //    }
-                //}
+                if (!res.IsSuccessStatusCode) {
+                    return StatusCode((int)res.StatusCode);
+                }
+
+                var json = await res.Content.ReadAsStringAsync();
+
+                var fishList = JsonSerializer.Deserialize<List<Fish>>(
+                    json,
+                    new JsonSerializerOptions {
+                        PropertyNameCaseInsensitive = true
+                    });
 
                 return Json(fishList);
-
             } catch (Exception ex) {
-
+                return StatusCode(500, ex.Message);
             }
-
-            return NotFound();
         }
 
         public async Task<IActionResult> GetUserFish() {

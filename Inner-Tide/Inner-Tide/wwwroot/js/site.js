@@ -413,7 +413,49 @@ if (document.body.classList.contains("quiz-menu-page")) {
     });
 }
 
-async function renderInventoryFish() {
+async function renderStoreFish () {
+    try {
+
+        const res = await fetch('/Aquarium/GetAllFish');
+
+        if (!res.ok) {
+            throw new Error("Failed to load fish");
+        }
+
+        const fish = await res.json();
+
+        const storeContainer =
+            document.querySelector("#storeFish .store-items");
+
+        if (!storeContainer) return;
+
+        storeContainer.innerHTML = "";
+
+        fish.forEach(f => {
+
+            const item = document.createElement("div");
+            item.className = "store-item";
+
+            item.innerHTML = `
+            <img class="fish-preview"
+                 src="${f.sprite}"
+                 alt="${f.species}">
+
+            <p class="store-product">
+                ${f.species}
+            </p>
+        `;
+
+            storeContainer.appendChild(item);
+        });
+
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+
+async function renderInventoryFish () {
 
     try {
 
@@ -458,6 +500,7 @@ async function renderInventoryFish() {
 
 if (document.body.classList.contains("aquarium-page")) {
     renderInventoryFish();
+    renderStoreFish();
 
     window.requestAnimationFrame(() => {
         document.body.classList.remove("aquarium-enter");
