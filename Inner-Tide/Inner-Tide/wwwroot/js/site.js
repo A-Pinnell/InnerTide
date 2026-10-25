@@ -31,6 +31,8 @@ async function getTaskData() {
     }
 
     console.log(taskData);
+    console.log(JSON.stringify(taskData, null, 2));
+
     renderTasks("daily");
 }
 
@@ -59,6 +61,8 @@ async function loadCoinBalance() {
 let coinBalance = 0;
 
 async function saveCoinBalance(coinAmount) {
+    console.log("Adding coins:", coinAmount);
+
     try {
         const res = await fetch('/Users/AddCoins', {
             method: 'POST',
@@ -68,13 +72,15 @@ async function saveCoinBalance(coinAmount) {
             body: JSON.stringify({ amount: coinAmount })
         });
 
+        console.log("Status:", res.status);
+
         if (!res.ok) {
             throw new Error('Failed to save coins.');
         }
 
         await loadCoinBalance();
-
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
     }
 }
@@ -180,6 +186,9 @@ function renderTasks(period) {
         const row = document.createElement("article");
         row.className = `task-row completeable${task.completed ? " completed" : ""}${task.priority ? " priority-task" : ""}`;
 
+        console.log(task);
+        console.log(task.coinReward);
+
         if (task.priority) {
             const priorityIcon = document.createElement("img");
             priorityIcon.className = "priority-icon";
@@ -212,7 +221,7 @@ function renderTasks(period) {
             coin.className = "coin";
             const value = document.createElement("span");
             value.className = "reward-value";
-            value.textContent = task.reward;
+            value.textContent = task.coinReward;
             reward.append(coin, value);
             if (task.priority) {
                 const multiplier = document.createElement("span");
@@ -232,7 +241,10 @@ function renderTasks(period) {
 
         const complete = () => {
             if (task.completed) return;
+            console.log(task);
             task.completed = true;
+            animateCoinReward(row, task.coinReward);
+            saveCoinBalance(task.coinReward);
             renderTasks(period);
         };
         row.addEventListener("click", complete);
