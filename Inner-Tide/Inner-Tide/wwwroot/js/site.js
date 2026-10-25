@@ -433,7 +433,7 @@ async function purchaseStoreFish(_id) {
     console.log("Fetched Data");
 
     if (!res.ok) {
-        throw new Error("Failed to load items");
+        throw new Error("Failed to load fish");
     }
 
     const result = await res.json();
@@ -443,6 +443,30 @@ async function purchaseStoreFish(_id) {
     console.log(result.remainingCoins);
 
     renderInventoryFish();
+}
+
+async function purchaseStoreItem(_id) {
+    const formData = new FormData();
+    formData.append("itemId", _id);
+
+    const res = await fetch(`/Aquarium/PurchaseShopItem?itemId=${_id}`, {
+        method: 'POST',
+        body: formData
+    });
+
+    console.log("Fetched Data");
+
+    if (!res.ok) {
+        throw new Error("Failed to load items");
+    }
+
+    const result = await res.json();
+    document.querySelector('#coin-count').textContent = result.remainingCoins;
+    console.log("Updated Coins Visually");
+
+    console.log(result.remainingCoins);
+
+    renderInventoryItems();
 }
 
 async function renderStoreItems() {
@@ -466,6 +490,8 @@ async function renderStoreItems() {
         items.forEach(i => {
 
             const item = document.createElement("div");
+            item.setAttribute("value", i._id)
+            item.addEventListener("click", () => purchaseStoreItem(i._id));
             item.className = "store-item";
 
             item.innerHTML = `
