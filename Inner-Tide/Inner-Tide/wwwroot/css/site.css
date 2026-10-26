@@ -2200,9 +2200,9 @@ a.element-action:hover {
     transition: transform 0.2s ease;
 }
 
-.store-item:hover {
-    transform: scale(1.05);
-}
+    .store-item:hover {
+        transform: scale(1.05);
+    }
 
 .store-product {
     position: relative;
@@ -3800,73 +3800,3 @@ body.users-page {
         object-fit: cover;
     }
 
-html::after {
-    position: fixed;
-    z-index: 2147483647;
-    inset: 0;
-    background: #000;
-    content: "";
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .18s linear;
-}
-
-.task-menu-startup-video[hidden] {
-    display: none;
-}
-
-html.task-menu-stallion-pending body {
-    background: #000;
-}
-
-html.task-menu-auth-check body {
-    background: #000;
-}
-
-    html.task-menu-auth-check body.task-menu-page .game-shell {
-        opacity: 0;
-        pointer-events: none;
-    }
-
-html.task-menu-stallion-pending body.task-menu-page .game-shell,
-html.task-menu-stallion-revealing body.task-menu-page .game-shell {
-    transition: opacity .45s ease;
-}
-
-html.task-menu-stallion-pending body.task-menu-page .game-shell {
-    opacity: 0;
-    pointer-events: none;
-}
-
-html.task-menu-stallion-revealing body.task-menu-page .game-shell {
-    opacity: 1;
-}
-
-html.reduced-motion-transitioning::after,
-html.reduced-motion-entering::after {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-html.reduced-motion *,
-html.reduced-motion *::before,
-html.reduced-motion *::after {
-    transition: none !important;
-    animation: none !important;
-}
-
-html.reduced-motion body.quiz-menu-page .quiz-card:hover,
-html.reduced-motion body.quiz-menu-page .nav-link:hover,
-html.reduced-motion body.quiz-menu-page .nav-link:focus-visible,
-html.reduced-motion body.users-page .auth-submit:hover {
-    transform: none;
-}
-
-.fishGrabbable {
-    position: relative;
-}
-
-#fishContainer {
-    position: absolute;
-    height: 100%
-}
