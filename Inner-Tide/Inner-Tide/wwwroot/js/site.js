@@ -32,6 +32,69 @@ const aquariumPercentLabel = document.querySelector(".status-percent");
 const coinStorageKey = "innerTide.coinBalance";
 const graphicalPresentationKey = "innerTide.graphicalPresentation";
 const reduceMotionKey = "innerTide.reduceMotion";
+const musicVolumeStorageKey = "innerTide.musicVolume";
+const sfxVolumeStorageKey = "innerTide.sfxVolume";
+const readStoredVolume = key => {
+    const storedValue = localStorage.getItem(key);
+    if (storedValue === null) return 0.5;
+
+    const volume = Number(storedValue);
+    return Number.isFinite(volume) ? Math.min(1, Math.max(0, volume)) : 0.5;
+};
+let musicVolume = readStoredVolume(musicVolumeStorageKey);
+let sfxVolume = readStoredVolume(sfxVolumeStorageKey);
+const audioPlayers = {
+    music: new Set(),
+    sfx: new Set()
+};
+
+function registerAudioPlayer(player, type) {
+    if (!player) return;
+
+    audioPlayers[type].add(player);
+    player.volume = type === "music" ? musicVolume : sfxVolume;
+    return player;
+}
+
+function setAudioVolume(type, volume) {
+    const boundedVolume = Math.min(1, Math.max(0, volume));
+    if (!Number.isFinite(boundedVolume)) {
+        throw new RangeError("Audio volume must be a finite number between 0 and 1.");
+    }
+
+    if (type === "music") {
+        musicVolume = boundedVolume;
+        localStorage.setItem(musicVolumeStorageKey, String(boundedVolume));
+    } else {
+        sfxVolume = boundedVolume;
+        localStorage.setItem(sfxVolumeStorageKey, String(boundedVolume));
+    }
+
+    audioPlayers[type].forEach(player => {
+        player.volume = boundedVolume;
+    });
+}
+
+const musicVolumeSlider = document.querySelector("#musicVolume");
+const musicVolumeValue = document.querySelector("#musicVolumeValue");
+const sfxVolumeSlider = document.querySelector("#sfxVolume");
+const sfxVolumeValue = document.querySelector("#sfxVolumeValue");
+
+function initializeVolumeSlider(slider, output, type, volume) {
+    if (!slider || !output) return;
+
+    slider.value = String(Math.round(volume * 100));
+    output.value = `${slider.value}%`;
+    slider.addEventListener("input", () => {
+        const percentage = Number(slider.value);
+        output.value = `${percentage}%`;
+        setAudioVolume(type, percentage / 100);
+    });
+}
+
+initializeVolumeSlider(musicVolumeSlider, musicVolumeValue, "music", musicVolume);
+initializeVolumeSlider(sfxVolumeSlider, sfxVolumeValue, "sfx", sfxVolume);
+
 let aquariumMenuSounds;
 let aquariumMusicPlayer = null;
 const soundPathPrefix = document.body.classList.contains("aquarium-page") || document.body.classList.contains("question-page") || document.body.classList.contains("quiz-menu-page")
@@ -45,6 +108,10 @@ const elementsBarSounds = {
     in: new Audio(`${soundPathPrefix}elements_in.mp3`),
     out: new Audio(`${soundPathPrefix}elements_out.mp3`)
 };
+Object.values(sideNavigationSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
+Object.values(elementsBarSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
+registerAudioPlayer(document.querySelector("#aquarium-music"), "music");
+registerAudioPlayer(document.querySelector("#login-music"), "music");
 
 async function getTaskData() {
     const response = await fetch('/Home/GetTasks');
@@ -585,15 +652,17 @@ async function renderStoreItems() {
             item.className = "store-item";
 
             item.innerHTML = `
-            <img class="item-preview"
-                 src="${i.sprite}"
-                 loading="lazy"
-                 decoding="async"
-                 alt="${i.name}">
+            <div class="store-item-image">
+                <img class="item-preview"
+                     src="${i.sprite}"
+                     loading="lazy"
+                     decoding="async"
+                     alt="${i.name}">
+            </div>
 
-            <div>
-                <p class="store-product">${i.name} </p>
-                <span class="store-price"> <img src="../img/coin.png" alt="${i.name} Image"> ${i.price} </span>
+            <div class="store-item-details">
+                <p class="store-product-name">${i.name} </p>
+                <span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">${i.price}</span></span>
             </div>`;
 
             storeContainer.appendChild(item);
@@ -631,15 +700,17 @@ async function renderStoreFish() {
             item.className = "store-item";
 
             item.innerHTML = `
-            <img class="fish-preview"
-                 src="${f.sprite}"
-                 loading="lazy"
-                 decoding="async"
-                 alt="${f.species}">
+            <div class="store-item-image">
+                <img class="fish-preview"
+                     src="${f.sprite}"
+                     loading="lazy"
+                     decoding="async"
+                     alt="${f.species}">
+            </div>
 
-            <div>
-                <p class="store-product">${f.species} </p>
-                <span class="store-price"> <img src="../img/coin.png" alt="${f.species} Image"> ${f.price} </span>
+            <div class="store-item-details">
+                <p class="store-product-name">${f.species} </p>
+                <span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">${f.price}</span></span>
             </div>`;
 
             storeContainer.appendChild(item);
@@ -677,16 +748,17 @@ async function renderInventoryItems() {
             item.setAttribute("value", i.UserItemId)
 
             item.innerHTML = `
-            <img class="item-preview"
-                 src="${i.sprite}"
-                 loading="lazy"
-                 decoding="async"
-                 alt="${i.name}">
+            <div class="store-item-image">
+                <img class="item-preview"
+                     src="${i.sprite}"
+                     loading="lazy"
+                     decoding="async"
+                     alt="${i.name}">
+            </div>
 
-            <p class="store-product">
-                ${i.name}
-            </p>
-        `;
+            <div class="store-item-details">
+                <p class="store-product-name">${i.name}</p>
+            </div>`;
 
             inventoryContainer.appendChild(item);
         });
@@ -719,21 +791,22 @@ async function renderInventoryFish() {
 
             const item = document.createElement("div");
             item.className = "store-item fishGrabbable";
-            item.setAttribute("value", f.UserFishId);
+            item.setAttribute("value", f.userFishId);
             item.setAttribute("value2", f.fishId);
 
             item.innerHTML = `
-            <img class="fish-preview"
-                 src="${f.sprite}"
-                 draggable="false"
-                 loading="lazy"
-                 decoding="async"
-                 alt="${f.species}">
+            <div class="store-item-image">
+                <img class="fish-preview"
+                     src="${f.sprite}"
+                     draggable="false"
+                     loading="lazy"
+                     decoding="async"
+                     alt="${f.species}">
+            </div>
 
-            <p class="store-product">
-                ${f.species}
-            </p>
-        `;
+            <div class="store-item-details">
+                <p class="store-product-name">${f.species}</p>
+            </div>`;
 
             inventoryContainer.appendChild(item);
         });
@@ -1082,8 +1155,11 @@ if (questionScreen) {
 
     function advanceQuestion() {
         if (currentQuestion === questions.length - 1) {
-            if (navigateWithReducedMotion("index.html")) return;
-            window.location.assign("index.html");
+            const quizMenuUrl = new URL("/Quiz/Index", window.location.origin).href;
+            sessionStorage.setItem("innerTide.quizExitTransition", "true");
+            if (navigateWithReducedMotion(quizMenuUrl)) return;
+            document.querySelector(".question-screen").classList.add("quiz-exiting");
+            window.setTimeout(() => window.location.assign(quizMenuUrl), 700);
             return;
         }
         fadeThroughBlack(() => {
@@ -1251,7 +1327,10 @@ function playAquariumMenuSound(opening) {
 function playSideTabEntranceSound() {
     if (isReducedMotionEnabled()) return;
 
-    const sound = new Audio(document.body.classList.contains("aquarium-page") ? "../sfx/Slide.mp3" : "sfx/Slide.mp3");
+    const sound = registerAudioPlayer(
+        new Audio(document.body.classList.contains("aquarium-page") ? "../sfx/Slide.mp3" : "sfx/Slide.mp3"),
+        "sfx"
+    );
     sound.play().catch(error => {
         console.error("Unable to play side tab entrance sound.", error);
     });
@@ -1277,8 +1356,9 @@ if (document.body.classList.contains("aquarium-page")) {
         open: new Audio("../sfx/Open.mp3"),
         close: new Audio("../sfx/Close.mp3")
     };
+    Object.values(aquariumMenuSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
     const aquariumMusic = document.querySelector("#aquarium-music");
-    aquariumMusicPlayer = aquariumMusic;
+    aquariumMusicPlayer = registerAudioPlayer(aquariumMusic, "music");
     const aquariumTracks = [
         "../music/Aquarium_1.mp3",
         "../music/Aquarium_2.mp3",
@@ -1394,6 +1474,12 @@ document.addEventListener("click", event => {
 
     const destination = new URL(link.href, window.location.href);
     if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+    if (link.closest(".aquarium-tab")) {
+        playSideNavigationSound("right");
+    } else if (link.closest(".task-tab")) {
+        playSideNavigationSound("left");
+    }
+
     if (document.body.classList.contains("aquarium-page") && link.closest(".task-tab")) {
         event.preventDefault();
         destination.searchParams.set("from", "aquarium");
@@ -1409,6 +1495,19 @@ document.addEventListener("click", event => {
             fadeOutAquariumMusic(duration),
             new Promise(resolve => window.setTimeout(resolve, duration))
         ]).then(() => window.location.assign(destination.href));
+        return;
+    }
+    if (document.body.classList.contains("question-page") && link.closest(".question-actions")) {
+        event.preventDefault();
+        sessionStorage.setItem("innerTide.quizExitTransition", "true");
+        const reducedMotion = isReducedMotionEnabled();
+        if (reducedMotion) {
+            navigateWithReducedMotion(link.href);
+            return;
+        }
+
+        document.querySelector(".question-screen").classList.add("quiz-exiting");
+        window.setTimeout(() => window.location.assign(link.href), 700);
         return;
     }
     if (!isReducedMotionEnabled()) return;
@@ -1429,6 +1528,24 @@ document.addEventListener("click", event => {
 }, true);
 
 if (document.body.classList.contains("quiz-menu-page")) {
+    if (sessionStorage.getItem("innerTide.quizExitTransition") === "true") {
+        sessionStorage.removeItem("innerTide.quizExitTransition");
+        const card = document.querySelector(".quiz-card[href]");
+        if (card && !isReducedMotionEnabled()) {
+            const bounds = card.getBoundingClientRect();
+            card.style.setProperty("--transition-top", `${bounds.top}px`);
+            card.style.setProperty("--transition-left", `${bounds.left}px`);
+            card.style.setProperty("--transition-scale-x", String(bounds.width / window.innerWidth));
+            card.style.setProperty("--transition-scale-y", String(bounds.height / window.innerHeight));
+            card.style.setProperty("--transition-radius", getComputedStyle(card).borderRadius);
+            card.classList.add("is-transitioning", "is-zooming-out", "is-expanded");
+            window.requestAnimationFrame(() => {
+                card.classList.remove("is-expanded");
+                window.setTimeout(() => card.classList.remove("is-transitioning", "is-zooming-out"), 950);
+            });
+        }
+    }
+
     document.querySelectorAll(".quiz-card[href]").forEach(card => {
         card.addEventListener("click", event => {
             if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -1440,13 +1557,13 @@ if (document.body.classList.contains("quiz-menu-page")) {
             const bounds = card.getBoundingClientRect();
             card.style.setProperty("--transition-top", `${bounds.top}px`);
             card.style.setProperty("--transition-left", `${bounds.left}px`);
-            card.style.setProperty("--transition-width", `${bounds.width}px`);
-            card.style.setProperty("--transition-height", `${bounds.height}px`);
+            card.style.setProperty("--transition-scale-x", String(bounds.width / window.innerWidth));
+            card.style.setProperty("--transition-scale-y", String(bounds.height / window.innerHeight));
             card.style.setProperty("--transition-radius", getComputedStyle(card).borderRadius);
             card.classList.add("is-transitioning");
 
             const destination = card.href;
-            const transitionDuration = 900;
+            const transitionDuration = 700;
 
             void card.offsetWidth;
             window.requestAnimationFrame(() => {
@@ -1464,20 +1581,25 @@ if (document.body.classList.contains("quiz-menu-page")) {
             const destination = new URL(link.href);
             if (link.classList.contains("nav-task")) {
                 destination.searchParams.set("from", "quiz");
-
-                const bounds = link.getBoundingClientRect();
-                link.style.setProperty("--transition-top", `${bounds.top}px`);
-                link.style.setProperty("--transition-left", `${bounds.left}px`);
-                link.style.setProperty("--transition-width", `${bounds.width}px`);
-                link.style.setProperty("--transition-height", `${bounds.height}px`);
-                link.classList.add("is-transitioning");
-
-                const transitionDuration = 950;
-                window.requestAnimationFrame(() => {
-                    link.classList.add("is-expanded");
-                    window.setTimeout(() => window.location.assign(destination.href), transitionDuration);
-                });
+            } else {
+                playSideNavigationSound("right");
             }
+
+            if (navigateWithReducedMotion(destination.href)) return;
+
+            const bounds = link.getBoundingClientRect();
+            link.style.setProperty("--transition-top", `${bounds.top}px`);
+            link.style.setProperty("--transition-left", `${bounds.left}px`);
+            link.style.setProperty("--transition-scale-x", String(bounds.width / window.innerWidth));
+            link.style.setProperty("--transition-scale-y", String(bounds.height / window.innerHeight));
+            link.classList.add("is-transitioning");
+
+            const transitionDuration = 700;
+            void link.offsetWidth;
+            window.requestAnimationFrame(() => {
+                link.classList.add("is-expanded");
+                window.setTimeout(() => window.location.assign(destination.href), transitionDuration);
+            });
         });
     });
 }
@@ -1493,7 +1615,7 @@ if (
 ) {
     const loginNavigationKey = "innerTide.loginNavigation";
     sessionStorage.removeItem(loginNavigationKey);
-    const loginMusic = document.querySelector("#login-music");
+    const loginMusic = registerAudioPlayer(document.querySelector("#login-music"), "music");
 
     function startLoginMusic() {
         if (!startupSequenceFinished) return;
@@ -1804,7 +1926,7 @@ document.addEventListener("pointerup", async event => {
             });
 
             if (res.ok) {
-                
+
                 selectedFish.remove();
                 renderInventoryFish();
                 renderAquariumFish();

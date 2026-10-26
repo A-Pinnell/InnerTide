@@ -65,10 +65,9 @@
                 <button class="round-button" type="button">
                     <a asp-controller="Users" asp-action="Logout"> <img src="img/logout_icon.png" alt=""> </a>
                 </button>
-                <button class="round-button" type="button">
-                    <button class="round-button" id="creditsButton" type="button">
-                        <img src="img/credits_icon.png" alt="">
-                    </button>
+                <button class="round-button" id="creditsButton" type="button">
+                    <img src="img/credits_icon.png" alt="">
+                </button>
         </nav>
 
         <aside class="side-tab aquarium-tab">
@@ -110,6 +109,20 @@
                 <label class="graphical-option">
                     <input type="radio" name="reduceMotion" value="off">
                     <span>Off</span>
+                </label>
+            </fieldset>
+            <fieldset class="audio-volume-setting">
+                <legend>Music Volume</legend>
+                <label class="audio-volume-control">
+                    <input id="musicVolume" type="range" min="0" max="100" step="1" value="50">
+                    <output id="musicVolumeValue" for="musicVolume">50%</output>
+                </label>
+            </fieldset>
+            <fieldset class="audio-volume-setting">
+                <legend>SFX Volume</legend>
+                <label class="audio-volume-control">
+                    <input id="sfxVolume" type="range" min="0" max="100" step="1" value="50">
+                    <output id="sfxVolumeValue" for="sfxVolume">50%</output>
                 </label>
             </fieldset>
             <button class="options-back" id="optionsBackButton" type="button">Back to Tasks</button>
@@ -178,6 +191,7 @@
                 <feDisplacementMap in="SourceGraphic" in2="water-noise" scale="42" xChannelSelector="R" yChannelSelector="G" />
             </filter>
         </svg>
+        @await Html.PartialAsync("_DeveloperTools")
     </main>
 </body>
 </html>

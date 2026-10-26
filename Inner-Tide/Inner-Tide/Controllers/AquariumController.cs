@@ -66,13 +66,23 @@ namespace Inner_Tide.Controllers {
                                             uf.FishId
                                         }).ToListAsync();
 
-                List<Fish> fishList = new List<Fish>();
+                var fishList = new List<object>();
 
                 foreach (var fish in userFish) {
                     var res = await _httpClient.GetFromJsonAsync<Fish>("https://innertideapi.vercel.app/api/v1/fish/" + fish.FishId);
 
                     if (res != null) {
-                        fishList.Add(res);
+                        fishList.Add(new {
+                            userFishId = fish.UserFishId,
+                            fishId = res.FishId,
+                            res.Sprite,
+                            res.Species,
+                            res.Description,
+                            res.Price,
+                            res.Height,
+                            res.Width,
+                            res.FunFacts
+                        });
                     }
                 }//end foreach
 
@@ -301,4 +311,3 @@ namespace Inner_Tide.Controllers {
         }
     }
 }
-
