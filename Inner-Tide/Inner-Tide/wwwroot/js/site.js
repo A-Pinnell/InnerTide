@@ -717,7 +717,7 @@ if (taskMenuLink) {
     });
 }
 
-async function purchaseStoreFish(_id, storeItem) {
+async function purchaseStoreFish(_id) {
     const formData = new FormData();
     formData.append("fishId", _id);
 
@@ -833,7 +833,7 @@ async function renderStoreFish() {
             //console.log(f);
             const item = document.createElement("div");
             item.setAttribute("value", f._id)
-            item.addEventListener("click", () => purchaseStoreFish(f._id, item));
+            item.addEventListener("click", () => purchaseStoreFish(f._id));
             item.className = "store-item";
 
             item.innerHTML = `
@@ -927,7 +927,7 @@ async function renderInventoryFish() {
         fish.forEach(f => {
 
             const item = document.createElement("div");
-            item.className = "store-item fishGrabbable";
+            item.className = "store-item inventoryGrabbable";
             item.setAttribute("value", f.userFishId);
             item.setAttribute("value2", f.fishId);
 
@@ -1967,7 +1967,12 @@ let offSetX = 0;
 let offSetY = 0;
 
 document.addEventListener("pointerdown", async event => {
-    selectedFish = event.target.closest(".fishGrabbable");;
+    if (event.target.closest(".inventoryGrabbable")) {
+        selectedFish = event.target.closest(".inventoryGrabbable");
+
+    } else if (event.target.closest(".aquariumGrabbable")) {
+        selectedFish = event.target.closest(".aquariumGrabbable");
+    }
     console.log(selectedFish);
 
     if (!selectedFish) {
@@ -2019,66 +2024,122 @@ document.addEventListener("pointermove", async event => {
 });
 
 document.addEventListener("pointerup", async event => {
-    if (!selectedFish) {
-        return;
-    }
-
     const fishContainer = document.querySelector("#fishContainer");
     const aquarium = document.querySelector("#aquarium");
 
-    const userFishId = selectedFish.getAttribute("value");
-    const fishId = selectedFish.getAttribute("value2");
+    if (!selectedFish) {
+        return;
+    }
 
     if (!fishContainer) {
         selectedFish = null;
         return;
     }
 
-    fishContainer.style.height = aquarium.style.height;
-    fishContainer.style.width = aquarium.style.width;
+    const userFishId = selectedFish.getAttribute("value");
+    const fishId = selectedFish.getAttribute("value2");
+
+    fishContainer.style.height = `${aquarium.offsetHeight}px`;
+
+    fishContainer.style.width = `${aquarium.offsetWidth}px`;
 
     const aquariumRect = aquarium.getBoundingClientRect();
 
-    const droppedInAquarium =
-        event.clientX >= aquariumRect.left &&
-        event.clientX <= aquariumRect.right &&
-        event.clientY >= aquariumRect.top &&
-        event.clientY <= aquariumRect.bottom;
+    if (selectedFish.classList.contains("inventoryGrabbable")) {
+        const droppedInAquarium =
+            event.clientX >= aquariumRect.left &&
+            event.clientX <= aquariumRect.right &&
+            event.clientY >= aquariumRect.top &&
+            event.clientY <= aquariumRect.bottom;
 
-    if (droppedInAquarium) {
-        const x = event.clientX - aquariumRect.left;
-        const y = event.clientY - aquariumRect.top;
+        if (droppedInAquarium) {
+            const x = event.clientX - aquariumRect.left;
+            const y = event.clientY - aquariumRect.top;
 
-        fishContainer.appendChild(selectedFish);
+            try {
+                const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        userFishId: userFishId
+                    })
+                });
 
-        try {
-            const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    userFishId: userFishId
-                })
-            });
+                if (res.ok) {
+                    selectedFish.classList.remove("inventoryGrabbable");
+                    selectddFish.classList.add("aquariumGrabbable");
 
-            if (res.ok) {
+                    fishContainer.appendChild(selectedFish);
 
-                selectedFish.remove();
-                renderInventoryFish();
-                renderAquariumFish();
+                    selectedFish.remove();
+                    renderInventoryFish();
+                    renderAquariumFish();
+
+                }
+
+            } catch (error) {
 
             }
-
-        } catch (error) {
-
+        } else {
+            selectedFish.style.position = "";
+            selectedFish.style.left = "";
+            selectedFish.style.top = "";
+            selectedFish.style.zIndex = "";
+            selectedFish.style.pointerEvents = "";
         }
-    } else {
-        selectedFish.style.position = "";
-        selectedFish.style.left = "";
-        selectedFish.style.top = "";
-        selectedFish.style.zIndex = "";
-        selectedFish.style.pointerEvents = "";
+        selectedFish = null;
+    } else if (selectedFish.classList.contains("aquariumGrabbable")) {
+
+        const inventoryPanel =
+            document.querySelector("#tankInventoryPanel");
+
+        const inventoryRect =
+            inventoryPanel.getBoundingClientRect();
+
+        const droppedInInventory =
+            event.clientX >= inventoryRect.left &&
+            event.clientX <= inventoryRect.right &&
+            event.clientY >= inventoryRect.top &&
+            event.clientY <= inventoryRect.bottom;
+
+        if (droppedInInventory) {
+
+            try {
+
+                const res = await fetch(
+                    `/Aquarium/RemoveFishFromAquarium?userFishId=${userFishId}&fishId=${fishId}`,
+                    {
+                        method: "POST"
+                    }
+                );
+
+                if (res.ok) {
+                    selectedFish.classList.remove(""); aquariumGrabbable
+                    selectddFish.classList.add("inventoryGrabbable");
+
+                    fishContainer.appendChild(selectedFish);
+
+                    selectedFish.remove();
+
+                    renderInventoryFish();
+                    renderAquariumFish();
+                }
+
+            } catch (error) {
+                console.error(error);
+            }
+
+        } else {
+
+            selectedFish.style.position = "";
+            selectedFish.style.left = "";
+            selectedFish.style.top = "";
+            selectedFish.style.zIndex = "";
+            selectedFish.style.pointerEvents = "";
+        }
+
+        selectedFish = null;
     }
-    selectedFish = null;
 });
