@@ -185,6 +185,7 @@ namespace Inner_Tide.Controllers {
                         UserFishId = userFish.UserFishId,
                         fishId = fish.FishId,
                         fishSpecies = fish.Species,
+                        coinsSpent = fishPrice,
                         remainingCoins = user.CoinCount
                     });
                 }
