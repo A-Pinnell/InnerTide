@@ -33,6 +33,12 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("CompletionPercentage")
                         .HasColumnType("int");
 
+                    b.Property<int>("CurrentFish")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentObjects")
+                        .HasColumnType("int");
+
                     b.Property<int>("MaxFish")
                         .HasColumnType("int");
 
