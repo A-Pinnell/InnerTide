@@ -697,8 +697,7 @@ async function renderInventoryItems() {
     }
 }
 
-async function renderInventoryFish () {
-
+async function renderInventoryFish() {
     try {
 
         const res = await fetch('/Aquarium/GetUserFish');
@@ -726,6 +725,9 @@ async function renderInventoryFish () {
             item.innerHTML = `
             <img class="fish-preview"
                  src="${f.sprite}"
+                 draggable="false"
+                 loading="lazy"
+                 decoding="async"
                  alt="${f.species}">
 
             <p class="store-product">
@@ -1107,3 +1109,717 @@ if (questionScreen) {
     skipButton.addEventListener("click", advanceQuestion);
     renderQuestion();
 }
+
+if (document.body.classList.contains("users-page") || document.body.classList.contains("aquarium-page") || document.body.classList.contains("quiz-menu-page") || document.body.classList.contains("question-page") || document.body.classList.contains("task-menu-page")) {
+    if (localStorage.getItem("innerTide.graphicalPresentation") === "advanced") {
+        document.documentElement.classList.add("graphical-advanced");
+    }
+    const motionPreference = localStorage.getItem("innerTide.reduceMotion");
+    if (motionPreference !== null) {
+        document.documentElement.classList.add("motion-preference-set");
+        if (motionPreference === "true") {
+            document.documentElement.classList.add("reduced-motion", "reduced-motion-entering");
+            document.documentElement.classList.remove("graphical-advanced");
+            localStorage.setItem("innerTide.graphicalPresentation", "default");
+        }
+    } else if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("reduced-motion", "reduced-motion-entering");
+    }
+}
+
+if (document.body.classList.contains("task-menu-page")) {
+    const loginNavigationKey = "innerTide.loginNavigation";
+    const arrivedFromLogin = sessionStorage.getItem(loginNavigationKey) === "true";
+    sessionStorage.removeItem(loginNavigationKey);
+    const isInternalReturn = ["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"));
+    if (!arrivedFromLogin && !isInternalReturn) {
+        document.documentElement.classList.add("task-menu-auth-check");
+    }
+    if (isInternalReturn) {
+        document.documentElement.classList.add("task-menu-return");
+    }
+    if (localStorage.getItem("innerTide.graphicalPresentation") === "advanced") {
+        document.documentElement.classList.add("graphical-advanced");
+    }
+}
+
+function playTaskMenuStartupVideo() {
+    const startupVideoOverlay = document.querySelector("#task-menu-startup-video");
+    const startupVideoPlayer = document.querySelector("#task-menu-startup-video-player");
+    let startupVideoFinished = false;
+
+    const finishStartupVideo = () => {
+        if (startupVideoFinished) return;
+        startupVideoFinished = true;
+        document.removeEventListener("pointerdown", startStartupVideo);
+        document.removeEventListener("keydown", startStartupVideo);
+        startupVideoOverlay.classList.add("is-finished");
+        document.documentElement.classList.remove("task-menu-stallion-pending", "task-menu-auth-check");
+        document.documentElement.classList.add("task-menu-stallion-revealing");
+        window.setTimeout(() => {
+            startupVideoOverlay.remove();
+            document.documentElement.classList.remove("task-menu-stallion-revealing");
+        }, 450);
+    };
+
+    const startStartupVideo = () => {
+        document.removeEventListener("pointerdown", startStartupVideo);
+        document.removeEventListener("keydown", startStartupVideo);
+        startupVideoPlayer.play().catch(error => {
+            if (error.name === "NotAllowedError") {
+                document.addEventListener("pointerdown", startStartupVideo, { once: true });
+                document.addEventListener("keydown", startStartupVideo, { once: true });
+                return;
+            }
+            console.error("Unable to play the post-login startup video.", error);
+            finishStartupVideo();
+        });
+    };
+
+    startupVideoOverlay.hidden = false;
+    document.documentElement.classList.remove("task-menu-auth-check");
+    document.documentElement.classList.add("task-menu-stallion-pending");
+    startupVideoPlayer.addEventListener("ended", finishStartupVideo, { once: true });
+    startupVideoPlayer.addEventListener("error", () => {
+        console.error("Unable to load the post-login startup video.", startupVideoPlayer.error);
+        finishStartupVideo();
+    }, { once: true });
+    startupVideoPlayer.src = "vid/Stallion.mp4";
+    startupVideoPlayer.load();
+    startStartupVideo();
+}
+
+function finishTaskMenuAuthCheck() {
+    document.documentElement.classList.remove("task-menu-auth-check");
+}
+
+function playSideNavigationSound(position) {
+    if (position !== "left" && position !== "right") return;
+
+    const sound = sideNavigationSounds[position];
+    sound.pause();
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error(`Unable to play ${position} navigation sound.`, error);
+    });
+}
+
+function playElementsTransitionSound(direction) {
+    const sound = elementsBarSounds[direction];
+    sound.pause();
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error(`Unable to play elements ${direction} sound.`, error);
+    });
+}
+
+function fadeOutAquariumMusic(duration) {
+    if (!aquariumMusicPlayer || aquariumMusicPlayer.paused) return Promise.resolve();
+
+    const startingVolume = aquariumMusicPlayer.volume;
+    const startTime = performance.now();
+
+    return new Promise(resolve => {
+        function updateVolume(now) {
+            const progress = Math.min(1, (now - startTime) / duration);
+            aquariumMusicPlayer.volume = startingVolume * (1 - progress);
+            if (progress < 1) {
+                window.requestAnimationFrame(updateVolume);
+                return;
+            }
+
+            aquariumMusicPlayer.pause();
+            aquariumMusicPlayer.volume = startingVolume;
+            resolve();
+        }
+
+        window.requestAnimationFrame(updateVolume);
+    });
+}
+
+function playAquariumMenuSound(opening) {
+    const sound = aquariumMenuSounds?.[opening ? "open" : "close"];
+    if (!sound) return;
+
+    sound.pause();
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error("Unable to play Aquarium menu sound.", error);
+    });
+}
+
+function playSideTabEntranceSound() {
+    if (isReducedMotionEnabled()) return;
+
+    const sound = new Audio(document.body.classList.contains("aquarium-page") ? "../sfx/Slide.mp3" : "sfx/Slide.mp3");
+    sound.play().catch(error => {
+        console.error("Unable to play side tab entrance sound.", error);
+    });
+}
+
+function isReducedMotionEnabled() {
+    return document.documentElement.classList.contains("reduced-motion");
+}
+
+function syncRippleMotion() {
+    const svg = document.querySelector("#background-water-ripple")?.ownerSVGElement;
+    if (!svg) return;
+
+    if (isReducedMotionEnabled()) {
+        svg.pauseAnimations();
+    } else {
+        svg.unpauseAnimations();
+    }
+}
+
+if (document.body.classList.contains("aquarium-page")) {
+    aquariumMenuSounds = {
+        open: new Audio("../sfx/Open.mp3"),
+        close: new Audio("../sfx/Close.mp3")
+    };
+    const aquariumMusic = document.querySelector("#aquarium-music");
+    aquariumMusicPlayer = aquariumMusic;
+    const aquariumTracks = [
+        "../music/Aquarium_1.mp3",
+        "../music/Aquarium_2.mp3",
+        "../music/Aquarium_3.mp3"
+    ];
+    function createAquariumPlaylist() {
+        const shuffledTracks = [...aquariumTracks];
+        for (let index = shuffledTracks.length - 1; index > 0; index -= 1) {
+            const randomIndex = Math.floor(Math.random() * (index + 1));
+            [shuffledTracks[index], shuffledTracks[randomIndex]] = [shuffledTracks[randomIndex], shuffledTracks[index]];
+        }
+        return shuffledTracks.flatMap(track => [track, "../music/Aquatic.mp3"]);
+    }
+
+    let aquariumPlaylist = createAquariumPlaylist();
+    let aquariumTrackIndex = 0;
+
+    function playAquariumTrack() {
+        aquariumMusic.src = aquariumPlaylist[aquariumTrackIndex];
+        aquariumMusic.load();
+        aquariumMusic.play().catch(error => {
+            if (error.name === "NotAllowedError") {
+                document.addEventListener("pointerdown", resumeAquariumMusic, { once: true });
+                document.addEventListener("keydown", resumeAquariumMusic, { once: true });
+                return;
+            }
+            console.error("Unable to play Aquarium music.", error);
+        });
+    }
+
+    function resumeAquariumMusic() {
+        document.removeEventListener("pointerdown", resumeAquariumMusic);
+        document.removeEventListener("keydown", resumeAquariumMusic);
+        aquariumMusic.play().catch(error => {
+            if (error.name !== "NotAllowedError") {
+                console.error("Unable to resume Aquarium music.", error);
+            }
+        });
+    }
+
+    aquariumMusic.addEventListener("ended", () => {
+        aquariumTrackIndex += 1;
+        if (aquariumTrackIndex >= aquariumPlaylist.length) {
+            aquariumPlaylist = createAquariumPlaylist();
+            aquariumTrackIndex = 0;
+        }
+        playAquariumTrack();
+    });
+    playAquariumTrack();
+}
+
+function setReducedMotion(enabled) {
+    const root = document.documentElement;
+    root.classList.add("motion-preference-set");
+    root.classList.toggle("reduced-motion", enabled);
+    localStorage.setItem(reduceMotionKey, String(enabled));
+
+    if (enabled) {
+        root.classList.remove("graphical-advanced");
+        localStorage.setItem(graphicalPresentationKey, "default");
+        graphicalPresentationOptions.forEach(option => {
+            option.checked = option.value === "default";
+            option.disabled = option.value === "advanced";
+        });
+    } else {
+        graphicalPresentationOptions.forEach(option => {
+            option.disabled = false;
+        });
+    }
+}
+
+let reducedMotionTransitionTimeout;
+
+function fadeThroughBlack(update) {
+    if (!isReducedMotionEnabled()) {
+        update();
+        return;
+    }
+
+    window.clearTimeout(reducedMotionTransitionTimeout);
+    document.documentElement.classList.add("reduced-motion-transitioning");
+    reducedMotionTransitionTimeout = window.setTimeout(() => {
+        update();
+        window.requestAnimationFrame(() => {
+            document.documentElement.classList.remove("reduced-motion-transitioning");
+        });
+    }, 180);
+}
+
+function navigateWithReducedMotion(destination) {
+    if (!isReducedMotionEnabled()) return false;
+
+    document.documentElement.classList.add("reduced-motion-transitioning");
+    window.setTimeout(() => window.location.assign(destination), 180);
+    return true;
+}
+
+if (document.documentElement.classList.contains("reduced-motion-entering")) {
+    window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+            document.documentElement.classList.remove("reduced-motion-entering");
+        });
+    });
+}
+
+document.addEventListener("click", event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!(event.target instanceof Element)) return;
+
+    const link = event.target.closest("a[href]");
+    if (!link || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+    if (link.getAttribute("href").startsWith("#")) return;
+
+    const destination = new URL(link.href, window.location.href);
+    if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+    if (document.body.classList.contains("aquarium-page") && link.closest(".task-tab")) {
+        event.preventDefault();
+        destination.searchParams.set("from", "aquarium");
+        const reducedMotion = isReducedMotionEnabled();
+        const duration = reducedMotion ? 180 : 950;
+        if (reducedMotion) {
+            document.documentElement.classList.add("reduced-motion-transitioning");
+        } else {
+            document.body.classList.add("task-menu-transition");
+        }
+
+        Promise.all([
+            fadeOutAquariumMusic(duration),
+            new Promise(resolve => window.setTimeout(resolve, duration))
+        ]).then(() => window.location.assign(destination.href));
+        return;
+    }
+    if (!isReducedMotionEnabled()) return;
+
+    if (document.body.classList.contains("question-page")) {
+        playElementsTransitionSound("out");
+    } else if (document.body.classList.contains("quiz-menu-page") && link.classList.contains("quiz-card")) {
+        playElementsTransitionSound("in");
+    }
+    if (link.closest(".task-tab")) {
+        destination.searchParams.set("from", "aquarium");
+    } else if (link.classList.contains("nav-task")) {
+        destination.searchParams.set("from", "quiz");
+    }
+
+    event.preventDefault();
+    navigateWithReducedMotion(destination.href);
+}, true);
+
+if (document.body.classList.contains("quiz-menu-page")) {
+    document.querySelectorAll(".quiz-card[href]").forEach(card => {
+        card.addEventListener("click", event => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            playElementsTransitionSound("in");
+
+            if (navigateWithReducedMotion(card.href)) return;
+
+            const bounds = card.getBoundingClientRect();
+            card.style.setProperty("--transition-top", `${bounds.top}px`);
+            card.style.setProperty("--transition-left", `${bounds.left}px`);
+            card.style.setProperty("--transition-width", `${bounds.width}px`);
+            card.style.setProperty("--transition-height", `${bounds.height}px`);
+            card.style.setProperty("--transition-radius", getComputedStyle(card).borderRadius);
+            card.classList.add("is-transitioning");
+
+            const destination = card.href;
+            const transitionDuration = 900;
+
+            void card.offsetWidth;
+            window.requestAnimationFrame(() => {
+                card.classList.add("is-expanded");
+                window.setTimeout(() => window.location.assign(destination), transitionDuration);
+            });
+        });
+    });
+
+    document.querySelectorAll(".main-nav .nav-link").forEach(link => {
+        link.addEventListener("click", event => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+
+            const destination = new URL(link.href);
+            if (link.classList.contains("nav-task")) {
+                destination.searchParams.set("from", "quiz");
+
+                const bounds = link.getBoundingClientRect();
+                link.style.setProperty("--transition-top", `${bounds.top}px`);
+                link.style.setProperty("--transition-left", `${bounds.left}px`);
+                link.style.setProperty("--transition-width", `${bounds.width}px`);
+                link.style.setProperty("--transition-height", `${bounds.height}px`);
+                link.classList.add("is-transitioning");
+
+                const transitionDuration = 950;
+                window.requestAnimationFrame(() => {
+                    link.classList.add("is-expanded");
+                    window.setTimeout(() => window.location.assign(destination.href), transitionDuration);
+                });
+            }
+        });
+    });
+}
+
+// Login page startup video, music, and authentication transitions.
+if (
+    document.querySelector("#startup-video") &&
+    document.querySelector("#startup-video-player") &&
+    document.querySelector("#login-music") &&
+    document.querySelector(".auth-panel") &&
+    document.querySelector("#registerContainer") &&
+    document.querySelector("#loginContainer")
+) {
+    const loginNavigationKey = "innerTide.loginNavigation";
+    sessionStorage.removeItem(loginNavigationKey);
+    const loginMusic = document.querySelector("#login-music");
+
+    function startLoginMusic() {
+        if (!startupSequenceFinished) return;
+        document.removeEventListener("pointerdown", startLoginMusic);
+        document.removeEventListener("keydown", startLoginMusic);
+        loginMusic.play().catch(error => {
+            if (error.name === "NotAllowedError") {
+                document.addEventListener("pointerdown", startLoginMusic, { once: true });
+                document.addEventListener("keydown", startLoginMusic, { once: true });
+                return;
+            }
+            console.error("Unable to play login music.", error);
+        });
+    }
+
+    const startupVideoOverlay = document.querySelector("#startup-video");
+    const startupVideoPlayer = document.querySelector("#startup-video-player");
+
+    // Keep the startup video non-interactive: hide native controls and immediately
+    // resume playback if the browser or an input action pauses it.
+    startupVideoPlayer.controls = false;
+    startupVideoPlayer.removeAttribute("controls");
+    startupVideoPlayer.setAttribute("disablepictureinpicture", "");
+    startupVideoPlayer.setAttribute("playsinline", "");
+    startupVideoPlayer.addEventListener("contextmenu", event => event.preventDefault());
+    startupVideoPlayer.addEventListener("pause", () => {
+        if (
+            !startupSequenceFinished &&
+            !startupVideoPlayer.ended &&
+            startupVideoPlayer.currentSrc &&
+            document.visibilityState === "visible"
+        ) {
+            startupVideoPlayer.play().catch(error => {
+                console.error("Unable to keep startup video playing.", error);
+            });
+        }
+    });
+
+    startupVideoPlayer.muted = true;
+    const firstBoot = sessionStorage.getItem("innerTide.booted") !== "true";
+    const startupVideos = firstBoot
+        ? ["../vid/Stallion.mp4", "../vid/Intro.mp4"]
+        : ["../vid/Stallion.mp4"];
+    let startupVideoIndex = 0;
+    let startupSequenceFinished = false;
+
+    sessionStorage.setItem("innerTide.booted", "true");
+
+    function enableStartupVideoAudio() {
+        startupVideoPlayer.muted = false;
+        document.removeEventListener("pointerdown", enableStartupVideoAudio);
+        document.removeEventListener("keydown", enableStartupVideoAudio);
+    }
+
+    document.addEventListener("pointerdown", enableStartupVideoAudio);
+    document.addEventListener("keydown", enableStartupVideoAudio);
+
+    function resumeStartupVideo() {
+        if (
+            !startupSequenceFinished &&
+            startupVideoIndex < startupVideos.length &&
+            document.visibilityState === "visible" &&
+            startupVideoPlayer.paused &&
+            !startupVideoPlayer.ended &&
+            startupVideoPlayer.currentSrc
+        ) {
+            startupVideoPlayer.play().catch(error => {
+                console.error("Unable to resume startup video.", error);
+            });
+        }
+    }
+    document.addEventListener("visibilitychange", resumeStartupVideo);
+
+    function playStartupVideo() {
+        if (startupVideoIndex >= startupVideos.length) {
+            startupSequenceFinished = true;
+            document.removeEventListener("visibilitychange", resumeStartupVideo);
+            document.removeEventListener("pointerdown", enableStartupVideoAudio);
+            document.removeEventListener("keydown", enableStartupVideoAudio);
+            startupVideoOverlay.classList.add("is-finished");
+            window.setTimeout(() => startupVideoOverlay.remove(), 450);
+            startLoginMusic();
+            return;
+        }
+
+        let hasAdvanced = false;
+        const advance = () => {
+            if (hasAdvanced) return;
+            hasAdvanced = true;
+            startupVideoPlayer.removeEventListener("ended", advance);
+            startupVideoPlayer.removeEventListener("error", advance);
+            startupVideoIndex += 1;
+            playStartupVideo();
+        };
+
+        startupVideoPlayer.addEventListener("ended", advance);
+        startupVideoPlayer.addEventListener("error", advance);
+        startupVideoPlayer.src = startupVideos[startupVideoIndex];
+        startupVideoPlayer.load();
+        startupVideoPlayer.play().catch(error => {
+            console.error("Unable to autoplay startup video.", error);
+        });
+    }
+
+    playStartupVideo();
+
+    const authPanel = document.querySelector(".auth-panel");
+    const authViews = {
+        register: document.querySelector("#registerContainer"),
+        login: document.querySelector("#loginContainer")
+    };
+    authViews.login.querySelector("form").addEventListener("submit", () => {
+        sessionStorage.setItem(loginNavigationKey, "true");
+    });
+    let authTransitionTimeout;
+    let authEnterTimeout;
+
+    if (document.documentElement.classList.contains("reduced-motion-entering")) {
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                document.documentElement.classList.remove("reduced-motion-entering");
+            });
+        });
+    }
+
+    function setAuthPanelHeight(view) {
+        authPanel.style.height = `${view.scrollHeight}px`;
+    }
+
+    document.body.classList.add("auth-transition-ready");
+    const activeAuthView = Object.values(authViews).find(view => !view.hidden);
+    if (activeAuthView) {
+        activeAuthView.classList.add("is-active");
+        setAuthPanelHeight(activeAuthView);
+    }
+    if ("ResizeObserver" in window) {
+        const authResizeObserver = new ResizeObserver(() => {
+            const activeView = Object.values(authViews).find(view => view.classList.contains("is-active"));
+            if (activeView) setAuthPanelHeight(activeView);
+        });
+        Object.values(authViews).forEach(view => authResizeObserver.observe(view));
+    }
+
+    document.querySelectorAll("[data-auth-view]").forEach(link => {
+        link.addEventListener("click", event => {
+            event.preventDefault();
+            const nextView = authViews[link.dataset.authView];
+            const currentView = Object.values(authViews).find(view => view.classList.contains("is-active"));
+
+            if (!nextView || !currentView || nextView === currentView) return;
+
+            window.clearTimeout(authTransitionTimeout);
+            window.clearTimeout(authEnterTimeout);
+            if (document.documentElement.classList.contains("reduced-motion")) {
+                document.documentElement.classList.add("reduced-motion-transitioning");
+                authTransitionTimeout = window.setTimeout(() => {
+                    currentView.hidden = true;
+                    currentView.inert = false;
+                    currentView.classList.remove("is-active");
+                    nextView.hidden = false;
+                    nextView.inert = false;
+                    nextView.classList.add("is-active");
+                    setAuthPanelHeight(nextView);
+                    window.requestAnimationFrame(() => {
+                        document.documentElement.classList.remove("reduced-motion-transitioning");
+                    });
+                }, 180);
+                return;
+            }
+
+            Object.values(authViews).forEach(view => {
+                if (view !== currentView && view !== nextView) {
+                    view.hidden = true;
+                    view.classList.remove(
+                        "is-active", "is-entering", "is-leaving",
+                        "is-entering-from-left", "is-entering-from-right",
+                        "is-leaving-to-left", "is-leaving-to-right"
+                    );
+                }
+            });
+
+            const direction = currentView === authViews.register ? "left" : "right";
+            const enterDirection = direction === "left" ? "right" : "left";
+            nextView.hidden = false;
+            nextView.inert = false;
+            nextView.classList.remove("is-leaving", "is-leaving-to-left", "is-leaving-to-right");
+            nextView.classList.add("is-entering", `is-entering-from-${enterDirection}`);
+            void nextView.offsetWidth;
+
+            currentView.classList.remove("is-active", "is-entering", "is-entering-from-left", "is-entering-from-right");
+            currentView.classList.add("is-leaving", `is-leaving-to-${direction}`);
+            currentView.inert = true;
+            nextView.classList.add("is-active");
+            setAuthPanelHeight(nextView);
+
+            authEnterTimeout = window.setTimeout(() => nextView.classList.remove(
+                "is-entering", "is-entering-from-left", "is-entering-from-right"
+            ), 20);
+
+            authTransitionTimeout = window.setTimeout(() => {
+                currentView.hidden = true;
+                currentView.inert = false;
+                currentView.classList.remove("is-leaving", "is-leaving-to-left", "is-leaving-to-right");
+            }, 520);
+        });
+    });
+}
+
+//Drag and Drop Logic
+let selectedFish = null;
+let offSetX = 0;
+let offSetY = 0;
+
+document.addEventListener("pointerdown", async event => {
+    selectedFish = event.target.closest(".fishGrabbable");;
+    console.log(selectedFish);
+
+    if (!selectedFish) {
+        return;
+    }
+
+    console.log("Dragging: ", selectedFish);
+
+    selectedFish = selectedFish.cloneNode(true);
+
+    document.body.appendChild(selectedFish);
+
+    const inventoryPanel = document.querySelector("#tankInventoryPanel");
+    //const inventoryBtn = document.querySelector("#inventoryBtn");
+
+    inventoryPanel.classList.remove("is-open");
+
+    const rect = selectedFish.getBoundingClientRect();
+
+    selectedFish.style.position = "fixed";
+    selectedFish.style.pointerEvents = "none";
+    selectedFish.style.zIndex = "9999";
+    selectedFish.style.left = `${rect.left}px`;
+    selectedFish.style.top = `${rect.top}px`;
+    selectedFish.style.width = `${rect.width}px`;
+    selectedFish.style.height = `${rect.height}px`;
+
+
+    offSetX = rect.width / 2;
+    offSetY = rect.height / 2;
+
+    console.log(selectedFish);
+});
+
+document.addEventListener("pointermove", async event => {
+    if (!selectedFish) {
+        return;
+    }
+
+    selectedFish.style.left =
+        `${event.clientX - selectedFish.offsetWidth / 2}px`;
+
+    selectedFish.style.top =
+        `${event.clientY - selectedFish.offsetHeight / 2}px`;
+
+    console.log(selectedFish.style.left);
+    console.log(selectedFish.style.top);
+    console.log(event.clientX, event.clientY);
+});
+
+document.addEventListener("pointerup", async event => {
+    if (!selectedFish) {
+        return;
+    }
+
+    const fishContainer = document.querySelector("#fishContainer");
+    const aquarium = document.querySelector("#aquarium");
+
+    const userFishId = selectedFish.getAttribute("value");
+    const fishId = selectedFish.getAttribute("value2");
+
+    if (!fishContainer) {
+        selectedFish = null;
+        return;
+    }
+
+    fishContainer.style.height = aquarium.style.height;
+    fishContainer.style.width = aquarium.style.width;
+
+    const aquariumRect = aquarium.getBoundingClientRect();
+
+    const droppedInAquarium =
+        event.clientX >= aquariumRect.left &&
+        event.clientX <= aquariumRect.right &&
+        event.clientY >= aquariumRect.top &&
+        event.clientY <= aquariumRect.bottom;
+
+    if (droppedInAquarium) {
+        const x = event.clientX - aquariumRect.left;
+        const y = event.clientY - aquariumRect.top;
+
+        fishContainer.appendChild(selectedFish);
+
+        try {
+            const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    userFishId: userFishId
+                })
+            });
+
+            if (res.ok) {
+                
+                selectedFish.remove();
+                renderInventoryFish();
+                renderAquariumFish();
+
+            }
+
+        } catch (error) {
+
+        }
+    } else {
+        selectedFish.style.position = "";
+        selectedFish.style.left = "";
+        selectedFish.style.top = "";
+        selectedFish.style.zIndex = "";
+        selectedFish.style.pointerEvents = "";
+    }
+    selectedFish = null;
+});
