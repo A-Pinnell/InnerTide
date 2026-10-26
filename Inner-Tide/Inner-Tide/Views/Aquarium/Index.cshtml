@@ -29,6 +29,7 @@
 </head>
 
 <body class="aquarium-page aquarium-enter">
+    <audio id="aquarium-music" autoplay preload="auto"></audio>
     <main>
         <div id="aquarium">
             <aside class="side-tab task-tab">
@@ -86,6 +87,12 @@
                     <span class="aquarium-menu-label">Inventory</span>
                 </button>
             </div>
+            <button class="aquariumMenuBtn aquarium-hide-button" id="aquariumHideButton" type="button">
+                <span class="aquarium-icon-frame">
+                    <img src="../img/aquarium_inventory.png" alt="">
+                </span>
+                <span class="aquarium-menu-label">Hide</span>
+            </button>
 
             <aside class="editor-toolbar" id="editorToolbar" inert hidden>
                 <button class="editor-layer-heading" id="editorSwitchLayer" type="button">
@@ -169,6 +176,7 @@
             <div id="journalButton">
                 <a class="journalText" asp-area="" asp-controller="Journals" asp-action="Index"> <span> Journals </span> <b> ˅ </b> </a>
             </div>
+            <button class="aquarium-hide-exit editor-close-button" id="aquariumHideExit" type="button" hidden><img src="../img/close_icon.png" alt=""></button>
         </div>
         <svg focusable="false" width="0" height="0">
             <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">

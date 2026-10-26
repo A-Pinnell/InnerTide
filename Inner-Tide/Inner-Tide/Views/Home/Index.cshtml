@@ -56,13 +56,13 @@
         </header>
 
         <nav class="quick-tools">
-            <button class="round-button" type="button">
+            <button class="round-button" id="settingsButton" type="button">
                 <img src="img/settings_icon.png" alt="">
             </button>
             <button class="round-button" type="button">
                 <a asp-controller="Users" asp-action="Logout"> <img src="img/logout_icon.png" alt=""> </a>
             </button>
-            <button class="round-button" type="button">
+            <button class="round-button" id="creditsButton" type="button">
                 <img src="img/credits_icon.png" alt="">
             </button>
         </nav>
@@ -82,6 +82,43 @@
                 <div class="task-list" id="task-list"></div>
             </div>
             <div class="scroll-rail"><span></span></div>
+        </section>
+
+        <section class="options-panel" id="optionsPanel" inert hidden>
+            <h2 id="optionsHeading">Options</h2>
+            <fieldset class="graphical-presentation">
+                <legend>Graphical Presentation</legend>
+                <label class="graphical-option">
+                    <input type="radio" name="graphicalPresentation" value="default">
+                    <span>Default</span>
+                </label>
+                <label class="graphical-option">
+                    <input type="radio" name="graphicalPresentation" value="advanced">
+                    <span>Advanced</span>
+                </label>
+            </fieldset>
+            <fieldset class="graphical-presentation">
+                <legend>Reduce Motion</legend>
+                <label class="graphical-option">
+                    <input type="radio" name="reduceMotion" value="on">
+                    <span>On</span>
+                </label>
+                <label class="graphical-option">
+                    <input type="radio" name="reduceMotion" value="off">
+                    <span>Off</span>
+                </label>
+            </fieldset>
+            <button class="options-back" id="optionsBackButton" type="button">Back to Tasks</button>
+        </section>
+
+        <section class="options-panel credits-panel" id="creditsPanel" inert hidden>
+            <img class="credits-logo" src="img/Team_1.png" alt="Serene Stallions">
+            <ul class="credits-list">
+                <li>Alyssa Pinnell</li>
+                <li>Matthew Johnston</li>
+                <li>Emma Sauve</li>
+            </ul>
+            <button class="options-back" id="creditsBackButton" type="button">Back to Tasks</button>
         </section>
 
         <button class="help-button" type="button" data-message="Choose a task, complete it, and collect your reward!">

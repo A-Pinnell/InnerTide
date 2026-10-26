@@ -69,6 +69,11 @@ button {
         pointer-events: none;
     }
 
+html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-scene::before,
+html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-bubbles {
+    filter: url("#background-water-ripple");
+}
+
 .ambient {
     position: absolute;
     z-index: -1;
@@ -283,6 +288,10 @@ button {
     pointer-events: none;
 }
 
+html.graphical-advanced body.question-page .question-background {
+    filter: url("#background-water-ripple");
+}
+
 .player-copy small {
     display: block;
     width: 100%;
@@ -432,6 +441,175 @@ button {
     box-shadow: 0 8px 28px rgba(185,91,185,.11), inset 0 6px 0 rgba(255,225,250,.9), inset 6px 0 0 rgba(255,210,242,.78), inset 0 -7px 0 rgba(194,74,157,.42), inset -7px 0 0 rgba(194,74,157,.3), inset 0 0 30px rgba(255,255,255,.1);
 }
 
+    .task-panel > * {
+        opacity: 1;
+        transition: opacity .32s ease;
+    }
+
+.options-panel {
+    position: absolute;
+    top: 8%;
+    right: 15.8%;
+    bottom: 3%;
+    left: 11.1%;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(18px, 4vh, 42px);
+    overflow: hidden;
+    padding: clamp(24px, 5vw, 64px);
+    pointer-events: none;
+    transition: visibility 0s linear .32s;
+    visibility: hidden;
+}
+
+    .options-panel[hidden] {
+        display: none;
+    }
+
+    .options-panel > * {
+        opacity: 0;
+        transition: opacity .32s ease;
+    }
+
+    .options-panel h2 {
+        margin: 0;
+        color: #d51b99;
+        font-family: "Aquino", "Neuropolx", sans-serif;
+        font-size: clamp(34px, 5vw, 64px);
+        text-align: center;
+        text-transform: uppercase;
+        text-shadow: 0 2px 2px rgba(77,42,98,.3);
+    }
+
+.graphical-presentation {
+    display: flex;
+    width: min(560px, 100%);
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(12px, 3vw, 28px);
+    margin: 0;
+    padding: clamp(18px, 3vw, 30px);
+    border: 2px solid rgba(255,255,255,.68);
+    border-radius: 22px;
+    background: rgba(102,74,139,.2);
+}
+
+    .graphical-presentation legend {
+        padding: 0 12px;
+        color: #fff;
+        font-size: clamp(18px, 2.5vw, 28px);
+        text-align: center;
+        text-shadow: 0 2px 2px rgba(77,42,98,.4);
+    }
+
+.graphical-option {
+    display: flex;
+    min-width: min(180px, 100%);
+    min-height: 58px;
+    flex: 1 1 180px;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border: 2px solid rgba(255,255,255,.65);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(126,144,206,.55), rgba(171,151,217,.49));
+    color: #fff;
+    font-size: clamp(18px, 2.5vw, 28px);
+    cursor: pointer;
+}
+
+    .graphical-option:has(input:checked) {
+        border-color: #11a4dc;
+        background: linear-gradient(180deg, #00a5db, #62d5f5);
+        box-shadow: 0 3px 0 rgba(255,255,255,.65), inset 0 2px 7px rgba(255,255,255,.18);
+    }
+
+    .graphical-option input {
+        width: 22px;
+        height: 22px;
+        margin: 0;
+        accent-color: #d51b99;
+    }
+
+    .graphical-option:has(input:disabled) {
+        cursor: not-allowed;
+        opacity: .55;
+    }
+
+.options-back {
+    min-height: 48px;
+    padding: 10px 24px;
+    border: 2px solid rgba(255,255,255,.72);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #00a5db, #1688c0);
+    box-shadow: 0 3px 0 rgba(255,255,255,.4), inset 0 2px 7px rgba(255,255,255,.18);
+    color: #fff;
+    font-size: clamp(17px, 2vw, 24px);
+    cursor: pointer;
+}
+
+    .options-back:hover {
+        filter: brightness(1.08);
+    }
+
+    .options-back:focus-visible,
+    .graphical-option:focus-within {
+        outline: 3px solid #fff;
+        outline-offset: 4px;
+    }
+
+.game-shell.options-open .task-panel > * {
+    opacity: 0;
+}
+
+.game-shell.options-open .options-panel {
+    pointer-events: auto;
+    visibility: visible;
+    transition: visibility 0s;
+}
+
+    .game-shell.options-open .options-panel > * {
+        opacity: 1;
+    }
+
+.game-shell.credits-open .task-panel > * {
+    opacity: 0;
+}
+
+.game-shell.credits-open .credits-panel {
+    pointer-events: auto;
+    visibility: visible;
+    transition: visibility 0s;
+}
+
+    .game-shell.credits-open .credits-panel > * {
+        opacity: 1;
+    }
+
+.credits-logo {
+    display: block;
+    width: min(420px, 75%);
+    max-height: 30vh;
+    object-fit: contain;
+}
+
+.credits-list {
+    display: grid;
+    max-width: 100%;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+    font-size: clamp(20px, 2.6vw, 32px);
+    list-style: none;
+    text-align: center;
+    text-shadow: 0 2px 2px rgba(77,42,98,.4);
+}
+
 .page-title {
     position: absolute;
     z-index: 2;
@@ -449,6 +627,16 @@ button {
     text-shadow: 0 1px 0 rgba(255,255,255,.25);
     pointer-events: none;
     white-space: nowrap;
+}
+
+body.task-menu-page .task-menu-version {
+    font-family: "Neuropolx", sans-serif;
+    display: inline-block;
+    margin-right: .35em;
+    font-size: .24em;
+    font-weight: 600;
+    letter-spacing: 0;
+    vertical-align: middle;
 }
 
 .tabs {
@@ -1081,9 +1269,8 @@ html.task-menu-return .game-shell {
     visibility: hidden;
     opacity: 0;
     background: rgba(49, 25, 67, .48);
-    backdrop-filter: blur(5px) saturate(.8);
     pointer-events: none;
-    transition: opacity .55s ease, visibility 0s linear .55s;
+    transition: opacity .3s ease, visibility 0s linear .3s;
 }
 
 .elements-panel {
@@ -1100,14 +1287,14 @@ html.task-menu-return .game-shell {
     border-radius: 0 55px 55px 0;
     background: linear-gradient(90deg, rgba(125,76,174,.83), rgba(168,97,187,.82));
     box-shadow: 0 8px 28px rgba(185,91,185,.11), inset 0 6px 0 rgba(255,225,250,.9), inset 0 -7px 0 rgba(194,74,157,.42), inset -7px 0 0 rgba(194,74,157,.3), inset 0 0 30px rgba(255,255,255,.1);
-    transition: width .78s cubic-bezier(.16, 1, .3, 1), height .78s cubic-bezier(.16, 1, .3, 1), border-radius .65s ease, box-shadow .55s ease;
+    transition: width .46s cubic-bezier(.16, 1, .3, 1), height .24s ease, border-radius .3s ease;
 }
 
 .elements-open .elements-backdrop {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
-    transition: opacity .55s ease, visibility 0s;
+    transition: opacity .3s ease, visibility 0s;
 }
 
 .elements-open .elements-panel {
@@ -1130,30 +1317,30 @@ html.task-menu-return .game-shell {
     opacity: 0;
     pointer-events: none;
     transform: translate3d(-10px, 8px, 0) scale(.985);
-    transition: opacity .38s ease, transform .52s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .52s;
+    transition: opacity .25s ease, transform .32s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .32s;
 }
 
     .elements-actions > .element-action {
         opacity: 0;
         transform: translateY(10px);
-        transition: opacity .32s ease, transform .42s cubic-bezier(.16, 1, .3, 1), filter .22s ease;
+        transition: opacity .2s ease, transform .25s cubic-bezier(.16, 1, .3, 1), filter .22s ease;
     }
 
-    .elements-actions > :nth-child(1) {
-        transition-delay: .08s;
-    }
+.elements-open .elements-actions > :nth-child(1) {
+    transition-delay: .04s;
+}
 
-    .elements-actions > :nth-child(2) {
-        transition-delay: .13s;
-    }
+.elements-open .elements-actions > :nth-child(2) {
+    transition-delay: .07s;
+}
 
-    .elements-actions > :nth-child(3) {
-        transition-delay: .18s;
-    }
+.elements-open .elements-actions > :nth-child(3) {
+    transition-delay: .1s;
+}
 
-    .elements-actions > :nth-child(4) {
-        transition-delay: .23s;
-    }
+.elements-open .elements-actions > :nth-child(4) {
+    transition-delay: .13s;
+}
 
 .element-action {
     position: relative;
@@ -1243,7 +1430,7 @@ a.element-action:hover {
     opacity: 0;
     pointer-events: none;
     transform: translate3d(0, 10px, 0);
-    transition: opacity .42s ease, transform .58s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .58s;
+    transition: opacity .25s ease, transform .32s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .32s;
 }
 
 .elements-open .elements-actions,
@@ -1252,7 +1439,7 @@ a.element-action:hover {
     opacity: 1;
     pointer-events: auto;
     transform: translate3d(0, 0, 0) scale(1);
-    transition-delay: .12s, .12s, 0s;
+    transition-delay: .06s, .06s, 0s;
 }
 
 .elements-open .elements-actions {
@@ -1260,7 +1447,7 @@ a.element-action:hover {
     opacity: 1;
     pointer-events: auto;
     transform: translate3d(0, 0, 0) scale(1);
-    transition-delay: .08s, .08s, 0s;
+    transition-delay: .04s, .04s, 0s;
 }
 
     .elements-open .elements-actions > .element-action {
@@ -1430,7 +1617,7 @@ a.element-action:hover {
     background: transparent;
     box-shadow: none;
     cursor: pointer;
-    transition: width .78s cubic-bezier(.16, 1, .3, 1), border-radius .65s ease, background .5s ease;
+    transition: width .46s cubic-bezier(.16, 1, .3, 1), border-radius .3s ease, background .3s ease;
 }
 
     .elements-toggle.elements-tab span {
@@ -1571,18 +1758,7 @@ a.element-action:hover {
         inset: 0;
         background: url("../backgrounds/Aquarium_1.png") center / cover no-repeat;
         content: "";
-        filter: url("#background-water-ripple");
         opacity: 0.5;
-        transition: opacity .5s ease;
-    }
-
-    .aquarium-scene::after {
-        position: absolute;
-        z-index: 1;
-        inset: 0;
-        background: url("../backgrounds/Aquarium_1.png") center / cover no-repeat;
-        content: "";
-        opacity: 0;
         transition: opacity .5s ease;
     }
 
@@ -1590,7 +1766,6 @@ a.element-action:hover {
     position: absolute;
     inset: 0;
     z-index: 3;
-    filter: url("#background-water-ripple");
     opacity: 1;
     transition: opacity .4s ease;
 }
@@ -2026,9 +2201,9 @@ a.element-action:hover {
     transition: transform 0.2s ease;
 }
 
-.store-item:hover {
-    transform: scale(1.05);
-}
+    .store-item:hover {
+        transform: scale(1.05);
+    }
 
 .store-product {
     position: relative;
@@ -2260,10 +2435,6 @@ a.element-action:hover {
     }
 
 .aquarium-page.editor-mode .aquarium-scene::before {
-    opacity: 0;
-}
-
-.aquarium-page.editor-mode .aquarium-scene::after {
     opacity: 1;
 }
 
@@ -2310,6 +2481,43 @@ a.element-action:hover {
     transition: opacity .4s ease, transform .65s cubic-bezier(.22, 1, .36, 1);
 }
 
+.aquarium-hide-button {
+    position: fixed;
+    z-index: 4;
+    right: 2%;
+    bottom: 310px;
+}
+
+.aquarium-page.aquarium-hide-mode .task-tab,
+.aquarium-page.aquarium-hide-mode #storeCoinDiv,
+.aquarium-page.aquarium-hide-mode .menu-buttons,
+.aquarium-page.aquarium-hide-mode .aquarium-hide-button,
+.aquarium-page.aquarium-hide-mode #journalButton {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity .4s ease, visibility .4s ease;
+}
+
+.aquarium-hide-exit {
+    position: fixed;
+    z-index: 30;
+    bottom: 16px;
+    left: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease, visibility .35s ease;
+}
+
+.aquarium-page .aquarium-hide-exit[hidden] {
+    display: none;
+}
+
+.aquarium-page.aquarium-hide-mode .aquarium-hide-exit {
+    opacity: 1;
+    visibility: visible;
+}
+
 
 /* Quiz Menu page */
 body.quiz-menu-page {
@@ -2352,21 +2560,16 @@ body.quiz-menu-page {
             inset: -3%;
             background: linear-gradient(180deg, rgba(5, 20, 42, .42), rgba(0, 12, 24, .58)), url("../backgrounds/QuizMenu.webp") center / cover no-repeat;
             content: "";
-            filter: url("#background-water-ripple");
             pointer-events: none;
-            transform-origin: center;
-            animation: quiz-background-drift 18s ease-in-out infinite alternate;
-            will-change: filter, transform;
         }
 
-        body.quiz-menu-page .quiz-page > .aquarium-bubbles {
-            z-index: 0;
-        }
+html.graphical-advanced body.quiz-menu-page .quiz-page::before,
+html.graphical-advanced body.quiz-menu-page .aquarium-bubbles {
+    filter: url("#background-water-ripple");
+}
 
-@keyframes quiz-background-drift {
-    to {
-        transform: scale(1.04);
-    }
+body.quiz-menu-page .quiz-page > .aquarium-bubbles {
+    z-index: 0;
 }
 
 body.quiz-menu-page .main-nav {
@@ -2606,9 +2809,12 @@ body.quiz-menu-page .card-watermark {
     font-family: "Hydration", sans-serif;
     font-size: clamp(190px, 25vw, 330px);
     line-height: 1;
-    filter: url("#background-water-ripple");
     pointer-events: none;
     user-select: none;
+}
+
+html.graphical-advanced body.quiz-menu-page .card-watermark {
+    filter: url("#background-water-ripple");
 }
 
 body.quiz-menu-page .quiz-age,
@@ -3004,11 +3210,7 @@ body.question-page {
         z-index: 0;
         inset: -3%;
         background: linear-gradient(180deg, rgba(3, 15, 32, .72), rgba(0, 8, 18, .84)), url("../backgrounds/QuizMenu.webp") center / cover no-repeat;
-        filter: url("#background-water-ripple");
         pointer-events: none;
-        transform-origin: center;
-        animation: quiz-background-drift 18s ease-in-out infinite alternate;
-        will-change: filter, transform;
     }
 
     body.question-page .question-screen::before {
@@ -3018,7 +3220,6 @@ body.question-page {
         border: clamp(8px, 1.2vw, 16px) solid var(--quiz-accent);
         background: linear-gradient(180deg, rgba(232, 138, 78, .28), rgba(155, 64, 14, .24) 55%, rgba(58, 22, 3, .2));
         box-shadow: 0 0 18px 6px var(--quiz-glow), 0 0 54px 18px rgba(230, 123, 55, .3), inset 0 0 28px rgba(255, 157, 82, .3);
-        backdrop-filter: blur(8px) saturate(1.35);
         content: "";
         pointer-events: none;
         animation: question-glass-reveal .9s cubic-bezier(.22, 1, .36, 1) both;
@@ -3037,12 +3238,10 @@ body.question-page {
 @keyframes question-glass-reveal {
     from {
         opacity: 1;
-        backdrop-filter: blur(8px) saturate(1.35);
     }
 
     to {
         opacity: 0;
-        backdrop-filter: blur(0) saturate(1);
     }
 }
 
@@ -3086,10 +3285,10 @@ body.question-page .answer-panel {
     height: clamp(220px, 33vh, 260px);
     border: 1px solid rgba(174, 247, 255, .55);
     background: linear-gradient(145deg, rgba(71, 232, 255, .22), rgba(0, 131, 206, .12) 45%, rgba(0, 50, 143, .24));
-    backdrop-filter: blur(22px) saturate(1.7);
-    -webkit-backdrop-filter: blur(22px) saturate(1.7);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
     clip-path: polygon(0 19%, 100% 0, 100% 81%, 0 100%);
-    filter: drop-shadow(0 0 12px rgba(0, 211, 242, .3));
+    box-shadow: 0 0 12px rgba(0, 211, 242, .3);
 }
 
     body.question-page .answer-panel::before {
@@ -3098,8 +3297,6 @@ body.question-page .answer-panel {
         border: 1px solid rgba(255, 255, 255, .3);
         background: linear-gradient(112deg, rgba(0, 47, 143, .18), rgba(0, 112, 184, .12) 48%, rgba(0, 55, 139, .2));
         clip-path: polygon(0 19%, 100% 0, 100% 81%, 0 100%);
-        backdrop-filter: blur(20px) saturate(1.6);
-        -webkit-backdrop-filter: blur(20px) saturate(1.6);
         content: "";
     }
 
@@ -3290,6 +3487,16 @@ body.question-page .question-action {
     body.question-page .question-action:hover {
         background: rgba(0, 95, 177, .92);
     }
+
+@media (prefers-reduced-motion: reduce) {
+    html:not(.motion-preference-set) *,
+    html:not(.motion-preference-set) *::before,
+    html:not(.motion-preference-set) *::after {
+        animation-duration: .18s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .18s !important;
+    }
+}
 
 .fish-preview, .item-preview {
     height: 90px;
@@ -3595,3 +3802,64 @@ body.users-page {
         object-fit: cover;
     }
 
+html::after {
+    position: fixed;
+    z-index: 2147483647;
+    inset: 0;
+    background: #000;
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s linear;
+}
+
+.task-menu-startup-video[hidden] {
+    display: none;
+}
+
+html.task-menu-stallion-pending body {
+    background: #000;
+}
+
+html.task-menu-auth-check body {
+    background: #000;
+}
+
+    html.task-menu-auth-check body.task-menu-page .game-shell {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+html.task-menu-stallion-pending body.task-menu-page .game-shell,
+html.task-menu-stallion-revealing body.task-menu-page .game-shell {
+    transition: opacity .45s ease;
+}
+
+html.task-menu-stallion-pending body.task-menu-page .game-shell {
+    opacity: 0;
+    pointer-events: none;
+}
+
+html.task-menu-stallion-revealing body.task-menu-page .game-shell {
+    opacity: 1;
+}
+
+html.reduced-motion-transitioning::after,
+html.reduced-motion-entering::after {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
+html.reduced-motion body.quiz-menu-page .quiz-card:hover,
+html.reduced-motion body.quiz-menu-page .nav-link:hover,
+html.reduced-motion body.quiz-menu-page .nav-link:focus-visible,
+html.reduced-motion body.users-page .auth-submit:hover {
+    transform: none;
+}
