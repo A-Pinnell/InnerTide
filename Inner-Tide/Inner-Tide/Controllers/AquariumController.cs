@@ -524,7 +524,6 @@ namespace Inner_Tide.Controllers {
                 _context.Aquariums.Update(currentAquarium);
                 _context.UserFish.Update(userFish);
 
-                _context.UserFish.Remove(userFish);
                 await _context.SaveChangesAsync();
 
                 return Ok();
