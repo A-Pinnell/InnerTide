@@ -420,114 +420,76 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddFishToAquarium([FromBody] AquariumFishRequest request)
-        {
+        public async Task<IActionResult> AddFishToAquarium( [FromBody] AquariumFishRequest request) {
+            try {
+                var user = await userManager.GetUserAsync(User);
+
+                if (user == null) {
+                    return NotFound();
+                }
+                if (request == null) {
+                    return BadRequest("Request was null.");
+                }
+
+                int userFishId = (int)request.UserFishId;
+
+                var aquariums = await _context.Aquariums.Where(a => a.UserId == user.Id).ToListAsync();
+                var userFish = await _context.UserFish.FirstOrDefaultAsync(uf => uf.UserId == user.Id && uf.UserFishId == userFishId);
+
+                int x = (int)Math.Round((double)request.X);
+                int y = (int)Math.Round((double)request.Y);
+
+                if (!aquariums.Any()) {
+                    return NotFound();
+                }
+
+                if (aquariums.Count() == 1) {
+                    var aquarium = aquariums.First();
+
+                    Console.WriteLine($"CurrentFish: {aquarium.CurrentFish}");
+                    Console.WriteLine($"MaxFish: {aquarium.MaxFish}");
+
+                    if ((aquarium.CurrentFish + 1) <= aquarium.MaxFish) {
+                        aquarium.CurrentFish += 1;
+                        aquarium.CompletionPercentage = (int)Math.Round( ((double)aquarium.CurrentFish / aquarium.MaxFish) * 100 );
+
+                        userFish.IsInAquarium = true;
+                        userFish.AquariumId = aquarium.AquariumId;
+                        userFish.xCord = x;
+                        userFish.yCord = y;
+
+                        await _context.SaveChangesAsync();
+
+                        return Ok();
+                    }
+
+                } else {
+                    foreach (Aquarium aquarium in aquariums) {
+                        if (aquarium.MaxFish == aquarium.CurrentFish) {
+                            continue;
+                        }
+
+                        if ((aquarium.CurrentFish + 1) <= aquarium.MaxFish) {
+                            aquarium.CurrentFish += 1;
+                            aquarium.CompletionPercentage = (int)Math.Round(((double)aquarium.CurrentFish / aquarium.MaxFish) * 100);
+
+                            userFish.IsInAquarium = true;
+                            userFish.AquariumId = aquarium.AquariumId;
+                            userFish.xCord = x;
+                            userFish.yCord = y;
+
+                            await _context.SaveChangesAsync();
+
+                            return Ok();
+                        }
+                    }
+                    return BadRequest("All Aquariums are Full.");
+                }
+
+            } catch (Exception e) {
+                return BadRequest(e.Message);
+            }
             return NotFound();
-            //try {
-            //    var user = await userManager.GetUserAsync(User);
-
-            //    if (user == null) {
-            //        return NotFound();
-            //    }
-
-            //    var aquariums = await _context.Aquariums.Where(a => a.UserId == user.Id).ToListAsync();
-            //    var userFish = _context.UserFish.Where(uf => uf.UserId == user.Id && uf.UserFishId.ToString() == userFishId);
-
-            //    using var reader = new StreamReader(Request.Body);
-            //    var body = await reader.ReadToEndAsync();
-
-            //    var json = JsonDocument.Parse(body);
-
-            //    int x = (int) Math.Round((double)request.Y);
-            //    int y = (int) Math.Round((double)request.X);
-
-            //    if (userFish == null) {
-            //        return NotFound("Fish not found.");
-            //    }
-
-            //    if (!aquariums.Any() || !userFish.Any()) {
-            //        return NotFound();
-            //    }
-
-            //    if (aquariums.Count() == 1) {
-            //        var aquarium = aquariums.First();
-
-            //        Console.WriteLine($"CurrentFish: {aquarium.CurrentFish}");
-            //        Console.WriteLine($"MaxFish: {aquarium.MaxFish}");
-
-            //        if ( (aquarium.CurrentFish + 1) <= aquarium.MaxFish ) {
-            //            aquarium.CurrentFish += 1;
-            //            aquarium.CompletionPercentage = (int)(Math.Round((double)aquarium.CurrentFish / (double)aquarium.MaxFish) * 100);
-
-            //            userFish.First().IsInAquarium = true;
-            //            userFish.First().AquariumId = aquarium.AquariumId;
-            //            userFish.First().xCord = x;
-            //            userFish.First().yCord = y;
-
-            //            await _context.SaveChangesAsync();
-
-            //            return Ok();
-            //        }
-
-            //    } else {
-            //        foreach (Aquarium aquarium in aquariums) {
-            //            if (aquarium.MaxFish == aquarium.CurrentFish) {
-            //                continue;
-            //            }
-
-            //            if ((aquarium.CurrentFish + 1) <= aquarium.MaxFish) {
-            //                aquarium.CurrentFish += 1;
-            //                aquarium.CompletionPercentage = (int) (Math.Round((double) aquarium.CurrentFish / (double) aquarium.MaxFish) * 100);
-
-            //                userFish.First().IsInAquarium = true;
-            //                userFish.First().AquariumId = aquarium.AquariumId;
-            //                userFish.First().xCord = x;
-            //                userFish.First().yCord = y;
-
-            //                await _context.SaveChangesAsync();
-
-            //                return Ok();
-            //            }
-            //        }
-            //        return BadRequest("All aquariums are full.");
-            //    }
-
-            //} catch (Exception e) {
-        }
-
-
-        public async Task<IActionResult> AddFishToAquarium(string fishId, string userFishId, int aquariumId) {
-            var user = await userManager.GetUserAsync(User);
-            if (user == null) {
-                return Unauthorized();
-            }
-
-            var aquarium = await _context.Aquariums
-                .SingleOrDefaultAsync(entry => entry.AquariumId == aquariumId && entry.UserId == user.Id);
-            if (aquarium == null) {
-                return NotFound("Aquarium not found.");
-            }
-
-            var userFish = await _context.UserFish.SingleOrDefaultAsync(entry =>
-                entry.UserId == user.Id &&
-                entry.UserFishId.ToString() == userFishId &&
-                entry.FishId == fishId &&
-                !entry.IsInAquarium);
-            if (userFish == null) {
-                return NotFound("Fish not found in your inventory.");
-            }
-
-            if (aquarium.CurrentFish >= aquarium.MaxFish) {
-                return BadRequest("This aquarium is full.");
-            }
-
-            aquarium.CurrentFish += 1;
-            aquarium.CompletionPercentage = GetAquariumCompletionPercentage(aquarium);
-            userFish.IsInAquarium = true;
-            userFish.AquariumId = aquarium.AquariumId;
-
-            await _context.SaveChangesAsync();
-            return Ok(new { completionPercentage = aquarium.CompletionPercentage });
         }
 
         [HttpPost]
@@ -552,9 +514,15 @@ namespace Inner_Tide.Controllers {
                 }
 
                 currentAquarium.CurrentFish -= 1;
+                currentAquarium.CompletionPercentage = (int)Math.Round(((double)currentAquarium.CurrentFish / currentAquarium.MaxFish) * 100);
 
+                userFish.IsInAquarium = false;
+                userFish.AquariumId = null;
+                userFish.xCord = 0;
+                userFish.yCord = 0;
 
                 _context.Aquariums.Update(currentAquarium);
+                _context.UserFish.Update(userFish);
 
                 _context.UserFish.Remove(userFish);
                 await _context.SaveChangesAsync();

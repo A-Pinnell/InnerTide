@@ -453,6 +453,7 @@ const editorForegroundLabel = document.querySelector("#editorForegroundLabel");
 const editorForegroundNumber = document.querySelector("#editorForegroundNumber");
 const editorInventoryPanel = document.querySelector("#editorInventoryPanel");
 const editorInventoryBackdrop = document.querySelector("#editorInventoryBackdrop");
+const removeFishBtn = document.querySelector("#removeFishBtn");
 
 //console.log("storePanel:", getComputedStyle(storePanel).zIndex);
 //console.log("storeBackdrop:", getComputedStyle(storeBackdrop).zIndex);
@@ -2355,6 +2356,10 @@ async function renderAquariumFish() {
 
 renderAquariumFish();
 
+const btn = document.querySelector("#removeFishBtn");
+
+console.log(btn.hidden);
+console.log(btn.hasAttribute("hidden"));
 
 // ----- Drag and Drop Logic
 let offSetX = 0;
@@ -2372,12 +2377,11 @@ document.addEventListener("pointerdown", event => {
         inventoryPanel?.classList.remove("is-open");
 
     } else if (event.target.closest(".aquariumGrabbable")) {
+        console.log(removeFishBtn);
+
         dragSource = event.target.closest(".aquariumGrabbable");
-        inventoryPanel.hidden = false;
-        inventoryBackdrop.hidden = false;
-        inventoryBackdrop.classList.add("is-open");
-        inventoryPanel.classList.add("is-open");
-        inventoryBtn.classList.add("is-open");
+        removeFishBtn.hidden = false;
+        removeFishBtn.classList.add("is-open");
 
     } else {
         return;
@@ -2444,38 +2448,37 @@ document.addEventListener("pointerup", async event => {
                 const x = event.clientX - aquariumRect.left;
                 const y = event.clientY - aquariumRect.top;
 
-                const aquariumId = Number(document.body.dataset.aquariumId) || 1;
-                const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}&aquariumId=${aquariumId}`, {
+                const res = await fetch(`/Aquarium/AddFishToAquarium`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
                         },
-                        body: JSON.stringify({
-                            userFishId,
-                            fishId,
-                            x,
-                            y
-                        })
-                    });
+                    body: JSON.stringify({
+                        userFishId: Number(userFishId),
+                        fishId,
+                        x: Math.round(x),
+                        y: Math.round(y)
+                    })
+                });
 
                 if (res.ok) {
                     await Promise.all([
                         renderInventoryFish(),
-                        renderAquariumFish()
+                        renderAquariumFish(),
                     ]);
                 }
             }
         } else if ( dragSource.classList.contains("aquariumGrabbable") ) {
 
-            const inventoryRect = inventoryPanel.getBoundingClientRect();
+            const removeRect = removeFishBtn.getBoundingClientRect();
 
-            const droppedInInventory =
-                event.clientX >= inventoryRect.left &&
-                event.clientX <= inventoryRect.right &&
-                event.clientY >= inventoryRect.top &&
-                event.clientY <= inventoryRect.bottom;
+            const droppedInRemove =
+                event.clientX >= removeRect.left &&
+                event.clientX <= removeRect.right &&
+                event.clientY >= removeRect.top &&
+                event.clientY <= removeRect.bottom;
 
-            if (droppedInInventory) {
+            if (droppedInRemove) {
                 const res = await fetch(`/Aquarium/RemoveFishFromAquarium?userFishId=${userFishId}`, {
                         method: "POST"
                     });
@@ -2483,19 +2486,23 @@ document.addEventListener("pointerup", async event => {
                 if (res.ok) {
                     await Promise.all([
                         renderInventoryFish(),
-                        renderAquariumFish()
+                        renderAquariumFish(),
                     ]);
+
                 }
             }
         }
+
         dragSource.remove();
         selectedFish.remove();
         selectedFish = null;
         dragSource = null;
+        removeFishBtn.hidden = true;
+        renderAquariumFish();
         return;
 
     } catch (error) {
-        console.error(error);
+        console.error("Drop failed:", error);
     }     
 });
 
