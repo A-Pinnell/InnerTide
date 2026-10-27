@@ -3,19 +3,19 @@
 @inject UserManager<User> UserManager
 
 @{
-    ViewData["Title"] = "Quiz Menu";
+    ViewData["Title"] = "Task Menu";
 
     var coinCount = 0;
+    var userName = "Chris Concept";
 
-    if (User.Identity?.IsAuthenticated == true)
-    {
+    if (User.Identity?.IsAuthenticated == true) {
         var currentUser = await UserManager.GetUserAsync(User);
 
         coinCount = currentUser.CoinCount;
-    }
-    else
-    {
+        userName = currentUser.UserName;
+    } else {
         coinCount = 0;
+
     }
 }
 
@@ -50,7 +50,7 @@
         <header class="player-card profile-collapsed">
             <div class="profile-details" id="profile-details">
                 <div class="player-copy">
-                    <strong>Chris Concept</strong>
+                    <strong> @userName </strong>
                     <small>30 More Pearls needed to level up!</small>
                 </div>
                 <div class="xp-track"><span></span></div>
