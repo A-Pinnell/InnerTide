@@ -99,6 +99,7 @@ const graphicalPresentationKey = "innerTide.graphicalPresentation";
 const reduceMotionKey = "innerTide.reduceMotion";
 const musicVolumeStorageKey = "innerTide.musicVolume";
 const sfxVolumeStorageKey = "innerTide.sfxVolume";
+
 const readStoredVolume = key => {
     const storedValue = localStorage.getItem(key);
     if (storedValue === null) return 0.5;
@@ -411,6 +412,22 @@ const editorForegroundLabel = document.querySelector("#editorForegroundLabel");
 const editorForegroundNumber = document.querySelector("#editorForegroundNumber");
 const editorInventoryPanel = document.querySelector("#editorInventoryPanel");
 const editorInventoryBackdrop = document.querySelector("#editorInventoryBackdrop");
+
+//console.log("storePanel:", getComputedStyle(storePanel).zIndex);
+//console.log("storeBackdrop:", getComputedStyle(storeBackdrop).zIndex);
+
+//console.log("inventoryPanel:", getComputedStyle(inventoryPanel).zIndex);
+//console.log("inventoryBackdrop:", getComputedStyle(inventoryBackdrop).zIndex);
+
+//console.log("editorToolbar:", getComputedStyle(editorToolbar).zIndex);
+//console.log("editorInventoryPanel:", getComputedStyle(editorInventoryPanel).zIndex);
+//console.log("editorInventoryBackdrop:", getComputedStyle(editorInventoryBackdrop).zIndex);
+
+//console.log("storeBtn:", getComputedStyle(storeBtn).zIndex);
+//console.log("inventoryBtn:", getComputedStyle(inventoryBtn).zIndex);
+//console.log("editorBtn:", getComputedStyle(editorBtn).zIndex);
+//console.log("aquarium:", getComputedStyle(aquarium).zIndex);
+
 
 function setAquariumPercent(percent) {
     const numericPercent = Number(percent);
@@ -2032,7 +2049,7 @@ async function renderAquariumFish() {
 
         const fish = await res.json();
 
-        console.log("Aquarium Fish:", fish);
+        //console.log("Aquarium Fish:", fish);
 
         const fishContainer =
             document.querySelector("#fishContainer");
@@ -2041,15 +2058,15 @@ async function renderAquariumFish() {
 
         fishContainer.innerHTML = "";
 
-        console.log("Length:", fish.length);
-        console.log("First fish:", fish[0]);
+        //console.log("Length:", fish.length);
+        //console.log("First fish:", fish[0]);
 
         fish.forEach(f => {
-            console.log(f);
+            //console.log(f);
 
             const item = document.createElement("div");
             item.classList.add("aquariumFish");
-            item.classList.add("aquariumDraggable");
+            item.classList.add("aquariumGrabbable");
             item.setAttribute("value", f.userFishId);
             item.setAttribute("value2", f.fishId);
 
@@ -2094,7 +2111,11 @@ document.addEventListener("pointerdown", event => {
 
     } else if (event.target.closest(".aquariumGrabbable")) {
         dragSource = event.target.closest(".aquariumGrabbable");
-        inventoryPanel?.classList.add("is-open");
+        inventoryPanel.hidden = false;
+        inventoryBackdrop.hidden = false;
+        inventoryBackdrop.classList.add("is-open");
+        inventoryPanel.classList.add("is-open");
+        inventoryBtn.classList.add("is-open");
 
     } else {
         return;
@@ -2128,7 +2149,7 @@ document.addEventListener("pointermove", event => {
 });
 
 document.addEventListener("pointerup", async event => {
-    const fishContainer =document.querySelector("#fishContainer");
+    const fishContainer=document.querySelector("#fishContainer");
     const aquarium = document.querySelector("#aquarium");
     const inventoryPanel = document.querySelector("#tankInventoryPanel");
 
@@ -2142,8 +2163,10 @@ document.addEventListener("pointerup", async event => {
     try {
         if (dragSource.classList.contains("inventoryGrabbable")) {
 
-            const aquariumRect =
-                aquarium.getBoundingClientRect();
+            const aquariumRect = aquarium.getBoundingClientRect();
+
+            console.log("Mouse:", event.clientX, event.clientY);
+            console.log("Aquarium Rect:", aquariumRect);
 
             const droppedInAquarium =
                 event.clientX >= aquariumRect.left &&
@@ -2151,7 +2174,11 @@ document.addEventListener("pointerup", async event => {
                 event.clientY >= aquariumRect.top &&
                 event.clientY <= aquariumRect.bottom;
 
+            console.log("Dropped:", droppedInAquarium);
+
             if (droppedInAquarium) {
+                console.log("ENTERED DROP LOGIC");
+
                 const x = event.clientX - aquariumRect.left;
                 const y = event.clientY - aquariumRect.top;
 
@@ -2169,8 +2196,10 @@ document.addEventListener("pointerup", async event => {
                     });
 
                 if (res.ok) {
-                    await renderInventoryFish();
-                    await renderAquariumFish();
+                    await Promise.all([
+                        renderInventoryFish(),
+                        renderAquariumFish()
+                    ]);
                 }
             }
         } else if ( dragSource.classList.contains("aquariumGrabbable") ) {
@@ -2184,28 +2213,31 @@ document.addEventListener("pointerup", async event => {
                 event.clientY <= inventoryRect.bottom;
 
             if (droppedInInventory) {
-                const res = await fetch(`/Aquarium/RemoveFishFromAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
+                const res = await fetch(`/Aquarium/RemoveFishFromAquarium?userFishId=${userFishId}`, {
                         method: "POST"
                     });
 
                 if (res.ok) {
-                    await renderInventoryFish();
-                    await renderAquariumFish();
+                    await Promise.all([
+                        renderInventoryFish(),
+                        renderAquariumFish()
+                    ]);
                 }
             }
         }
+        dragSource.remove();
+        selectedFish.remove();
+        selectedFish = null;
+        dragSource = null;
+        return;
 
-    } catch (error) {} 
-    selectedFish.style.position = "";
-    selectedFish.style.left = "";
-    selectedFish.style.top = "";
-    selectedFish.style.zIndex = "";
-    selectedFish.style.pointerEvents = "";
-    selectedFish = null;
-    
+    } catch (error) {
+        console.error(error);
+    }     
 });
 
 if (["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"))) {
     document.documentElement.classList.add("task-menu-return");
 }
 document.documentElement.classList.add("page-assets-loading");
+

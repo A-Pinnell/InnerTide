@@ -3,6 +3,7 @@ using Inner_Tide.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Channels;
 
@@ -305,7 +306,7 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddFishToAquarium(string fishId, string userFishId) {
+        public async Task<IActionResult> AddFishToAquarium([FromBody] AquariumFishRequest request) {
             try {
                 var user = await userManager.GetUserAsync(User);
 
@@ -316,6 +317,14 @@ namespace Inner_Tide.Controllers {
                 var aquariums = await _context.Aquariums.Where(a => a.UserId == user.Id).ToListAsync();
                 var userFish = _context.UserFish.Where(uf => uf.UserId == user.Id && uf.UserFishId.ToString() == userFishId);
 
+                using var reader = new StreamReader(Request.Body);
+                var body = await reader.ReadToEndAsync();
+
+                var json = JsonDocument.Parse(body);
+
+                int x = (int) Math.Round((double)request.Y);
+                int y = (int) Math.Round((double)request.X);
+
                 if (userFish == null) {
                     return NotFound("Fish not found.");
                 }
@@ -323,7 +332,6 @@ namespace Inner_Tide.Controllers {
                 if (!aquariums.Any() || !userFish.Any()) {
                     return NotFound();
                 }
-
 
                 if (aquariums.Count() == 1) {
                     var aquarium = aquariums.First();
@@ -333,18 +341,16 @@ namespace Inner_Tide.Controllers {
 
                     if ( (aquarium.CurrentFish + 1) <= aquarium.MaxFish ) {
                         aquarium.CurrentFish += 1;
+                        aquarium.CompletionPercentage = (int)(Math.Round((double)aquarium.CurrentFish / (double)aquarium.MaxFish) * 100);
 
                         userFish.First().IsInAquarium = true;
                         userFish.First().AquariumId = aquarium.AquariumId;
+                        userFish.First().xCord = x;
+                        userFish.First().yCord = y;
 
-                        Console.WriteLine(_context.ChangeTracker.DebugView.LongView);
+                        await _context.SaveChangesAsync();
 
-                        var changes = await _context.SaveChangesAsync();
-
-                        Console.WriteLine($"Changes saved: {changes}");
-                        Console.WriteLine(_context.Entry(userFish.First()).State);
                         return Ok();
-
                     }
 
                 } else {
@@ -355,14 +361,15 @@ namespace Inner_Tide.Controllers {
 
                         if ((aquarium.CurrentFish + 1) <= aquarium.MaxFish) {
                             aquarium.CurrentFish += 1;
+                            aquarium.CompletionPercentage = (int) (Math.Round((double) aquarium.CurrentFish / (double) aquarium.MaxFish) * 100);
 
                             userFish.First().IsInAquarium = true;
                             userFish.First().AquariumId = aquarium.AquariumId;
+                            userFish.First().xCord = x;
+                            userFish.First().yCord = y;
 
-                            var changes = await _context.SaveChangesAsync();
+                            await _context.SaveChangesAsync();
 
-                            Console.WriteLine($"Changes saved: {changes}");
-                            Console.WriteLine(_context.Entry(userFish.First()).State);
                             return Ok();
                         }
                     }
@@ -373,6 +380,42 @@ namespace Inner_Tide.Controllers {
 
             }
             return NotFound();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveFishFromAquarium(string userFishId) {
+            try {
+                var user = await userManager.GetUserAsync(User);
+
+                if (user == null) {
+                    return NotFound();
+                }
+
+                var userFish = _context.UserFish.FirstOrDefault(uf => uf.UserId == user.Id && uf.UserFishId.ToString() == userFishId);
+
+                if (userFish == null) {
+                    return NotFound();
+                }
+
+                var currentAquarium = _context.Aquariums.FirstOrDefault(a => a.AquariumId == userFish.AquariumId);
+
+                if (currentAquarium == null) {
+                    return NotFound();
+                }
+
+                currentAquarium.CurrentFish -= 1;
+
+
+                _context.Aquariums.Update(currentAquarium);
+
+                _context.UserFish.Remove(userFish);
+                await _context.SaveChangesAsync();
+
+                return Ok();
+
+            } catch (Exception e) {
+                return StatusCode(500, e.Message);
+            }
         }
     }
 }
