@@ -6,6 +6,9 @@
     ViewData["Title"] = "Aquarium Menu";
 
     var coinCount = 0;
+    var aquariumNumber = (int)ViewData["AquariumNumber"]!;
+    var aquariumId = (int)ViewData["AquariumId"]!;
+    var aquariumBackgroundNumber = (int)ViewData["AquariumBackgroundNumber"]!;
 
     if (User.Identity?.IsAuthenticated == true) {
         var currentUser = await UserManager.GetUserAsync(User);
@@ -16,7 +19,7 @@
     }
 }
 
-<body class="aquarium-page aquarium-enter">
+<body class="aquarium-page aquarium-enter" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber">
     <audio id="aquarium-music" autoplay preload="auto"></audio>
     <main>
         <div id="aquarium">
@@ -47,7 +50,7 @@
             <div id="sand"></div>
             <div id="sand-layer"></div>
             <div id="sand2"></div>
-            <div class="hide-mode-clock" id="hideModeClock" role="timer" aria-live="off" aria-label="Current date and time">
+            <div class="hide-mode-clock" id="hideModeClock">
                 <time id="hideModeTime"></time>
                 <span id="hideModeDate"></span>
             </div>
@@ -111,9 +114,9 @@
             <div class="editor-foreground-label" id="editorForegroundLabel"><span>FOREGROUND</span><b id="editorForegroundNumber">1</b></div>
 
             <div class="editor-inventory-backdrop" id="editorInventoryBackdrop" hidden></div>
-            <section class="editor-inventory-panel" id="editorInventoryPanel" role="dialog" hidden>
+            <section class="editor-inventory-panel" id="editorInventoryPanel" hidden>
                 <div class="store-tabs editor-inventory-tabs">
-                    <span class="store-tab active" data-position="center" role="heading">Objects</span>
+                    <span class="store-tab active" data-position="center">Objects</span>
                 </div>
                 <div class="editor-inventory-items">
                     <div class="store-items">
@@ -134,17 +137,17 @@
             </section>
 
             <div class="tank-store-backdrop" id="tankStoreBackdrop" hidden></div>
-            <section class="tank-store-panel" id="tankStorePanel" role="dialog" hidden>
-                <div class="store-tabs" role="tablist">
-                    <button class="store-tab" id="storeObjectsTab" type="button" role="tab" data-category="objects">Objects</button>
-                    <button class="store-tab active" id="storeFishTab" type="button" role="tab" data-category="fish">Fish</button>
+            <section class="tank-store-panel" id="tankStorePanel" hidden>
+                <div class="store-tabs">
+                    <button class="store-tab" id="storeObjectsTab" type="button" data-category="objects">Objects</button>
+                    <button class="store-tab active" id="storeFishTab" type="button" data-category="fish">Fish</button>
                 </div>
-                <div class="store-catalog" id="storeFish" role="tabpanel">
+                <div class="store-catalog" id="storeFish">
                     <div class="store-items">
                         <div class="store-item"><span class="store-product fish-product"></span><span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">25</span></span></div>
                     </div>
                 </div>
-                <div class="store-catalog" id="storeObjects" role="tabpanel" hidden>
+                <div class="store-catalog" id="storeObjects" hidden>
                     <div class="store-items">
                         <div class="store-item"><span class="store-product object-product"></span><span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">25</span></span></div>
                     </div>
@@ -152,17 +155,17 @@
             </section>
 
             <div class="tank-store-backdrop" id="tankInventoryBackdrop" hidden></div>
-            <section class="tank-store-panel" id="tankInventoryPanel" role="dialog" hidden>
-                <div class="store-tabs" role="tablist">
-                    <button class="store-tab" id="inventoryObjectsTab" type="button" role="tab" data-category="objects">Objects</button>
-                    <button class="store-tab active" id="inventoryFishTab" type="button" role="tab" data-category="fish">Fish</button>
+            <section class="tank-store-panel" id="tankInventoryPanel" hidden>
+                <div class="store-tabs">
+                    <button class="store-tab" id="inventoryObjectsTab" type="button" data-category="objects">Objects</button>
+                    <button class="store-tab active" id="inventoryFishTab" type="button" data-category="fish">Fish</button>
                 </div>
-                <div class="store-catalog" id="inventoryFish" role="tabpanel">
+                <div class="store-catalog" id="inventoryFish">
                     <div class="store-items">
                         <div class="store-item"><span class="store-product fish-product"></span></div>
                     </div>
                 </div>
-                <div class="store-catalog" id="inventoryObjects" role="tabpanel" hidden>
+                <div class="store-catalog" id="inventoryObjects" hidden>
                     <div class="store-items">
                         <div class="store-item"><span class="store-product object-product"></span></div>
                     </div>

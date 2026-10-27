@@ -60,6 +60,12 @@ button {
     background: #dc9be8;
 }
 
+.task-menu-page.aquarium-selector-open .game-shell {
+    opacity: .14;
+    filter: blur(2px);
+    transform: scale(.72);
+}
+
 .game-shell::before {
     position: absolute;
     z-index: -1;
@@ -72,6 +78,10 @@ button {
 html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-scene::before,
 html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-bubbles {
     filter: url("#background-water-ripple");
+}
+
+html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-scene::before {
+    filter: var(--aquarium-background-tint, saturate(1)) url("#background-water-ripple");
 }
 
 .ambient {
@@ -1195,7 +1205,7 @@ html.task-menu-return body.task-menu-fading::after {
 
 .task-menu-page .game-shell,
 html.task-menu-return .game-shell {
-    transition: opacity 1.15s ease;
+    transition: opacity 1.15s ease, transform .65s cubic-bezier(.16, 1, .3, 1), filter .65s ease;
 }
 
 .task-menu-page.task-menu-enter .game-shell,
@@ -1461,17 +1471,28 @@ a.element-action:hover {
 }
 
 .element-action.elements-list {
+    cursor: not-allowed;
+}
+
+.element-action.elements-list:disabled {
     color: #6c6c6c;
     border-color: #d4d4d4;
     background: linear-gradient(145deg, rgba(255,255,255,.58), transparent 30%), linear-gradient(180deg, rgba(230,236,237,.72), rgba(180,194,196,.55));
     box-shadow: inset 0 2px 2px rgba(42,43,43,.45), inset 0 -2px 2px rgba(255,255,255,.7);
-    cursor: not-allowed;
     text-shadow: none;
 }
 
-    .element-action.elements-list .element-icon img {
+.element-action.elements-list:not(:disabled) {
+    border-color: rgba(228,255,248,.96);
+    background: linear-gradient(145deg, rgba(255,255,255,.68), transparent 28%), linear-gradient(180deg, rgba(213,250,255,.53), rgba(104,195,216,.31) 52%, rgba(233,255,255,.46));
+    box-shadow: inset 0 2px 3px rgba(255,255,255,.95), inset 0 -3px 5px rgba(78,157,177,.34), 0 2px 4px rgba(34,73,79,.4);
+    color: #fff;
+    cursor: pointer;
+}
+
+.element-action.elements-list:disabled .element-icon img {
         filter: grayscale(1) opacity(.6);
-    }
+}
 
 .elements-status {
     position: absolute;
@@ -1767,7 +1788,7 @@ a.element-action:hover {
     z-index: 3;
     width: 120%;
     height: 135px;
-    background: #dcae20;
+    background: var(--aquarium-sand-back, #dcae20);
     clip-path: url("#sand-base-shape");
 }
 
@@ -1778,7 +1799,7 @@ a.element-action:hover {
     z-index: 2;
     width: 120%;
     height: 150px;
-    background: #edc833;
+    background: var(--aquarium-sand-middle, #edc833);
     clip-path: url("#sand-middle-shape");
 }
 
@@ -1789,7 +1810,7 @@ a.element-action:hover {
     z-index: 1;
     width: 120%;
     height: 300px;
-    background: #ffeb70;
+    background: var(--aquarium-sand-front, #ffeb70);
     clip-path: url("#sand-front-shape");
 }
 
@@ -1798,7 +1819,7 @@ a.element-action:hover {
     height: 100vh;
     position: relative;
     overflow: hidden;
-    background-color: #0086B6;
+    background-color: var(--aquarium-base-color, #0086B6);
 }
 
 .aquarium-scene {
@@ -1813,9 +1834,18 @@ a.element-action:hover {
         position: absolute;
         z-index: 0;
         inset: 0;
-        background: url("../backgrounds/Aquarium_1.png") center / cover no-repeat;
+        background-image:
+            linear-gradient(
+                color-mix(in srgb, var(--aquarium-background-tint-color, transparent) 55%, transparent),
+                color-mix(in srgb, var(--aquarium-background-tint-color, transparent) 55%, transparent)
+            ),
+            var(--aquarium-background-image, url("../backgrounds/Aquarium_1.png"));
+        background-position: center, center;
+        background-size: cover, cover;
+        background-repeat: no-repeat, no-repeat;
         content: "";
         opacity: 0.5;
+        filter: var(--aquarium-background-tint, none);
         transition: opacity .5s ease;
     }
 
@@ -1943,7 +1973,14 @@ a.element-action:hover {
 }
 
 .aquarium-page {
-    background: #0086B6;
+    background: var(--aquarium-base-color, #0086B6);
+}
+
+.aquarium-page[data-aquarium-number="2"] {
+    --aquarium-base-color: #000;
+    --aquarium-sand-back: #71834a;
+    --aquarium-sand-middle: #8fa85a;
+    --aquarium-sand-front: #b7c87a;
 }
 
     .aquarium-page.aquarium-enter #aquarium {
@@ -1961,6 +1998,252 @@ a.element-action:hover {
         opacity: 1;
         transform: translateX(0);
     }
+
+.aquarium-selector[hidden] {
+    display: none;
+}
+
+.aquarium-selector {
+    position: fixed;
+    z-index: 980;
+    inset: 0;
+    display: grid;
+    overflow: hidden;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .55s ease;
+}
+
+.aquarium-selector.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.aquarium-selector-stage {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+}
+
+.aquarium-selector-preview {
+    position: fixed;
+    top: 8vh;
+    width: min(71.5vw, 1220px);
+    height: 72vh;
+    overflow: hidden;
+    background-position: center;
+    background-size: cover;
+    box-shadow: 0 10px 35px rgba(0,0,0,.4);
+    opacity: .55;
+    transform: translateX(-50%);
+    transition: left .55s cubic-bezier(.2,.8,.2,1), opacity .4s ease;
+}
+
+.aquarium-selector-preview[hidden] {
+    display: none;
+}
+
+.aquarium-selector-progress,
+.aquarium-selector-create-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-family: "Aquino", "Neuropolx", sans-serif;
+    font-size: clamp(32px, 6vw, 72px);
+    text-shadow: 0 2px 12px rgba(0,0,0,.8);
+    transform: translate(-50%, -50%);
+}
+
+.aquarium-selector-progress {
+    padding: 10px 20px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, .48);
+}
+
+.aquarium-selector-create-icon {
+    width: clamp(76px, 12vw, 140px);
+    aspect-ratio: 1;
+    border: 5px solid rgba(255,255,255,.85);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .16);
+    font-family: Arial, sans-serif;
+    font-size: clamp(56px, 9vw, 108px);
+    line-height: 1;
+}
+
+.aquarium-selector-preview:not(.is-create-placeholder) .aquarium-selector-create-icon {
+    display: none;
+}
+
+.aquarium-selector-preview.is-create-placeholder .aquarium-selector-progress {
+    display: none;
+}
+
+.aquarium-selector-preview.is-current {
+    z-index: 1;
+    opacity: 1;
+}
+
+.aquarium-selector-preview.is-zooming {
+    z-index: 5;
+    top: 50%;
+    left: 50% !important;
+    border-radius: 0;
+    transform: translate(-50%, -50%) scale(var(--aquarium-preview-zoom-scale));
+    transition: top .76s cubic-bezier(.2,.8,.2,1), left .76s cubic-bezier(.2,.8,.2,1), transform .76s cubic-bezier(.2,.8,.2,1), border-radius .76s ease;
+}
+
+.aquarium-selector.is-choosing .aquarium-selector-preview:not(.is-current),
+.aquarium-selector.is-choosing .aquarium-selector-arrow,
+.aquarium-selector.is-choosing .aquarium-selector-title,
+.aquarium-selector.is-choosing .aquarium-selector-choose,
+.aquarium-selector.is-choosing .aquarium-selector-close {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .35s ease;
+}
+
+.aquarium-selector.is-repositioning .aquarium-selector-preview {
+    transition: none;
+}
+
+.aquarium-selector-title {
+    position: absolute;
+    top: 82%;
+    left: 50%;
+    z-index: 2;
+    margin: 0;
+    color: #fff;
+    font-family: "Aquino", "Neuropolx", sans-serif;
+    font-size: clamp(24px, 4vw, 38px);
+    font-weight: 400;
+    text-align: center;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.aquarium-selector-choose {
+    position: absolute;
+    top: 90%;
+    left: 50%;
+    z-index: 2;
+    width: min(380px, 52vw);
+    min-height: 56px;
+    padding: 4px 24px;
+    border: 0;
+    border-radius: 15px;
+    background: #c91fea;
+    color: #fff;
+    font-family: "Hydration", "Ipanema", sans-serif;
+    font-size: clamp(28px, 4vw, 42px);
+    line-height: 1.1;
+    cursor: pointer;
+    transform: translateX(-50%);
+    transition: filter .2s ease, transform .2s ease;
+}
+
+.aquarium-selector-choose:hover {
+    filter: brightness(1.12);
+    transform: translateX(-50%) scale(1.025);
+}
+
+.aquarium-selector-arrow {
+    position: absolute;
+    top: 42%;
+    z-index: 3;
+    display: grid;
+    width: 58px;
+    height: 70px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.aquarium-selector-arrow::before {
+    width: 24px;
+    height: 24px;
+    border: solid #ed168f;
+    border-width: 0 7px 7px 0;
+    content: "";
+}
+
+.aquarium-selector-previous {
+    left: max(14px, calc(50% - min(35.75vw, 610px) - 48px));
+}
+
+.aquarium-selector-previous::before {
+    transform: rotate(135deg);
+}
+
+.aquarium-selector-next {
+    right: max(14px, calc(50% - min(35.75vw, 610px) - 48px));
+}
+
+.aquarium-selector-next::before {
+    transform: rotate(-45deg);
+}
+
+.aquarium-selector-close {
+    position: absolute;
+    top: 18px;
+    right: 24px;
+    z-index: 4;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255,255,255,.55);
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    color: #fff;
+    font: 32px/1 Arial, sans-serif;
+    cursor: pointer;
+}
+
+.aquarium-selector-arrow:focus-visible,
+.aquarium-selector-choose:focus-visible,
+.aquarium-selector-close:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 4px;
+}
+
+@media (max-width: 700px) {
+    .aquarium-selector-stage {
+        inset: 0;
+    }
+
+    .aquarium-selector-preview {
+        top: 16vh;
+        width: 86vw;
+        height: 48vh;
+    }
+
+    .aquarium-selector-title {
+        top: 70%;
+    }
+
+    .aquarium-selector-choose {
+        top: 81%;
+        width: min(340px, 70vw);
+    }
+
+    .aquarium-selector-arrow {
+        top: 34%;
+        width: 44px;
+    }
+
+    .aquarium-selector-previous {
+        left: 3px;
+    }
+
+    .aquarium-selector-next {
+        right: 3px;
+    }
+}
 
 #journalButton {
     position: absolute;

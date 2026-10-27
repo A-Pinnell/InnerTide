@@ -20,11 +20,24 @@ namespace Inner_Tide.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             if (User.Identity?.IsAuthenticated != true)
             {
                 return Redirect("/Users/Index");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user != null && !await _context.Aquariums.AnyAsync(aquarium => aquarium.UserId == user.Id)) {
+                _context.Aquariums.Add(new Aquarium {
+                    MaxFish = 10,
+                    MaxObjects = 5,
+                    CurrentFish = 0,
+                    CurrentObjects = 0,
+                    CompletionPercentage = 0,
+                    UserId = user.Id
+                });
+                await _context.SaveChangesAsync();
             }
 
             return View("Index");

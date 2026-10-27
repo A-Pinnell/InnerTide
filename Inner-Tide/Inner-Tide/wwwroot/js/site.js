@@ -4,6 +4,43 @@ let taskData = {
     weekly: []
 };
 
+const selectedAquariumStorageKey = "innerTide.selectedAquarium";
+const aquariumBackgroundColorOverrides = {};
+
+function getAquariumBackgroundNumber(aquariumNumber) {
+    return aquariumNumber <= 5 ? aquariumNumber : ((aquariumNumber - 6) % 5) + 1;
+}
+
+function isValidAquariumNumber(aquariumNumber) {
+    return Number.isSafeInteger(aquariumNumber) && aquariumNumber >= 1 && aquariumNumber <= 2147483647;
+}
+
+function getAquariumBackgroundColor(aquariumNumber) {
+    const customColor = aquariumBackgroundColorOverrides[aquariumNumber];
+    if (customColor) return customColor;
+
+    const seed = Math.imul(aquariumNumber, 2654435761) >>> 0;
+    const hue = (aquariumNumber * 137.50776405003785) % 360;
+    const saturation = 58 + (seed % 23);
+    const lightness = 38 + ((seed >>> 8) % 20);
+    return `hsl(${hue} ${saturation}% ${lightness}%)`;
+}
+
+const aquariumScene = document.querySelector(".aquarium-scene");
+if (aquariumScene) {
+    const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
+    localStorage.setItem(selectedAquariumStorageKey, String(aquariumNumber));
+    const backgroundNumber = Number(document.body.dataset.aquariumBackgroundNumber) || getAquariumBackgroundNumber(aquariumNumber);
+    const backgroundUrl = new URL(`../backgrounds/Aquarium_${backgroundNumber}.png`, document.baseURI);
+    aquariumScene.style.setProperty("--aquarium-background-image", `url("${backgroundUrl.href}")`);
+
+    if (aquariumNumber > 5) {
+        const tintColor = getAquariumBackgroundColor(aquariumNumber);
+        document.body.style.setProperty("--aquarium-base-color", tintColor);
+        aquariumScene.style.setProperty("--aquarium-background-tint-color", tintColor);
+    }
+}
+
 function revealPageAfterAssetsLoad() {
     if (!document.documentElement.classList.contains("page-assets-loading")) return;
 
@@ -60,6 +97,7 @@ function revealPageAfterAssetsLoad() {
         document.documentElement.classList.add("page-assets-ready");
         window.setTimeout(() => {
             document.documentElement.classList.remove("page-assets-ready");
+            window.dispatchEvent(new Event("page-assets-ready"));
         }, 400);
     }).catch(error => {
         console.error("Unable to prepare page assets.", error);
@@ -94,12 +132,15 @@ const coinCount = document.querySelector("#coin-count");
 const aquariumStatus = document.querySelector(".elements-status");
 const aquariumTank = document.querySelector(".status-tank");
 const aquariumPercentLabel = document.querySelector(".status-percent");
+const aquariumListButton = document.querySelector(".elements-list");
+const aquariumSelector = document.querySelector("#aquariumSelector");
 const coinStorageKey = "innerTide.coinBalance";
 const graphicalPresentationKey = "innerTide.graphicalPresentation";
 const reduceMotionKey = "innerTide.reduceMotion";
 const musicVolumeStorageKey = "innerTide.musicVolume";
 const sfxVolumeStorageKey = "innerTide.sfxVolume";
 
+const multiAquariumStorageKey = "innerTide.multiAquariumEnabled";
 const readStoredVolume = key => {
     const storedValue = localStorage.getItem(key);
     if (storedValue === null) return 0.5;
@@ -752,6 +793,229 @@ if (gameShell) {
     });
     aquariumBackdrop.addEventListener("click", () => setaquariumOpen(false));
 
+    if (aquariumListButton && aquariumSelector) {
+        const aquariumSelectorStage = document.querySelector("#aquariumSelectorStage");
+        const aquariumSelectorTitle = document.querySelector("#aquariumSelectorTitle");
+        const aquariumSelectorChoose = document.querySelector("#aquariumSelectorChoose");
+        const aquariumSelectorPrevious = document.querySelector("#aquariumSelectorPrevious");
+        const aquariumSelectorNext = document.querySelector("#aquariumSelectorNext");
+        const aquariumSelectorClose = document.querySelector("#aquariumSelectorClose");
+        const aquariumLink = document.querySelector(".aquarium-tab a");
+        let aquariumPreviews = [];
+        let aquariumEntries = [];
+        let createdAquariumCount = 1;
+        let selectorIsAnimating = false;
+        let aquariumSlideTimeout;
+        let aquariumChoiceInProgress = false;
+        let selectedAquariumNumber = Number(localStorage.getItem(selectedAquariumStorageKey));
+        if (!isValidAquariumNumber(selectedAquariumNumber)) {
+            selectedAquariumNumber = 1;
+            localStorage.setItem(selectedAquariumStorageKey, String(selectedAquariumNumber));
+        }
+
+        function renderAquariumSelector() {
+            if (aquariumPreviews.length === 0) {
+                aquariumPreviews = Array.from({ length: 3 }, () => {
+                    const preview = document.createElement("div");
+                    preview.className = "aquarium-selector-preview";
+                    const progress = document.createElement("span");
+                    progress.className = "aquarium-selector-progress";
+                    const createIcon = document.createElement("span");
+                    createIcon.className = "aquarium-selector-create-icon";
+                    createIcon.textContent = "+";
+                    preview.append(progress, createIcon);
+                    aquariumSelectorStage.append(preview);
+                    return preview;
+                });
+            }
+
+            aquariumSelector.classList.add("is-repositioning");
+            aquariumPreviews.forEach((preview, index) => {
+                const offset = index - 1;
+                const aquariumNumber = Math.min(2147483647, Math.max(1, selectedAquariumNumber + offset));
+                const entry = aquariumEntries[aquariumNumber - 1];
+                const isCreatePlaceholder = !entry && aquariumNumber === createdAquariumCount + 1;
+                const isVisible = Boolean(entry || isCreatePlaceholder);
+                const backgroundNumber = getAquariumBackgroundNumber(aquariumNumber);
+                const backgroundUrl = new URL(`../backgrounds/Aquarium_${backgroundNumber}.png`, document.baseURI);
+                const tintColor = aquariumNumber > 5 ? getAquariumBackgroundColor(aquariumNumber) : null;
+                const progress = preview.querySelector(".aquarium-selector-progress");
+                preview.classList.toggle("is-current", offset === 0);
+                preview.classList.toggle("is-create-placeholder", isCreatePlaceholder);
+                preview.hidden = !isVisible;
+                preview.style.left = `calc(50% + ${offset * 100}vw)`;
+                preview.style.backgroundImage = isCreatePlaceholder
+                    ? "none"
+                    : tintColor
+                    ? `linear-gradient(color-mix(in srgb, ${tintColor} 55%, transparent), color-mix(in srgb, ${tintColor} 55%, transparent)), url("${backgroundUrl.href}")`
+                    : `url("${backgroundUrl.href}")`;
+                preview.style.backgroundColor = isCreatePlaceholder ? "#777" : tintColor || "transparent";
+                preview.style.filter = "none";
+                progress.textContent = entry ? `${entry.completionPercentage}%` : "";
+            });
+            const isCreatePlaceholder = selectedAquariumNumber === createdAquariumCount + 1;
+            aquariumSelectorTitle.textContent = isCreatePlaceholder
+                ? `Create Aquarium ${selectedAquariumNumber}`
+                : `Aquarium ${selectedAquariumNumber}`;
+            aquariumSelectorChoose.textContent = isCreatePlaceholder ? "Create Aquarium" : "Choose";
+            void aquariumSelectorStage.offsetWidth;
+            window.requestAnimationFrame(() => aquariumSelector.classList.remove("is-repositioning"));
+        }
+
+        function setAquariumListEnabled(enabled) {
+            aquariumListButton.disabled = !enabled;
+        }
+
+        function closeAquariumSelector(restoreFocus = true) {
+            window.clearTimeout(aquariumSlideTimeout);
+            selectorIsAnimating = false;
+            aquariumSelector.classList.remove("is-open");
+            aquariumSelector.inert = true;
+            gameShell.inert = false;
+            gameShell.classList.remove("aquarium-selector-open");
+            document.body.classList.remove("aquarium-selector-open");
+            setAquariumListEnabled(localStorage.getItem(multiAquariumStorageKey) === "true");
+            window.setTimeout(() => {
+                if (!aquariumSelector.classList.contains("is-open")) {
+                    aquariumSelector.hidden = true;
+                }
+            }, isReducedMotionEnabled() ? 0 : 560);
+            if (restoreFocus) (aquariumListButton.disabled ? elementsToggle : aquariumListButton).focus();
+        }
+
+        function moveAquariumSelection(direction) {
+            if (selectorIsAnimating ||
+                (direction < 0 && selectedAquariumNumber === 1) ||
+                (direction > 0 && selectedAquariumNumber >= createdAquariumCount + 1)) return;
+            selectorIsAnimating = true;
+            aquariumPreviews.forEach((preview, index) => {
+                const offset = index - 1 + (direction > 0 ? -1 : 1);
+                preview.style.left = `calc(50% + ${offset * 100}vw)`;
+            });
+            aquariumSlideTimeout = window.setTimeout(() => {
+                selectedAquariumNumber += direction;
+                aquariumPreviews = direction > 0
+                    ? [aquariumPreviews[1], aquariumPreviews[2], aquariumPreviews[0]]
+                    : [aquariumPreviews[2], aquariumPreviews[0], aquariumPreviews[1]];
+                renderAquariumSelector();
+                selectorIsAnimating = false;
+            }, isReducedMotionEnabled() ? 0 : 560);
+        }
+
+        aquariumListButton.addEventListener("click", async () => {
+            if (aquariumListButton.disabled) return;
+            setAquariumListEnabled(false);
+            try {
+                const response = await fetch("/Aquarium/GetAquariums");
+                if (!response.ok) {
+                    throw new Error(`Unable to load aquariums (${response.status}).`);
+                }
+                aquariumEntries = await response.json();
+                if (!Array.isArray(aquariumEntries) || aquariumEntries.length === 0) {
+                    throw new Error("No aquariums are available.");
+                }
+                createdAquariumCount = aquariumEntries.length;
+                selectedAquariumNumber = Number(localStorage.getItem(selectedAquariumStorageKey));
+                if (!isValidAquariumNumber(selectedAquariumNumber)) selectedAquariumNumber = 1;
+                selectedAquariumNumber = Math.min(selectedAquariumNumber, createdAquariumCount + 1);
+            } catch (error) {
+                console.error("Could not load aquarium list.", error);
+                window.alert(error instanceof Error ? error.message : "Could not load aquariums.");
+                setAquariumListEnabled(true);
+                return;
+            }
+
+            setaquariumOpen(false);
+            renderAquariumSelector();
+            aquariumSelector.hidden = false;
+            aquariumSelector.inert = false;
+            aquariumSelector.classList.remove("is-open");
+            gameShell.inert = true;
+            gameShell.classList.add("aquarium-selector-open");
+            document.body.classList.add("aquarium-selector-open");
+            setAquariumListEnabled(true);
+            if (isReducedMotionEnabled()) {
+                aquariumSelector.classList.add("is-open");
+            } else {
+                window.requestAnimationFrame(() => aquariumSelector.classList.add("is-open"));
+            }
+            aquariumSelectorChoose.focus();
+        });
+
+        aquariumSelectorPrevious.addEventListener("click", () => moveAquariumSelection(-1));
+        aquariumSelectorNext.addEventListener("click", () => moveAquariumSelection(1));
+        aquariumSelectorClose.addEventListener("click", () => closeAquariumSelector());
+        aquariumSelectorChoose.addEventListener("click", async () => {
+            if (aquariumChoiceInProgress) return;
+            aquariumChoiceInProgress = true;
+            const isCreatingAquarium = selectedAquariumNumber === createdAquariumCount + 1;
+            if (isCreatingAquarium) {
+                try {
+                    const response = await fetch(`/Aquarium/CreateNewAquarium?aquariumNumber=${selectedAquariumNumber}`, {
+                        method: "POST"
+                    });
+                    if (!response.ok) {
+                        const message = await response.text();
+                        throw new Error(message || `Could not create aquarium (${response.status}).`);
+                    }
+                    const createdAquarium = await response.json();
+                    aquariumEntries.push(createdAquarium);
+                    createdAquariumCount = aquariumEntries.length;
+                    renderAquariumSelector();
+                } catch (error) {
+                    aquariumChoiceInProgress = false;
+                    console.error("Could not create aquarium.", error);
+                    window.alert(error instanceof Error ? error.message : "Could not create aquarium.");
+                    return;
+                }
+            }
+            localStorage.setItem(selectedAquariumStorageKey, String(selectedAquariumNumber));
+
+            const currentPreview = aquariumSelectorStage.querySelector(".aquarium-selector-preview.is-current");
+            const previewBounds = currentPreview.getBoundingClientRect();
+            currentPreview.style.setProperty("--aquarium-preview-zoom-scale", String(Math.max(
+                window.innerWidth / previewBounds.width,
+                window.innerHeight / previewBounds.height
+            )));
+            currentPreview.classList.add("is-zooming");
+            aquariumSelector.classList.add("is-choosing");
+
+            window.setTimeout(() => {
+                const destination = new URL(aquariumLink.href);
+                destination.searchParams.set("from", "selector");
+                destination.searchParams.set("aquarium", String(selectedAquariumNumber));
+                window.location.assign(destination.href);
+            }, isReducedMotionEnabled() ? 0 : 760);
+        });
+        aquariumSelector.addEventListener("keydown", event => {
+            if (aquariumChoiceInProgress) {
+                event.preventDefault();
+                return;
+            }
+            if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                moveAquariumSelection(-1);
+            } else if (event.key === "ArrowRight") {
+                event.preventDefault();
+                moveAquariumSelection(1);
+            } else if (event.key === "Escape") {
+                event.preventDefault();
+                closeAquariumSelector();
+            }
+        });
+        aquariumSelector.addEventListener("click", event => {
+            if (event.target === aquariumSelector) closeAquariumSelector();
+        });
+
+        setAquariumListEnabled(localStorage.getItem(multiAquariumStorageKey) === "true");
+        aquariumSelector.inert = true;
+        document.addEventListener("innerTide:multi-aquarium-changed", event => {
+            const enabled = event.detail?.enabled === true;
+            setAquariumListEnabled(enabled);
+            if (!enabled && !aquariumSelector.hidden) closeAquariumSelector();
+        });
+    }
+
     taskScroll.addEventListener("scroll", () => {
         const rail = document.querySelector(".scroll-rail span");
         const maxScroll = taskScroll.scrollHeight - taskScroll.clientHeight;
@@ -771,10 +1035,13 @@ if (gameShell) {
     aquariumLink.addEventListener("click", event => {
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        if (navigateWithReducedMotion(aquariumLink.href)) return;
+        const selectedAquariumNumber = Number(localStorage.getItem(selectedAquariumStorageKey));
+        const destination = new URL(aquariumLink.href);
+        destination.searchParams.set("aquarium", String(isValidAquariumNumber(selectedAquariumNumber) ? selectedAquariumNumber : 1));
+        if (navigateWithReducedMotion(destination.href)) return;
         gameShell.classList.add("aquarium-transition");
         const transitionDuration = 950;
-        window.setTimeout(() => window.location.assign(aquariumLink.href), transitionDuration);
+        window.setTimeout(() => window.location.assign(destination.href), transitionDuration);
     });
 }
 
@@ -785,6 +1052,11 @@ if (taskMenuLink) {
         event.preventDefault();
         document.body.classList.add("task-menu-transition");
         const destination = new URL(taskMenuLink.href);
+        const aquariumNumber = Number(document.body.dataset.aquariumNumber);
+        if (isValidAquariumNumber(aquariumNumber)) {
+            localStorage.setItem(selectedAquariumStorageKey, String(aquariumNumber));
+            destination.searchParams.set("aquarium", String(aquariumNumber));
+        }
         destination.searchParams.set("from", "aquarium");
         if (navigateWithReducedMotion(destination.href)) return;
         const transitionDuration = 950;
@@ -793,28 +1065,33 @@ if (taskMenuLink) {
 }
 
 async function purchaseStoreFish(_id, item) {
-    const formData = new FormData();
-    formData.append("fishId", _id);
+    try {
+        const x = Math.round(window.innerWidth / 2);
+        const y = Math.round(window.innerHeight / 2);
+        const query = new URLSearchParams({ fishId: _id, xCord: String(x), yCord: String(y) });
+        const res = await fetch(`/Aquarium/PurchaseShopFish?${query}`, { method: "POST" });
 
-    const x = Math.round(window.innerWidth / 2);
-    const y = Math.round(window.innerHeight / 2);
+        if (!res.ok) {
+            let message = `Fish purchase failed (${res.status}).`;
+            const responseText = await res.text();
+            try {
+                const error = JSON.parse(responseText);
+                message = error.detail || error.title || responseText || message;
+            } catch (error) {
+                if (!(error instanceof SyntaxError)) throw error;
+                if (responseText) message = responseText;
+            }
+            throw new Error(message);
+        }
 
-    const res = await fetch(`/Aquarium/PurchaseShopFish?fishId=${_id}&xCord=${x}&yCord=${y}`, {
-        method: 'POST',
-        body: formData
-    });
-
-    console.log("Fetched Data");
-
-    if (!res.ok) {
-        throw new Error("Failed to load fish");
+        const result = await res.json();
+        coinBalance = result.remainingCoins;
+        await animateCoinSpend(result.coinsSpent, item || storePanel, result.remainingCoins);
+        renderInventoryFish();
+    } catch (error) {
+        console.error("Could not purchase fish.", error);
+        window.alert(error instanceof Error ? error.message : "Could not purchase fish. Please try again.");
     }
-
-    const result = await res.json();
-    coinBalance = result.remainingCoins;
-    await animateCoinSpend(result.coinsSpent, item || storePanel, result.remainingCoins);
-
-    renderInventoryFish();
 }
 
 async function purchaseStoreItem(_id, item) {
@@ -1578,25 +1855,13 @@ if (document.body.classList.contains("aquarium-page")) {
     Object.values(aquariumMenuSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
     const aquariumMusic = document.querySelector("#aquarium-music");
     aquariumMusicPlayer = registerAudioPlayer(aquariumMusic, "music");
-    const aquariumTracks = [
-        "../music/Aquarium_1.mp3",
-        "../music/Aquarium_2.mp3",
-        "../music/Aquarium_3.mp3"
-    ];
-    function createAquariumPlaylist() {
-        const shuffledTracks = [...aquariumTracks];
-        for (let index = shuffledTracks.length - 1; index > 0; index -= 1) {
-            const randomIndex = Math.floor(Math.random() * (index + 1));
-            [shuffledTracks[index], shuffledTracks[randomIndex]] = [shuffledTracks[randomIndex], shuffledTracks[index]];
-        }
-        return shuffledTracks.flatMap(track => [track, "../music/Aquatic.mp3"]);
-    }
-
-    let aquariumPlaylist = createAquariumPlaylist();
-    let aquariumTrackIndex = 0;
+    const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
+    const trackNumber = ((aquariumNumber - 1) % 5) + 1;
+    const aquariumTrack = `../music/Aquarium_${trackNumber}.mp3`;
+    aquariumMusic.loop = true;
 
     function playAquariumTrack() {
-        aquariumMusic.src = aquariumPlaylist[aquariumTrackIndex];
+        aquariumMusic.src = aquariumTrack;
         aquariumMusic.load();
         aquariumMusic.play().catch(error => {
             if (error.name === "NotAllowedError") {
@@ -1618,14 +1883,9 @@ if (document.body.classList.contains("aquarium-page")) {
         });
     }
 
-    aquariumMusic.addEventListener("ended", () => {
-        aquariumTrackIndex += 1;
-        if (aquariumTrackIndex >= aquariumPlaylist.length) {
-            aquariumPlaylist = createAquariumPlaylist();
-            aquariumTrackIndex = 0;
-        }
-        playAquariumTrack();
-    });
+    aquariumMusic.addEventListener("error", () => {
+        console.error(`Unable to load the music track for Aquarium ${aquariumNumber}: ${aquariumTrack}`);
+    }, { once: true });
     playAquariumTrack();
 }
 
@@ -2041,7 +2301,8 @@ if (
 async function renderAquariumFish() {
     console.log('Rendering Fish');
     try {
-        const res = await fetch(`/Aquarium/GetAllAquariumFish?aquariumId=${1}`);
+        const aquariumId = Number(document.body.dataset.aquariumId) || 1;
+        const res = await fetch(`/Aquarium/GetAllAquariumFish?aquariumId=${aquariumId}`);
 
         if (!res.ok) {
             throw new Error("Failed to load fish");
@@ -2093,6 +2354,7 @@ async function renderAquariumFish() {
 }
 
 renderAquariumFish();
+
 
 // ----- Drag and Drop Logic
 let offSetX = 0;
@@ -2182,7 +2444,8 @@ document.addEventListener("pointerup", async event => {
                 const x = event.clientX - aquariumRect.left;
                 const y = event.clientY - aquariumRect.top;
 
-                const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
+                const aquariumId = Number(document.body.dataset.aquariumId) || 1;
+                const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}&aquariumId=${aquariumId}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"

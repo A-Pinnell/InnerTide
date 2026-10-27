@@ -10,6 +10,13 @@
         <section class="developer-tool-section">
             <h3>Tasks and Coins</h3>
             <button class="developer-tool-action" id="developerResetTasks" type="button">Reset Current Tasks</button>
+            <label class="developer-multi-aquarium-option" for="developerMultiAquarium">
+                <input id="developerMultiAquarium" type="checkbox">
+                <span>
+                    <strong>Enable Multi-Aquarium</strong>
+                    <small>Unlock the Aquarium List selector in the task menu.</small>
+                </span>
+            </label>
             <form id="developerCoinsForm">
                 <label for="developerCoinAmount">Coin amount (0-999)</label>
                 <div class="developer-tools-inline">
@@ -53,7 +60,8 @@
         max-height: min(88vh, 860px);
         flex-direction: column;
         gap: 16px;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
         padding: clamp(18px, 4vw, 32px);
         border: 5px solid rgba(195, 250, 255, .96);
         border-radius: 28px;
@@ -102,6 +110,35 @@
 
     .developer-tools-status.has-error {
         color: #ffd1d1;
+    }
+
+    .developer-multi-aquarium-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(255,255,255,.4);
+        border-radius: 12px;
+        background: rgba(0, 30, 58, .24);
+        cursor: pointer;
+    }
+
+    .developer-multi-aquarium-option input {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+        margin: 2px 0 0;
+        accent-color: #24c1e4;
+    }
+
+    .developer-multi-aquarium-option span {
+        display: grid;
+        gap: 4px;
+    }
+
+    .developer-multi-aquarium-option small {
+        color: rgba(255,255,255,.8);
+        font: 14px/1.35 Arial, sans-serif;
     }
 
     .developer-tool-section {
@@ -186,6 +223,7 @@
 
         const closeButton = document.querySelector("#developerToolsClose");
         const status = document.querySelector("#developerToolsStatus");
+        const multiAquariumToggle = document.querySelector("#developerMultiAquarium");
         const inventoryList = document.querySelector("#developerInventoryList");
         const saveInventoryButton = document.querySelector("#developerSaveInventory");
         const inventoryTabs = [...panel.querySelectorAll("[data-inventory-category]")];
@@ -197,6 +235,9 @@
         let activeInventoryCategory = "fish";
         let inventoryLoaded = false;
         let typedCharacters = "";
+        const multiAquariumStorageKey = "innerTide.multiAquariumEnabled";
+
+        multiAquariumToggle.checked = localStorage.getItem(multiAquariumStorageKey) === "true";
 
         function setDeveloperStatus(message, isError = false) {
             status.textContent = message;
@@ -307,6 +348,15 @@
         });
 
         closeButton.addEventListener("click", closeDeveloperTools);
+        multiAquariumToggle.addEventListener("change", () => {
+            const enabled = multiAquariumToggle.checked;
+            localStorage.setItem(multiAquariumStorageKey, String(enabled));
+            document.dispatchEvent(new CustomEvent("innerTide:multi-aquarium-changed", {
+                detail: { enabled }
+            }));
+            setDeveloperStatus(`Multi-Aquarium ${enabled ? "enabled" : "disabled"}.`);
+        });
+
         panel.addEventListener("click", event => {
             if (event.target === panel) closeDeveloperTools();
         });
