@@ -206,7 +206,7 @@ html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-bubbles {
 }
 
 .coin-counter.coin-arrived {
-    animation: coin-counter-pop .42s ease-out;
+    animation: coin-counter-pop .18s ease-out;
 }
 
 @keyframes coin-counter-pop {
@@ -219,8 +219,8 @@ html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-bubbles {
 .coin-flight {
     position: fixed;
     z-index: 20;
-    width: 34px;
-    height: 34px;
+    width: 70px;
+    height: 70px;
     pointer-events: none;
     object-fit: contain;
     will-change: transform, opacity;
@@ -1994,6 +1994,12 @@ a.element-action:hover {
     align-content: center;
     justify-content: center;
     right: 5%;
+    transform: none;
+}
+
+#coinCounterAquarium img {
+    width: 52px;
+    height: 52px;
     transform: none;
 }
 

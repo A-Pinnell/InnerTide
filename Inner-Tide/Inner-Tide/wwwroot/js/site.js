@@ -157,10 +157,157 @@ async function loadCoinBalance() {
     }
 }
 let coinBalance = 0;
+let coinCountAnimationTimeout = null;
 
-async function saveCoinBalance(coinAmount) {
-    console.log("Adding coins:", coinAmount);
+function pulseCoinCounter() {
+    if (!coinCounter) return;
 
+    coinCounter.classList.remove("coin-arrived");
+    void coinCounter.offsetWidth;
+    coinCounter.classList.add("coin-arrived");
+
+    if (coinCount && typeof coinCount.animate === "function") {
+        coinCount.animate([
+            { transform: "scale(1)" },
+            { transform: "scale(1.25)", offset: .45 },
+            { transform: "scale(1)" }
+        ], { duration: 180, easing: "ease-out" });
+    }
+}
+
+function incrementDisplayedCoinCount() {
+    if (!coinCount) return;
+
+    const displayedBalance = Number(coinCount.textContent.trim());
+    if (!Number.isSafeInteger(displayedBalance)) {
+        throw new TypeError("Displayed coin balance must be a safe integer.");
+    }
+
+    coinCount.textContent = String(displayedBalance + 1);
+    pulseCoinCounter();
+}
+
+function decrementDisplayedCoinCount(shouldPulse = true) {
+    if (!coinCount) return;
+
+    const displayedBalance = Number(coinCount.textContent.trim());
+    if (!Number.isSafeInteger(displayedBalance)) {
+        throw new TypeError("Displayed coin balance must be a safe integer.");
+    }
+
+    coinCount.textContent = String(displayedBalance - 1);
+    if (shouldPulse) pulseCoinCounter();
+}
+
+function animateCoinSpend(amount, destination, nextBalance) {
+    if (!Number.isSafeInteger(amount) || amount < 0) {
+        throw new TypeError("Coin spend must be a non-negative safe integer.");
+    }
+
+    if (!destination || !coinCounter || !coinCount) {
+        animateCoinCount(nextBalance);
+        return Promise.resolve(false);
+    }
+
+    if (amount === 0) {
+        animateCoinCount(nextBalance);
+        return Promise.resolve(true);
+    }
+
+    if (typeof Element.prototype.animate !== "function" || isReducedMotionEnabled()) {
+        animateCoinCount(nextBalance);
+        return Promise.resolve(false);
+    }
+
+    const sourceCoin = coinCounter.querySelector("img");
+    const source = (sourceCoin || coinCounter).getBoundingClientRect();
+    const target = destination.getBoundingClientRect();
+    const coinSize = 70;
+    const sourceX = source.left + source.width / 2 - coinSize / 2;
+    const sourceY = source.top + source.height / 2 - coinSize / 2;
+    const targetX = target.left + target.width / 2 - coinSize / 2;
+    const targetY = target.top + target.height / 2 - coinSize / 2;
+    const flights = Array.from({ length: amount }, (_, index) => {
+        const delay = index * 75;
+        const coin = document.createElement("img");
+        coin.className = "coin-flight";
+        coin.src = "img/coin.png";
+        coin.alt = "";
+        coin.style.left = `${sourceX}px`;
+        coin.style.top = `${sourceY}px`;
+        document.body.append(coin);
+
+        const animation = coin.animate([
+            { transform: "translate(0, 0) scale(.8)", opacity: 0, zIndex: "1", offset: 0 },
+            { transform: "translate(0, 0) scale(.8)", opacity: 1, zIndex: "20", offset: .16 },
+            { transform: `translate(${targetX - sourceX}px, ${targetY - sourceY}px) scale(.45)`, opacity: .2 }
+        ], {
+            duration: 550,
+            delay,
+            easing: "cubic-bezier(.22,.75,.35,1)",
+            fill: "both"
+        });
+
+        window.setTimeout(() => decrementDisplayedCoinCount(false), delay);
+
+        return animation.finished.then(() => {
+            coin.remove();
+            return true;
+        }, () => {
+            coin.remove();
+            return false;
+        });
+    });
+
+    return Promise.all(flights).then(results => {
+        const allCoinsArrived = results.every(Boolean);
+        if (!allCoinsArrived || Number(coinCount.textContent.trim()) !== nextBalance) {
+            animateCoinCount(nextBalance);
+        }
+        return allCoinsArrived;
+    });
+}
+
+function animateCoinCount(nextBalance) {
+    if (!Number.isSafeInteger(nextBalance)) {
+        throw new TypeError("Coin balance must be a safe integer.");
+    }
+
+    coinBalance = nextBalance;
+    if (!coinCount) return;
+
+    const currentBalance = Number(coinCount.textContent.trim());
+    if (!Number.isSafeInteger(currentBalance) || isReducedMotionEnabled() || currentBalance === nextBalance) {
+        if (coinCountAnimationTimeout !== null) {
+            clearTimeout(coinCountAnimationTimeout);
+            coinCountAnimationTimeout = null;
+        }
+        coinCount.textContent = String(nextBalance);
+        return;
+    }
+
+    if (coinCountAnimationTimeout !== null) {
+        clearTimeout(coinCountAnimationTimeout);
+    }
+
+    const direction = Math.sign(nextBalance - currentBalance);
+    const update = () => {
+        const displayedBalance = Number(coinCount.textContent.trim());
+        const nextStep = displayedBalance + direction;
+        coinCount.textContent = String(nextStep);
+        pulseCoinCounter();
+
+        if (nextStep !== nextBalance) {
+            coinCountAnimationTimeout = window.setTimeout(update, 200);
+        } else {
+            coinCountAnimationTimeout = null;
+        }
+    };
+
+    coinCountAnimationTimeout = window.setTimeout(update, 35);
+}
+
+async function saveCoinBalance(coinAmount, coinAnimation) {
     try {
         const res = await fetch('/Users/AddCoins', {
             method: 'POST',
@@ -176,7 +323,12 @@ async function saveCoinBalance(coinAmount) {
             throw new Error('Failed to save coins.');
         }
 
-        await loadCoinBalance();
+        const data = await res.json();
+        coinBalance = data.coins;
+        const allCoinsArrived = await coinAnimation;
+        if (!allCoinsArrived || Number(coinCount?.textContent.trim()) !== data.coins) {
+            animateCoinCount(data.coins);
+        }
     }
     catch (error) {
         console.error(error);
@@ -216,38 +368,19 @@ function setAquariumPercent(percent) {
 
 function animateCoinReward(taskRow, amount) {
     if (typeof Element.prototype.animate !== "function" || isReducedMotionEnabled()) {
-        return;
+        return Promise.resolve(false);
     }
 
     const source = taskRow.querySelector(".task-reward").getBoundingClientRect();
     const target = coinCounter.getBoundingClientRect();
-    const animateCoinArrival = () => {
-        coinCounter.classList.remove("coin-arrived");
-        void coinCounter.offsetWidth;
-        coinCounter.classList.add("coin-arrived");
-        if (typeof coinCount.animate === "function") {
-            coinCount.animate([
-                { transform: "scale(1)" },
-                { transform: "scale(1.25)", offset: .45 },
-                { transform: "scale(1)" }
-            ], { duration: 260, easing: "ease-out" });
-        }
-    };
-
-    saveCoinBalance(amount);
-
-    if (typeof Element.prototype.animate !== "function") {
-        return;
-    }
-
-    const coinSize = 34;
+    const coinSize = 70;
     const sourceX = source.left + source.width / 2 - coinSize / 2;
     const sourceY = source.top + source.height / 2 - coinSize / 2;
     const targetX = target.left + target.width / 2 - coinSize / 2;
     const targetY = target.top + target.height / 2 - coinSize / 2;
     const spread = amount > 1 ? Math.min(18, 4 + amount) : 0;
 
-    Array.from({ length: amount }, (_, index) => {
+    const arrivals = Array.from({ length: amount }, (_, index) => {
         const angle = (index / amount) * Math.PI * 2;
         const startX = sourceX + Math.cos(angle) * spread;
         const startY = sourceY + Math.sin(angle) * spread;
@@ -271,11 +404,17 @@ function animateCoinReward(taskRow, amount) {
             fill: "both"
         });
 
-        animation.finished.then(() => {
+        return animation.finished.then(() => {
             coin.remove();
-            animateCoinArrival();
-        }, () => coin.remove());
+            incrementDisplayedCoinCount();
+            return true;
+        }, () => {
+            coin.remove();
+            return false;
+        });
     });
+
+    return Promise.all(arrivals).then(results => results.every(Boolean));
 }
 
 function renderTasks(period) {
@@ -345,8 +484,8 @@ function renderTasks(period) {
             if (task.completed) return;
             console.log(task);
             task.completed = true;
-            animateCoinReward(row, task.coinReward);
-            saveCoinBalance(task.coinReward);
+            const coinAnimation = animateCoinReward(row, task.coinReward);
+            saveCoinBalance(task.coinReward, coinAnimation);
             renderTasks(period);
         };
         row.addEventListener("click", complete);
@@ -594,10 +733,8 @@ async function purchaseStoreFish(_id) {
     }
 
     const result = await res.json();
-    document.querySelector('#coin-count').textContent = result.remainingCoins;
-    console.log("Updated Coins Visually");
-
-    console.log(result.remainingCoins);
+    coinBalance = result.remainingCoins;
+    await animateCoinSpend(result.coinsSpent, storeItem || storePanel, result.remainingCoins);
 
     renderInventoryFish();
 }
@@ -618,7 +755,7 @@ async function purchaseStoreItem(_id) {
     }
 
     const result = await res.json();
-    document.querySelector('#coin-count').textContent = result.remainingCoins;
+    animateCoinCount(result.remainingCoins);
     console.log("Updated Coins Visually");
 
     console.log(result.remainingCoins);
@@ -1984,7 +2121,15 @@ document.addEventListener("pointerup", async event => {
             }
         }
 
-    } catch (error) {
-        return StatusCode(500, e.ToString());
+        } catch (error) {
+
+        }
+    } else {
+        selectedFish.style.position = "";
+        selectedFish.style.left = "";
+        selectedFish.style.top = "";
+        selectedFish.style.zIndex = "";
+        selectedFish.style.pointerEvents = "";
     }
+    selectedFish = null;
 });
