@@ -186,6 +186,97 @@ namespace Inner_Tide.Controllers {
             return Ok(new { items = requestedIds.Count });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAquariumFish() {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var aquariums = await _context.Aquariums
+                .Where(aquarium => aquarium.UserId == user.Id)
+                .OrderBy(aquarium => aquarium.AquariumId)
+                .Select(aquarium => new { aquarium.AquariumId })
+                .ToListAsync();
+            var aquariumNumbers = aquariums
+                .Select((aquarium, index) => new { aquarium.AquariumId, AquariumNumber = index + 1 })
+                .ToDictionary(aquarium => aquarium.AquariumId, aquarium => aquarium.AquariumNumber);
+            var placedFish = await _context.UserFish
+                .Where(fish => fish.UserId == user.Id && fish.IsInAquarium && fish.AquariumId != null)
+                .Select(fish => new { fish.UserFishId, fish.FishId, AquariumId = fish.AquariumId!.Value })
+                .ToListAsync();
+
+            if (placedFish.Count == 0) {
+                return Json(Array.Empty<object>());
+            }
+
+            using var response = await _httpClient.GetAsync("https://innertideapi.vercel.app/api/v1/fish");
+            if (!response.IsSuccessStatusCode) {
+                return Problem(
+                    detail: "Unable to load the fish catalog to display aquarium fish.",
+                    statusCode: StatusCodes.Status502BadGateway);
+            }
+
+            var catalog = await response.Content.ReadFromJsonAsync<List<Fish>>();
+            if (catalog == null) {
+                return Problem(
+                    detail: "The fish catalog returned no data.",
+                    statusCode: StatusCodes.Status502BadGateway);
+            }
+
+            var catalogById = catalog.ToDictionary(fish => fish.FishId, StringComparer.Ordinal);
+            var result = placedFish.Select(fish => {
+                catalogById.TryGetValue(fish.FishId, out var details);
+                aquariumNumbers.TryGetValue(fish.AquariumId, out var aquariumNumber);
+                return new {
+                    fish.UserFishId,
+                    fish.FishId,
+                    aquariumNumber,
+                    species = details?.Species ?? fish.FishId,
+                    sprite = details?.Sprite
+                };
+            });
+
+            return Json(result);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearAquariumFish() {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var aquariums = await _context.Aquariums
+                .Where(aquarium => aquarium.UserId == user.Id)
+                .ToListAsync();
+            var placedFish = await _context.UserFish
+                .Where(fish => fish.UserId == user.Id && fish.IsInAquarium)
+                .ToListAsync();
+
+            foreach (var fish in placedFish) {
+                fish.IsInAquarium = false;
+                fish.AquariumId = null;
+            }
+
+            foreach (var aquarium in aquariums) {
+                aquarium.CurrentFish = 0;
+                aquarium.CompletionPercentage = 0;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { removed = placedFish.Count });
+        }
+
         private bool IsDeveloperEnvironment() => _environment.IsDevelopment();
     }
 
