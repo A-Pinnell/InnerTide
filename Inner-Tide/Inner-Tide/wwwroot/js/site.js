@@ -2414,10 +2414,14 @@ document.addEventListener("pointermove", event => {
     selectedFish.style.top = `${event.clientY - selectedFish.offsetHeight / 2}px`;
 });
 
+const aquariumBody = document.querySelector("#aquariumBody");
+
 document.addEventListener("pointerup", async event => {
     const fishContainer=document.querySelector("#fishContainer");
     const aquarium = document.querySelector("#aquarium");
     const inventoryPanel = document.querySelector("#tankInventoryPanel");
+
+    const aquariumRect = aquarium.getBoundingClientRect();
 
     if (!selectedFish || !dragSource) {
         return;
@@ -2428,9 +2432,6 @@ document.addEventListener("pointerup", async event => {
 
     try {
         if (dragSource.classList.contains("inventoryGrabbable")) {
-
-            const aquariumRect = aquarium.getBoundingClientRect();
-
             console.log("Mouse:", event.clientX, event.clientY);
             console.log("Aquarium Rect:", aquariumRect);
 
@@ -2448,6 +2449,9 @@ document.addEventListener("pointerup", async event => {
                 const x = event.clientX - aquariumRect.left;
                 const y = event.clientY - aquariumRect.top;
 
+                const aquariumId = aquariumBody.getAttribute("data-aquarium-id");
+                console.log(aquariumId);
+
                 const res = await fetch(`/Aquarium/AddFishToAquarium`, {
                         method: "POST",
                         headers: {
@@ -2456,6 +2460,7 @@ document.addEventListener("pointerup", async event => {
                     body: JSON.stringify({
                         userFishId: Number(userFishId),
                         fishId,
+                        aquariumId: Number(aquariumId),
                         x: Math.round(x),
                         y: Math.round(y)
                     })
@@ -2472,16 +2477,32 @@ document.addEventListener("pointerup", async event => {
 
             const removeRect = removeFishBtn.getBoundingClientRect();
 
+            const aquariumId = aquariumBody.getAttribute("data-aquarium-id");
+            console.log(aquariumId);
+
             const droppedInRemove =
                 event.clientX >= removeRect.left &&
                 event.clientX <= removeRect.right &&
                 event.clientY >= removeRect.top &&
                 event.clientY <= removeRect.bottom;
 
+            const x = event.clientX - aquariumRect.left;
+            const y = event.clientY - aquariumRect.top;
+
             if (droppedInRemove) {
-                const res = await fetch(`/Aquarium/RemoveFishFromAquarium?userFishId=${userFishId}`, {
-                        method: "POST"
-                    });
+                const res = await fetch(`/Aquarium/RemoveFishFromAquarium`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        userFishId: Number(userFishId),
+                        fishId,
+                        aquariumId: Number(aquariumId),
+                        x: Math.round(x),
+                        y: Math.round(y)
+                    })
+                });
 
                 if (res.ok) {
                     await Promise.all([
