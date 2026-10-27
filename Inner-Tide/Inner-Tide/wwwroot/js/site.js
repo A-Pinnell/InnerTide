@@ -1859,10 +1859,13 @@ if (document.body.classList.contains("aquarium-page")) {
     const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
     const trackNumber = ((aquariumNumber - 1) % 5) + 1;
     const aquariumTrack = `../music/Aquarium_${trackNumber}.mp3`;
-    aquariumMusic.loop = true;
+    const aquariumTracks = [aquariumTrack, "../music/Aquatic.mp3"];
+    let currentAquariumTrackIndex = 0;
+    aquariumMusic.loop = false;
 
     function playAquariumTrack() {
-        aquariumMusic.src = aquariumTrack;
+        const track = aquariumTracks[currentAquariumTrackIndex];
+        aquariumMusic.src = track;
         aquariumMusic.load();
         aquariumMusic.play().catch(error => {
             if (error.name === "NotAllowedError") {
@@ -1870,7 +1873,7 @@ if (document.body.classList.contains("aquarium-page")) {
                 document.addEventListener("keydown", resumeAquariumMusic, { once: true });
                 return;
             }
-            console.error("Unable to play Aquarium music.", error);
+            console.error(`Unable to play Aquarium music track "${track}".`, error);
         });
     }
 
@@ -1884,9 +1887,13 @@ if (document.body.classList.contains("aquarium-page")) {
         });
     }
 
+    aquariumMusic.addEventListener("ended", () => {
+        currentAquariumTrackIndex = (currentAquariumTrackIndex + 1) % aquariumTracks.length;
+        playAquariumTrack();
+    });
     aquariumMusic.addEventListener("error", () => {
-        console.error(`Unable to load the music track for Aquarium ${aquariumNumber}: ${aquariumTrack}`);
-    }, { once: true });
+        console.error(`Unable to load Aquarium music track "${aquariumTracks[currentAquariumTrackIndex]}".`);
+    });
     playAquariumTrack();
 }
 
@@ -2531,4 +2538,3 @@ if (["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).ge
     document.documentElement.classList.add("task-menu-return");
 }
 document.documentElement.classList.add("page-assets-loading");
-
