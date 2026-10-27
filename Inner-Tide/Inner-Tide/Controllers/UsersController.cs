@@ -50,6 +50,8 @@ namespace Inner_Tide.Controllers {
                 XPForNextLevel = 100
             };
 
+            await _context.SaveChangesAsync();
+
             var result = await userManager.CreateAsync(newUser, user.Password);
 
             if (result.Succeeded) {
@@ -87,6 +89,27 @@ namespace Inner_Tide.Controllers {
             var result = await signInManager.PasswordSignInAsync(foundUser.UserName, user.Password, user.RememberMe, false);
 
             if (result.Succeeded) {
+                var userData = await userManager.GetUserAsync(User);
+                if (userData == null) {
+                    return Unauthorized();
+                }
+
+                var aquariums = _context.Aquariums.Where(a => a.UserId == userData.Id).ToList();
+
+                if (aquariums.Count() <= 0) {
+                    var aquarium = new Aquarium {
+                        UserId = userData.Id,
+                        MaxFish = 10,
+                        MaxObjects = 10,
+                        CurrentFish = 0,
+                        CurrentObjects = 0,
+                        CompletionPercentage = 0
+                    };
+
+                    _context.Aquariums.Add(aquarium);
+                    await _context.SaveChangesAsync();
+                }
+
                 return RedirectToAction("Index", "Home");
             } else {
                 ModelState.AddModelError("", "Email or Password is Incorrect");

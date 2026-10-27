@@ -340,6 +340,17 @@ namespace Inner_Tide.Controllers {
             return NotFound();
         }
 
+        //[HttpGet]
+        //public async Task<IActionResult> GetAllUserAquariums() {
+        //    var user = await userManager.GetUserAsync(User);
+
+        //    if (user == null) {
+        //        return Unauthorized();
+        //    }
+
+
+        //}
+
         [HttpPost]
         public async Task<IActionResult> CreateNewAquarium(int aquariumNumber) {
             var user = await userManager.GetUserAsync(User);
