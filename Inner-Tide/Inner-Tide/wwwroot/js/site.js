@@ -5,7 +5,6 @@ let taskData = {
 };
 
 const selectedAquariumStorageKey = `innerTide.selectedAquarium.${document.body.dataset.accountId}`;
-const aquariumBackgroundColorOverrides = {};
 
 function getAquariumBackgroundNumber(aquariumNumber) {
     return aquariumNumber <= 5 ? aquariumNumber : ((aquariumNumber - 6) % 5) + 1;
@@ -15,17 +14,6 @@ function isValidAquariumNumber(aquariumNumber) {
     return Number.isSafeInteger(aquariumNumber) && aquariumNumber >= 1 && aquariumNumber <= 2147483647;
 }
 
-function getAquariumBackgroundColor(aquariumNumber) {
-    const customColor = aquariumBackgroundColorOverrides[aquariumNumber];
-    if (customColor) return customColor;
-
-    const seed = Math.imul(aquariumNumber, 2654435761) >>> 0;
-    const hue = (aquariumNumber * 137.50776405003785) % 360;
-    const saturation = 58 + (seed % 23);
-    const lightness = 38 + ((seed >>> 8) % 20);
-    return `hsl(${hue} ${saturation}% ${lightness}%)`;
-}
-
 const aquariumScene = document.querySelector(".aquarium-scene");
 if (aquariumScene) {
     const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
@@ -33,12 +21,7 @@ if (aquariumScene) {
     const backgroundNumber = Number(document.body.dataset.aquariumBackgroundNumber) || getAquariumBackgroundNumber(aquariumNumber);
     const backgroundUrl = new URL(`../backgrounds/Aquarium_${backgroundNumber}.png`, document.baseURI);
     aquariumScene.style.setProperty("--aquarium-background-image", `url("${backgroundUrl.href}")`);
-
-    if (aquariumNumber > 5) {
-        const tintColor = getAquariumBackgroundColor(aquariumNumber);
-        document.body.style.setProperty("--aquarium-base-color", tintColor);
-        aquariumScene.style.setProperty("--aquarium-background-tint-color", tintColor);
-    }
+    window.aquariumColors.apply(document.body, aquariumScene, aquariumNumber);
 }
 
 function revealPageAfterAssetsLoad() {
@@ -839,7 +822,8 @@ if (gameShell) {
                 const isVisible = Boolean(entry || isCreatePlaceholder);
                 const backgroundNumber = getAquariumBackgroundNumber(aquariumNumber);
                 const backgroundUrl = new URL(`../backgrounds/Aquarium_${backgroundNumber}.png`, document.baseURI);
-                const tintColor = aquariumNumber > 5 ? getAquariumBackgroundColor(aquariumNumber) : null;
+                const colors = window.aquariumColors.get(aquariumNumber);
+                const tintColor = colors.backgroundTint;
                 const progress = preview.querySelector(".aquarium-selector-progress");
                 preview.classList.toggle("is-current", offset === 0);
                 preview.classList.toggle("is-create-placeholder", isCreatePlaceholder);
@@ -850,7 +834,7 @@ if (gameShell) {
                     : tintColor
                     ? `linear-gradient(color-mix(in srgb, ${tintColor} 55%, transparent), color-mix(in srgb, ${tintColor} 55%, transparent)), url("${backgroundUrl.href}")`
                     : `url("${backgroundUrl.href}")`;
-                preview.style.backgroundColor = isCreatePlaceholder ? "#777" : tintColor || "transparent";
+                preview.style.backgroundColor = isCreatePlaceholder ? "#777" : colors.base;
                 preview.style.filter = "none";
                 progress.textContent = entry ? `${entry.completionPercentage}%` : "";
             });

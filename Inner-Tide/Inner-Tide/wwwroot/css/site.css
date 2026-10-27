@@ -1976,13 +1976,6 @@ a.element-action:hover {
     background: var(--aquarium-base-color, #0086B6);
 }
 
-.aquarium-page[data-aquarium-number="2"] {
-    --aquarium-base-color: #000;
-    --aquarium-sand-back: #71834a;
-    --aquarium-sand-middle: #8fa85a;
-    --aquarium-sand-front: #b7c87a;
-}
-
     .aquarium-page.aquarium-enter #aquarium {
         opacity: 0;
     }
