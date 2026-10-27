@@ -7,6 +7,12 @@ namespace Inner_Tide.Models {
         [Required]
         public bool IsInAquarium { get; set; }
 
+        [Required]
+        public int xCord { get; set; }
+
+        [Required]
+        public int yCord { get; set; }
+
         //Foreign Key
         [Required]
         public string UserId { get; set; }

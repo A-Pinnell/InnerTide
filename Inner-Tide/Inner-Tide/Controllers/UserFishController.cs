@@ -23,9 +23,5 @@ namespace Inner_Tide.Controllers {
         public IActionResult Index() {
             return View();
         }
-
-        public async Task<IActionResult> CreateUserFish(string fishId) {
-            return View();
-        }
     }
 }

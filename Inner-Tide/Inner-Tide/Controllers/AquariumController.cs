@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace Inner_Tide.Controllers {
     public class AquariumController : Controller {
@@ -171,7 +172,9 @@ namespace Inner_Tide.Controllers {
                     var userFish = new UserFish {
                         UserId = user.Id,
                         FishId = fishId,
-                        IsInAquarium = false
+                        IsInAquarium = false,
+                        xCord = 0,
+                        yCord = 0,
                     };
 
                     _context.UserFish.Add(userFish);
@@ -216,7 +219,7 @@ namespace Inner_Tide.Controllers {
                     var userItem = new UserItem {
                         UserId = user.Id,
                         ItemId = itemId,
-                        IsInAquarium = false
+                        IsInAquarium = false,
                     };
 
                     _context.UserItems.Add(userItem);
@@ -265,6 +268,26 @@ namespace Inner_Tide.Controllers {
             return NotFound();
         }
 
+        public async Task<IActionResult> GetAllAquariumFish(int aquariumId) {
+            try {
+                var user = await userManager.GetUserAsync(User);
+
+                if (user == null) {
+                    return NotFound();
+                }
+
+                var userFishInAquarium = await _context.UserFish.Where(uf => uf.UserId == user.Id 
+                    && uf.IsInAquarium == true 
+                    && uf.AquariumId == aquariumId).ToListAsync();
+
+                List<UserFish> userFishList = new List<UserFish>();
+
+                return Json(userFishList);
+            } catch (Exception e) {}
+
+            return NotFound();
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddFishToAquarium(string fishId, string userFishId) {
             try {
@@ -275,19 +298,33 @@ namespace Inner_Tide.Controllers {
                 }
 
                 var aquariums = await _context.Aquariums.Where(a => a.UserId == user.Id).ToListAsync();
-                var userFish = _context.UserFish.Where(uf => uf.UserId == user.Id && uf.UserFishId.ToString() == userFishId).ToList();
+                var userFish = _context.UserFish.Where(uf => uf.UserId == user.Id && uf.UserFishId.ToString() == userFishId);
 
-                if (aquariums == null || userFish == null) {
+                if (aquariums.Any() || userFish.Any()) {
                     return NotFound();
                 }
 
+
                 if (aquariums.Count() == 1) {
                     var aquarium = aquariums.First();
+
+                    Console.WriteLine($"CurrentFish: {aquarium.CurrentFish}");
+                    Console.WriteLine($"MaxFish: {aquarium.MaxFish}");
 
                     if ( (aquarium.CurrentFish + 1) <= aquarium.MaxFish ) {
                         aquarium.CurrentFish += 1;
 
                         userFish.First().IsInAquarium = true;
+                        userFish.First().AquariumId = aquarium.AquariumId;
+
+                        Console.WriteLine(_context.ChangeTracker.DebugView.LongView);
+
+                        var changes = await _context.SaveChangesAsync();
+
+                        Console.WriteLine($"Changes saved: {changes}");
+                        Console.WriteLine(_context.Entry(userFish.First()).State);
+                        return Ok();
+
                     }
 
                 } else {
@@ -300,8 +337,16 @@ namespace Inner_Tide.Controllers {
                             aquarium.CurrentFish += 1;
 
                             userFish.First().IsInAquarium = true;
+                            userFish.First().AquariumId = aquarium.AquariumId;
+
+                            var changes = await _context.SaveChangesAsync();
+
+                            Console.WriteLine($"Changes saved: {changes}");
+                            Console.WriteLine(_context.Entry(userFish.First()).State);
+                            return Ok();
                         }
                     }
+                    return BadRequest("All aquariums are full.");
                 }
 
             } catch (Exception e) {

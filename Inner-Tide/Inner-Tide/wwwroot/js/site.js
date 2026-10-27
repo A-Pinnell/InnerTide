@@ -790,7 +790,7 @@ async function renderInventoryFish() {
         fish.forEach(f => {
 
             const item = document.createElement("div");
-            item.className = "store-item fishGrabbable";
+            item.className = "store-item inventoryGrabbable";
             item.setAttribute("value", f.userFishId);
             item.setAttribute("value2", f.fishId);
 
@@ -1824,31 +1824,75 @@ if (
     });
 }
 
-//Drag and Drop Logic
-let selectedFish = null;
+async function renderAquariumFish() {
+    try {
+        const res = await fetch(`/Aquarium/GetAllAquariumFish?${1}`);
+
+        if (!res.ok) {
+            throw new Error("Failed to load fish");
+        }
+
+        const fish = await res.json();
+
+        const fishContainer =
+            document.querySelector("#fishContainer .store-items");
+
+        if (!fishContainer) return;
+
+        fishContainer.innerHTML = "";
+
+        fish.forEach(f => {
+            const item = document.createElement("div");
+            item.setAttribute("value", f.userFishId);
+            item.setAttribute("value2", f.fishId);
+
+            item.innerHTML = `
+            <div class="store-item-image">
+                <img"
+                     src="${f.sprite}"
+                     draggable="false"
+                     loading="lazy"
+                     decoding="async"
+                     alt="${f.species}">
+            </div>`;
+
+            fishContainer.appendChild(item);
+        });
+
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+
+// ----- Drag and Drop Logic
 let offSetX = 0;
 let offSetY = 0;
 
-document.addEventListener("pointerdown", async event => {
-    selectedFish = event.target.closest(".fishGrabbable");;
-    console.log(selectedFish);
+// Drag and Drop Logic
+let selectedFish = null; // Dragged Ghost
+let dragSource = null;   // Original Fish
 
-    if (!selectedFish) {
+document.addEventListener("pointerdown", event => {
+    const inventoryPanel = document.querySelector("#tankInventoryPanel");
+
+    if (event.target.closest(".inventoryGrabbable")) {
+        dragSource = event.target.closest(".inventoryGrabbable");
+        inventoryPanel?.classList.remove("is-open");
+
+    } else if (event.target.closest(".aquariumGrabbable")) {
+        dragSource = event.target.closest(".aquariumGrabbable");
+        inventoryPanel?.classList.add("is-open");
+
+    } else {
         return;
     }
 
-    console.log("Dragging: ", selectedFish);
+    const rect = dragSource.getBoundingClientRect();
 
-    selectedFish = selectedFish.cloneNode(true);
+    selectedFish = dragSource.cloneNode(true);
 
     document.body.appendChild(selectedFish);
-
-    const inventoryPanel = document.querySelector("#tankInventoryPanel");
-    //const inventoryBtn = document.querySelector("#inventoryBtn");
-
-    inventoryPanel.classList.remove("is-open");
-
-    const rect = selectedFish.getBoundingClientRect();
 
     selectedFish.style.position = "fixed";
     selectedFish.style.pointerEvents = "none";
@@ -1858,90 +1902,89 @@ document.addEventListener("pointerdown", async event => {
     selectedFish.style.width = `${rect.width}px`;
     selectedFish.style.height = `${rect.height}px`;
 
-
-    offSetX = rect.width / 2;
-    offSetY = rect.height / 2;
-
-    console.log(selectedFish);
+    console.log("Dragging:", dragSource);
 });
 
-document.addEventListener("pointermove", async event => {
+
+document.addEventListener("pointermove", event => {
     if (!selectedFish) {
         return;
     }
 
-    selectedFish.style.left =
-        `${event.clientX - selectedFish.offsetWidth / 2}px`;
-
-    selectedFish.style.top =
-        `${event.clientY - selectedFish.offsetHeight / 2}px`;
-
-    console.log(selectedFish.style.left);
-    console.log(selectedFish.style.top);
-    console.log(event.clientX, event.clientY);
+    selectedFish.style.left = `${event.clientX - selectedFish.offsetWidth / 2}px`;
+    selectedFish.style.top = `${event.clientY - selectedFish.offsetHeight / 2}px`;
 });
+
 
 document.addEventListener("pointerup", async event => {
-    if (!selectedFish) {
-        return;
-    }
-
-    const fishContainer = document.querySelector("#fishContainer");
+    const fishContainer =document.querySelector("#fishContainer");
     const aquarium = document.querySelector("#aquarium");
+    const inventoryPanel = document.querySelector("#tankInventoryPanel");
 
-    const userFishId = selectedFish.getAttribute("value");
-    const fishId = selectedFish.getAttribute("value2");
-
-    if (!fishContainer) {
-        selectedFish = null;
+    if (!selectedFish || !dragSource) {
         return;
     }
 
-    fishContainer.style.height = aquarium.style.height;
-    fishContainer.style.width = aquarium.style.width;
+    const userFishId = dragSource.getAttribute("value");
+    const fishId = dragSource.getAttribute("value2");
 
-    const aquariumRect = aquarium.getBoundingClientRect();
+    try {
+        if (dragSource.classList.contains("inventoryGrabbable")) {
 
-    const droppedInAquarium =
-        event.clientX >= aquariumRect.left &&
-        event.clientX <= aquariumRect.right &&
-        event.clientY >= aquariumRect.top &&
-        event.clientY <= aquariumRect.bottom;
+            const aquariumRect =
+                aquarium.getBoundingClientRect();
 
-    if (droppedInAquarium) {
-        const x = event.clientX - aquariumRect.left;
-        const y = event.clientY - aquariumRect.top;
+            const droppedInAquarium =
+                event.clientX >= aquariumRect.left &&
+                event.clientX <= aquariumRect.right &&
+                event.clientY >= aquariumRect.top &&
+                event.clientY <= aquariumRect.bottom;
 
-        fishContainer.appendChild(selectedFish);
+            if (droppedInAquarium) {
+                const x = event.clientX - aquariumRect.left;
+                const y = event.clientY - aquariumRect.top;
 
-        try {
-            const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    userFishId: userFishId
-                })
-            });
+                const res = await fetch(`/Aquarium/AddFishToAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            userFishId,
+                            fishId,
+                            x,
+                            y
+                        })
+                    });
 
-            if (res.ok) {
-
-                selectedFish.remove();
-                renderInventoryFish();
-                renderAquariumFish();
-
+                if (res.ok) {
+                    await renderInventoryFish();
+                    await renderAquariumFish();
+                }
             }
+        } else if ( dragSource.classList.contains("aquariumGrabbable") ) {
 
-        } catch (error) {
+            const inventoryRect = inventoryPanel.getBoundingClientRect();
 
+            const droppedInInventory =
+                event.clientX >= inventoryRect.left &&
+                event.clientX <= inventoryRect.right &&
+                event.clientY >= inventoryRect.top &&
+                event.clientY <= inventoryRect.bottom;
+
+            if (droppedInInventory) {
+                const res = await fetch(`/Aquarium/RemoveFishFromAquarium?userFishId=${userFishId}&fishId=${fishId}`, {
+                        method: "POST"
+                    });
+
+                if (res.ok) {
+                    await renderInventoryFish();
+                    await renderAquariumFish();
+                }
+            }
         }
-    } else {
-        selectedFish.style.position = "";
-        selectedFish.style.left = "";
-        selectedFish.style.top = "";
-        selectedFish.style.zIndex = "";
-        selectedFish.style.pointerEvents = "";
+
+    } catch (error) {
+        return StatusCode(500, e.ToString());
     }
-    selectedFish = null;
 });

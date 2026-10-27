@@ -219,6 +219,12 @@ namespace Inner_Tide.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int>("xCord")
+                        .HasColumnType("int");
+
+                    b.Property<int>("yCord")
+                        .HasColumnType("int");
+
                     b.HasKey("UserFishId");
 
                     b.HasIndex("AquariumId");
