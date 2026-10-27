@@ -4,7 +4,7 @@ let taskData = {
     weekly: []
 };
 
-const selectedAquariumStorageKey = "innerTide.selectedAquarium";
+const selectedAquariumStorageKey = `innerTide.selectedAquarium.${document.body.dataset.accountId}`;
 const aquariumBackgroundColorOverrides = {};
 
 function getAquariumBackgroundNumber(aquariumNumber) {

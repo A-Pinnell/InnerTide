@@ -31,13 +31,13 @@ namespace Inner_Tide.Controllers {
                 return Redirect("/Users/Index");
             }
 
-            if (aquarium < 1) {
-                return NotFound();
-            }
-
             var user = await userManager.GetUserAsync(User);
             if (user == null) {
                 return Unauthorized();
+            }
+
+            if (aquarium < 1) {
+                return NotFound();
             }
 
             var aquariums = await GetOrCreateAquariumsAsync(user.Id);
@@ -47,6 +47,7 @@ namespace Inner_Tide.Controllers {
 
             var selectedAquarium = aquariums[aquarium - 1];
             var backgroundNumber = aquarium <= 5 ? aquarium : ((aquarium - 6) % 5) + 1;
+            ViewData["AccountId"] = user.Id;
             ViewData["AquariumNumber"] = aquarium;
             ViewData["AquariumId"] = selectedAquarium.AquariumId;
             ViewData["AquariumBackgroundNumber"] = backgroundNumber;

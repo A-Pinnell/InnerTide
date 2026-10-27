@@ -28,7 +28,12 @@ namespace Inner_Tide.Controllers
             }
 
             var user = await userManager.GetUserAsync(User);
-            if (user != null && !await _context.Aquariums.AnyAsync(aquarium => aquarium.UserId == user.Id)) {
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            ViewData["AccountId"] = user?.Id;
+            if (!await _context.Aquariums.AnyAsync(aquarium => aquarium.UserId == user.Id)) {
                 _context.Aquariums.Add(new Aquarium {
                     MaxFish = 10,
                     MaxObjects = 5,

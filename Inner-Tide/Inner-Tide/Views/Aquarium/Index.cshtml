@@ -5,6 +5,7 @@
 @{
     ViewData["Title"] = "Aquarium Menu";
 
+    var accountId = ViewData["AccountId"] as string ?? "";
     var coinCount = 0;
     var aquariumNumber = (int)ViewData["AquariumNumber"]!;
     var aquariumId = (int)ViewData["AquariumId"]!;
@@ -19,7 +20,7 @@
     }
 }
 
-<body id="aquariumBody" class="aquarium-page aquarium-enter" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber">
+<body id="aquariumBody" class="aquarium-page aquarium-enter" data-account-id="@accountId" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber">
     <audio id="aquarium-music" autoplay preload="auto"></audio>
     <main>
         <div id="aquarium">

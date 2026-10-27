@@ -5,6 +5,7 @@
 @{
     ViewData["Title"] = "Task Menu";
 
+    var accountId = ViewData["AccountId"] as string ?? "";
     var coinCount = 0;
     var userName = "Chris Concept";
 
@@ -19,7 +20,7 @@
     }
 }
 
-<body class="task-menu-page">
+<body class="task-menu-page" data-account-id="@accountId">
     <main class="game-shell">
         <header class="player-card profile-collapsed">
             <div class="profile-details" id="profile-details">
