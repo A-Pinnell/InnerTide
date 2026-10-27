@@ -2121,15 +2121,12 @@ document.addEventListener("pointerup", async event => {
             }
         }
 
-        } catch (error) {
-
-        }
-    } else {
-        selectedFish.style.position = "";
-        selectedFish.style.left = "";
-        selectedFish.style.top = "";
-        selectedFish.style.zIndex = "";
-        selectedFish.style.pointerEvents = "";
-    }
+    } catch (error) {} 
+    selectedFish.style.position = "";
+    selectedFish.style.left = "";
+    selectedFish.style.top = "";
+    selectedFish.style.zIndex = "";
+    selectedFish.style.pointerEvents = "";
     selectedFish = null;
+    
 });
