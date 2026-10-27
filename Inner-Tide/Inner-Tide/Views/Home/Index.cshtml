@@ -19,20 +19,6 @@
     }
 }
 
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#eb9fe4">
-    <script>
-        if (["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"))) {
-            document.documentElement.classList.add("task-menu-return");
-        }
-        document.documentElement.classList.add("page-assets-loading", "page-assets-loading-task-menu");
-    </script>
-    <title>Task Menu — Inner Tide</title>
-</head>
 <body class="task-menu-page">
     <main class="game-shell">
         <header class="player-card profile-collapsed">
@@ -195,4 +181,3 @@
         @await Html.PartialAsync("_DeveloperTools")
     </main>
 </body>
-</html>

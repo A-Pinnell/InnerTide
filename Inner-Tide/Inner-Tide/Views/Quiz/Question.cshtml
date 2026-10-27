@@ -1,14 +1,11 @@
-﻿<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#102c70">
-    <title>Wellness Quiz — Inner Tide</title>
-    <script>document.documentElement.classList.add("page-assets-loading");</script>
-    <link rel="stylesheet" href="../css/site.css">
-    <script src="../js/site.js" defer></script>
-</head>
+﻿@using Inner_Tide.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<User> UserManager
+
+@{
+    ViewData["Title"] = "Quiz";
+}
+
 <body class="question-page">
     <main class="question-screen">
         <div class="question-background"></div>

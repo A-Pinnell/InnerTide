@@ -210,15 +210,8 @@ async function loadCoinBalance() {
             coinCount.textContent = coinBalance;
         }
 
-        if (document.documentElement.classList.contains("task-menu-auth-check")) {
-            playTaskMenuStartupVideo();
-        }
-
     } catch (error) {
         console.error(error);
-        if (document.documentElement.classList.contains("task-menu-auth-check")) {
-            finishTaskMenuAuthCheck();
-        }
     }
 }
 let coinBalance = 0;
@@ -1466,69 +1459,13 @@ if (document.body.classList.contains("users-page") || document.body.classList.co
 }
 
 if (document.body.classList.contains("task-menu-page")) {
-    const loginNavigationKey = "innerTide.loginNavigation";
-    const arrivedFromLogin = sessionStorage.getItem(loginNavigationKey) === "true";
-    sessionStorage.removeItem(loginNavigationKey);
     const isInternalReturn = ["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"));
-    if (!arrivedFromLogin && !isInternalReturn) {
-        document.documentElement.classList.add("task-menu-auth-check");
-    }
     if (isInternalReturn) {
         document.documentElement.classList.add("task-menu-return");
     }
     if (localStorage.getItem("innerTide.graphicalPresentation") === "advanced") {
         document.documentElement.classList.add("graphical-advanced");
     }
-}
-
-function playTaskMenuStartupVideo() {
-    const startupVideoOverlay = document.querySelector("#task-menu-startup-video");
-    const startupVideoPlayer = document.querySelector("#task-menu-startup-video-player");
-    let startupVideoFinished = false;
-
-    const finishStartupVideo = () => {
-        if (startupVideoFinished) return;
-        startupVideoFinished = true;
-        document.removeEventListener("pointerdown", startStartupVideo);
-        document.removeEventListener("keydown", startStartupVideo);
-        startupVideoOverlay.classList.add("is-finished");
-        document.documentElement.classList.remove("task-menu-stallion-pending", "task-menu-auth-check");
-        document.documentElement.classList.add("task-menu-stallion-revealing");
-        window.setTimeout(() => {
-            startupVideoOverlay.remove();
-            document.documentElement.classList.remove("task-menu-stallion-revealing");
-        }, 450);
-    };
-
-    const startStartupVideo = () => {
-        document.removeEventListener("pointerdown", startStartupVideo);
-        document.removeEventListener("keydown", startStartupVideo);
-        startupVideoPlayer.play().catch(error => {
-            if (error.name === "NotAllowedError") {
-                document.addEventListener("pointerdown", startStartupVideo, { once: true });
-                document.addEventListener("keydown", startStartupVideo, { once: true });
-                return;
-            }
-            console.error("Unable to play the post-login startup video.", error);
-            finishStartupVideo();
-        });
-    };
-
-    startupVideoOverlay.hidden = false;
-    document.documentElement.classList.remove("task-menu-auth-check");
-    document.documentElement.classList.add("task-menu-stallion-pending");
-    startupVideoPlayer.addEventListener("ended", finishStartupVideo, { once: true });
-    startupVideoPlayer.addEventListener("error", () => {
-        console.error("Unable to load the post-login startup video.", startupVideoPlayer.error);
-        finishStartupVideo();
-    }, { once: true });
-    startupVideoPlayer.src = "vid/Stallion.mp4";
-    startupVideoPlayer.load();
-    startStartupVideo();
-}
-
-function finishTaskMenuAuthCheck() {
-    document.documentElement.classList.remove("task-menu-auth-check");
 }
 
 function playSideNavigationSound(position) {
@@ -1875,8 +1812,6 @@ if (
     document.querySelector("#registerContainer") &&
     document.querySelector("#loginContainer")
 ) {
-    const loginNavigationKey = "innerTide.loginNavigation";
-    sessionStorage.removeItem(loginNavigationKey);
     const loginMusic = registerAudioPlayer(document.querySelector("#login-music"), "music");
 
     function startLoginMusic() {
@@ -1989,9 +1924,6 @@ if (
         register: document.querySelector("#registerContainer"),
         login: document.querySelector("#loginContainer")
     };
-    authViews.login.querySelector("form").addEventListener("submit", () => {
-        sessionStorage.setItem(loginNavigationKey, "true");
-    });
     let authTransitionTimeout;
     let authEnterTimeout;
 
@@ -2255,3 +2187,8 @@ document.addEventListener("pointerup", async event => {
     selectedFish = null;
     
 });
+
+if (["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"))) {
+    document.documentElement.classList.add("task-menu-return");
+}
+document.documentElement.classList.add("page-assets-loading");

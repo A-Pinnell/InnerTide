@@ -1167,10 +1167,10 @@ html.task-menu-return.task-menu-ready .aquarium-tab {
     box-shadow: none;
 }
 
-    .aquarium-transition .aquarium-tab::before,
-    .task-menu-transition .task-tab::before {
+.aquarium-transition .aquarium-tab::before,
+.task-menu-transition .task-tab::before {
         opacity: 1;
-    }
+}
 
 .task-menu-page.task-menu-transitioning::after {
     position: fixed;
@@ -1207,6 +1207,25 @@ html.task-menu-return .game-shell {
     opacity: 1;
 }
 
+.task-menu-transition .task-tab {
+    z-index: 10;
+    left: 0;
+    width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.aquarium-transition .aquarium-tab span,
+.task-menu-transition .task-tab span {
+        animation: side-tab-text-exit .15s ease forwards;
+}
+
+.aquarium-transition .aquarium-tab b,
+.task-menu-transition .task-tab b {
+        opacity: 0;
+        transition: opacity .15s ease;
+}
+
 .task-tab {
     top: 0;
     left: -1.5%;
@@ -1220,24 +1239,14 @@ html.task-menu-return .game-shell {
     transition: left .95s cubic-bezier(.22, 1, .36, 1), width .95s cubic-bezier(.22, 1, .36, 1), border-radius .8s ease, background .8s ease, box-shadow .8s ease;
 }
 
-.task-menu-transition .task-tab {
-    z-index: 10;
-    left: 0;
-    width: 100%;
-    border-radius: 0;
-    box-shadow: none;
+.aquarium-transition .aquarium-tab span {
+        animation: side-tab-text-exit .15s ease forwards;
 }
 
-    .aquarium-transition .aquarium-tab span,
-    .task-menu-transition .task-tab span {
-        animation: side-tab-text-exit .15s ease forwards;
-    }
-
-    .aquarium-transition .aquarium-tab b,
-    .task-menu-transition .task-tab b {
+.aquarium-transition .aquarium-tab b {
         opacity: 0;
         transition: opacity .15s ease;
-    }
+}
 
 @keyframes side-tab-text-exit {
     from {
@@ -4028,14 +4037,6 @@ html.page-assets-ready::before {
     transition: opacity .35s ease;
 }
 
-html.page-assets-loading-task-menu::before {
-    background: #dc9be8;
-}
-
-html.page-assets-loading-aquarium::before {
-    background: #0086B6;
-}
-
 html.page-assets-ready::before {
     opacity: 0;
     pointer-events: none;
@@ -4062,37 +4063,6 @@ html.page-assets-loading::after {
     100% {
         opacity: 1;
     }
-}
-
-.task-menu-startup-video[hidden] {
-    display: none;
-}
-
-html.task-menu-stallion-pending body {
-    background: #000;
-}
-
-html.task-menu-auth-check body {
-    background: #000;
-}
-
-    html.task-menu-auth-check body.task-menu-page .game-shell {
-        opacity: 0;
-        pointer-events: none;
-    }
-
-html.task-menu-stallion-pending body.task-menu-page .game-shell,
-html.task-menu-stallion-revealing body.task-menu-page .game-shell {
-    transition: opacity .45s ease;
-}
-
-html.task-menu-stallion-pending body.task-menu-page .game-shell {
-    opacity: 0;
-    pointer-events: none;
-}
-
-html.task-menu-stallion-revealing body.task-menu-page .game-shell {
-    opacity: 1;
 }
 
 html.reduced-motion-transitioning::after,
