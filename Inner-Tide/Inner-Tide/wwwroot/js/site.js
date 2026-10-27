@@ -4,6 +4,71 @@ let taskData = {
     weekly: []
 };
 
+function revealPageAfterAssetsLoad() {
+    if (!document.documentElement.classList.contains("page-assets-loading")) return;
+
+    const backgroundUrls = new Set();
+    const backgroundUrlPattern = /url\((?:"([^"]+)"|'([^']+)'|([^)]*))\)/g;
+
+    document.querySelectorAll("*").forEach(element => {
+        [null, "::before", "::after"].forEach(pseudoElement => {
+            const backgroundImage = getComputedStyle(element, pseudoElement).backgroundImage;
+            for (const match of backgroundImage.matchAll(backgroundUrlPattern)) {
+                const url = (match[1] || match[2] || match[3] || "").trim();
+                if (url) backgroundUrls.add(new URL(url, document.baseURI).href);
+            }
+        });
+    });
+
+    const backgroundLoads = Array.from(backgroundUrls, url => new Promise(resolve => {
+        const image = new Image();
+        image.onload = () => resolve();
+        image.onerror = () => {
+            console.error(`Unable to load page background: ${url}`);
+            resolve();
+        };
+        image.src = url;
+        if (image.complete) {
+            if (image.naturalWidth > 0) {
+                resolve();
+            } else {
+                image.onerror();
+            }
+        }
+    }));
+
+    const fontsLoaded = Promise.all([
+        document.fonts.load('16px "Neuropolx"'),
+        document.fonts.load('16px "Aquino"'),
+        document.fonts.load('16px "Ipanema"'),
+        document.fonts.load('16px "Hydration"'),
+        document.fonts.ready
+    ]);
+
+    const allAssetsLoaded = Promise.all([fontsLoaded, ...backgroundLoads]);
+    let loadingTimeoutId;
+    const loadingTimeout = new Promise(resolve => {
+        loadingTimeoutId = window.setTimeout(() => {
+            console.warn("Page assets are taking too long to load; revealing the page.");
+            resolve();
+        }, 15000);
+    });
+
+    Promise.race([allAssetsLoaded, loadingTimeout]).then(() => {
+        window.clearTimeout(loadingTimeoutId);
+        document.documentElement.classList.remove("page-assets-loading");
+        document.documentElement.classList.add("page-assets-ready");
+        window.setTimeout(() => {
+            document.documentElement.classList.remove("page-assets-ready");
+        }, 400);
+    }).catch(error => {
+        console.error("Unable to prepare page assets.", error);
+        document.documentElement.classList.remove("page-assets-loading");
+    });
+}
+
+revealPageAfterAssetsLoad();
+
 // Task Menu Variables
 const bedIcon = '<svg viewBox="0 0 64 48"><path d="M5 8h8v17h46v17h-6v-6H11v6H5V8Zm9 17v-9h15a8 8 0 0 1 8 9H14Z"/></svg>';
 const taskList = document.querySelector("#task-list");
@@ -763,6 +828,40 @@ async function purchaseStoreItem(_id) {
     renderInventoryItems();
 }
 
+function showStoreImageLoading(item) {
+    const image = item.querySelector(".store-item-image > img");
+    if (!image) return;
+
+    const imageFrame = image.parentElement;
+    imageFrame.classList.add("is-loading");
+    let revealStarted = false;
+
+    const revealLoadedImage = () => {
+        if (revealStarted) return;
+        revealStarted = true;
+
+        if (typeof image.decode !== "function") {
+            imageFrame.classList.remove("is-loading");
+            return;
+        }
+
+        image.decode().then(() => {
+            imageFrame.classList.remove("is-loading");
+        }).catch(error => {
+            console.error(`Could not decode store image "${image.alt}".`, error);
+        });
+    };
+
+    image.addEventListener("load", revealLoadedImage, { once: true });
+    image.addEventListener("error", () => {
+        console.error(`Could not load store image "${image.alt}".`);
+    }, { once: true });
+
+    if (image.complete && image.naturalWidth > 0) {
+        revealLoadedImage();
+    }
+}
+
 async function renderStoreItems() {
     try {
 
@@ -802,6 +901,7 @@ async function renderStoreItems() {
                 <span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">${i.price}</span></span>
             </div>`;
 
+            showStoreImageLoading(item);
             storeContainer.appendChild(item);
         });
 
@@ -850,6 +950,7 @@ async function renderStoreFish() {
                 <span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">${f.price}</span></span>
             </div>`;
 
+            showStoreImageLoading(item);
             storeContainer.appendChild(item);
         });
 
@@ -897,6 +998,7 @@ async function renderInventoryItems() {
                 <p class="store-product-name">${i.name}</p>
             </div>`;
 
+            showStoreImageLoading(item);
             inventoryContainer.appendChild(item);
         });
 
@@ -945,6 +1047,7 @@ async function renderInventoryFish() {
                 <p class="store-product-name">${f.species}</p>
             </div>`;
 
+            showStoreImageLoading(item);
             inventoryContainer.appendChild(item);
         });
 
@@ -961,9 +1064,30 @@ if (document.body.classList.contains("aquarium-page")) {
     renderStoreItems();
     const hideButton = document.querySelector("#aquariumHideButton");
     const hideExitButton = document.querySelector("#aquariumHideExit");
+    const hideModeTime = document.querySelector("#hideModeTime");
+    const hideModeDate = document.querySelector("#hideModeDate");
+    let hideModeClockInterval;
 
-    if (hideButton && hideExitButton) {
+    const updateHideModeClock = () => {
+        const now = new Date();
+        hideModeTime.dateTime = now.toISOString();
+        hideModeTime.textContent = new Intl.DateTimeFormat(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit"
+        }).format(now);
+        hideModeDate.textContent = new Intl.DateTimeFormat(undefined, {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric"
+        }).format(now);
+    };
+
+    if (hideButton && hideExitButton && hideModeTime && hideModeDate) {
         hideButton.addEventListener("click", () => {
+            updateHideModeClock();
+            hideModeClockInterval = window.setInterval(updateHideModeClock, 1000);
             hideExitButton.hidden = false;
             window.requestAnimationFrame(() => {
                 document.body.classList.add("aquarium-hide-mode");
@@ -972,6 +1096,7 @@ if (document.body.classList.contains("aquarium-page")) {
         });
 
         hideExitButton.addEventListener("click", () => {
+            window.clearInterval(hideModeClockInterval);
             document.body.classList.remove("aquarium-hide-mode");
             hideButton.focus();
             window.setTimeout(() => {

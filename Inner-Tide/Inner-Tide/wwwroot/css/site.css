@@ -2289,6 +2289,19 @@ a.element-action:hover {
     padding-right: 8px;
 }
 
+.tank-store-panel .store-item-image.is-loading {
+    background: url("../img/loading.gif") center / 36px 36px no-repeat;
+}
+
+.tank-store-panel .store-item-image > img {
+    opacity: 1;
+    transition: opacity .16s ease;
+}
+
+.tank-store-panel .store-item-image.is-loading > img {
+    opacity: 0;
+}
+
 .tank-store-panel .fish-preview,
 .tank-store-panel .item-preview {
     width: 100%;
@@ -2625,6 +2638,44 @@ object-fit: cover;
     z-index: 4;
     right: 2%;
     bottom: 310px;
+}
+
+.hide-mode-clock {
+    position: absolute;
+    z-index: 5;
+    top: clamp(24px, 4vh, 48px);
+    left: clamp(20px, 4vw, 48px);
+    display: grid;
+    gap: 7px;
+    justify-items: center;
+    color: #fff;
+    opacity: 0;
+    pointer-events: none;
+    text-align: center;
+    transform: translateY(32px);
+    transition: opacity .5s ease, transform .7s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .7s;
+    visibility: hidden;
+}
+
+.hide-mode-clock time {
+    font-family: "Hydration", "Neuropolx", sans-serif;
+    font-size: clamp(25px, 4vw, 40px);
+    line-height: 1;
+    text-shadow: 0 2px 5px rgba(0, 27, 44, .8);
+}
+
+.hide-mode-clock span {
+    color: #fff;
+    font-family: "Neuropolx", sans-serif;
+    font-size: clamp(10px, 1.2vw, 14px);
+    text-shadow: 0 1px 4px rgba(0, 27, 44, .9);
+}
+
+.aquarium-page.aquarium-hide-mode .hide-mode-clock {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity .5s ease, transform .7s cubic-bezier(.16, 1, .3, 1), visibility 0s;
+    visibility: visible;
 }
 
 .aquarium-page.aquarium-hide-mode .task-tab,
@@ -3961,6 +4012,54 @@ html::after {
     opacity: 0;
     pointer-events: none;
     transition: opacity .18s linear;
+}
+
+html.page-assets-loading::before,
+html.page-assets-ready::before {
+    position: fixed;
+    z-index: 2147483646;
+    inset: 0;
+    background: #000;
+    content: "";
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity .35s ease;
+}
+
+html.page-assets-loading-task-menu::before {
+    background: #dc9be8;
+}
+
+html.page-assets-loading-aquarium::before {
+    background: #0086B6;
+}
+
+html.page-assets-ready::before {
+    opacity: 0;
+    pointer-events: none;
+}
+
+html.page-assets-loading::after {
+    z-index: 2147483647;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    color: #fff;
+    content: "Loading...";
+    font: 24px "Neuropolx", sans-serif;
+    opacity: 0;
+    animation: page-loading-label 1s linear forwards;
+    pointer-events: none;
+}
+
+@keyframes page-loading-label {
+    0%, 80% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 .task-menu-startup-video[hidden] {

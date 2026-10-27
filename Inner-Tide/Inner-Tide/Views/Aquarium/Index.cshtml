@@ -24,8 +24,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0086B6">
     <title> Aquarium — Inner Tide </title>
-    <link rel="stylesheet" href="../css/site.css">
-    <script src="../js/site.js" defer></script>
+    <script>document.documentElement.classList.add("page-assets-loading", "page-assets-loading-aquarium");</script>
 </head>
 
 <body class="aquarium-page aquarium-enter">
@@ -59,6 +58,10 @@
             <div id="sand"></div>
             <div id="sand-layer"></div>
             <div id="sand2"></div>
+            <div class="hide-mode-clock" id="hideModeClock" role="timer" aria-live="off" aria-label="Current date and time">
+                <time id="hideModeTime"></time>
+                <span id="hideModeDate"></span>
+            </div>
 
             <div id="storeCoinDiv">
                 <div class="coin-counter" id="coinCounterAquarium">
