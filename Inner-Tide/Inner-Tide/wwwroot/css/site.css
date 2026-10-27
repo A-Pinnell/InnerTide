@@ -4093,3 +4093,17 @@ html.reduced-motion body.users-page .auth-submit:hover {
     position: absolute;
     height: 100%;
 }
+
+.aquriumFish {
+    opacity: 1;
+    z-index: 40;
+}
+
+.aquariumFish img {
+    width: 150px;
+    height: auto;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}

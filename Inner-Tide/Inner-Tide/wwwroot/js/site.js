@@ -186,8 +186,8 @@ async function getTaskData() {
         throw new Error(`HTTP ${response.status}`);
     }
 
-    console.log(taskData);
-    console.log(JSON.stringify(taskData, null, 2));
+    //console.log(taskData);
+    //console.log(JSON.stringify(taskData, null, 2));
 
     renderTasks("daily");
 }
@@ -775,11 +775,14 @@ if (taskMenuLink) {
     });
 }
 
-async function purchaseStoreFish(_id) {
+async function purchaseStoreFish(_id, item) {
     const formData = new FormData();
     formData.append("fishId", _id);
 
-    const res = await fetch(`/Aquarium/PurchaseShopFish?fishId=${_id}`, {
+    const x = Math.round(window.innerWidth / 2);
+    const y = Math.round(window.innerHeight / 2);
+
+    const res = await fetch(`/Aquarium/PurchaseShopFish?fishId=${_id}&xCord=${x}&yCord=${y}`, {
         method: 'POST',
         body: formData
     });
@@ -792,12 +795,12 @@ async function purchaseStoreFish(_id) {
 
     const result = await res.json();
     coinBalance = result.remainingCoins;
-    await animateCoinSpend(result.coinsSpent, storeItem || storePanel, result.remainingCoins);
+    await animateCoinSpend(result.coinsSpent, item || storePanel, result.remainingCoins);
 
     renderInventoryFish();
 }
 
-async function purchaseStoreItem(_id) {
+async function purchaseStoreItem(_id, item) {
     const formData = new FormData();
     formData.append("itemId", _id);
 
@@ -877,7 +880,7 @@ async function renderStoreItems() {
 
             const item = document.createElement("div");
             item.setAttribute("value", i._id)
-            item.addEventListener("click", () => purchaseStoreItem(i._id));
+            item.addEventListener("click", () => purchaseStoreItem(i._id, item));
             item.className = "store-item";
 
             item.innerHTML = `
@@ -926,7 +929,7 @@ async function renderStoreFish() {
             //console.log(f);
             const item = document.createElement("div");
             item.setAttribute("value", f._id)
-            item.addEventListener("click", () => purchaseStoreFish(f._id));
+            item.addEventListener("click", () => purchaseStoreFish(f._id, item));
             item.className = "store-item";
 
             item.innerHTML = `
@@ -2019,8 +2022,9 @@ if (
 }
 
 async function renderAquariumFish() {
+    console.log('Rendering Fish');
     try {
-        const res = await fetch(`/Aquarium/GetAllAquariumFish?${1}`);
+        const res = await fetch(`/Aquarium/GetAllAquariumFish?aquariumId=${1}`);
 
         if (!res.ok) {
             throw new Error("Failed to load fish");
@@ -2028,27 +2032,39 @@ async function renderAquariumFish() {
 
         const fish = await res.json();
 
+        console.log("Aquarium Fish:", fish);
+
         const fishContainer =
-            document.querySelector("#fishContainer .store-items");
+            document.querySelector("#fishContainer");
 
         if (!fishContainer) return;
 
         fishContainer.innerHTML = "";
 
+        console.log("Length:", fish.length);
+        console.log("First fish:", fish[0]);
+
         fish.forEach(f => {
+            console.log(f);
+
             const item = document.createElement("div");
+            item.classList.add("aquariumFish");
+            item.classList.add("aquariumDraggable");
             item.setAttribute("value", f.userFishId);
             item.setAttribute("value2", f.fishId);
 
-            item.innerHTML = `
-            <div class="store-item-image">
-                <img"
-                     src="${f.sprite}"
-                     draggable="false"
-                     loading="lazy"
-                     decoding="async"
-                     alt="${f.species}">
-            </div>`;
+            const newFish = document.createElement("img");
+            newFish.setAttribute("src", f.sprite);
+            newFish.setAttribute("draggable", false);
+            newFish.setAttribute("loading", "lazy");
+            newFish.setAttribute("decoding", "async");
+            newFish.setAttribute("alt", f.species);
+
+            item.style.position = "absolute";
+            item.style.left = `${f.xCord}px`;
+            item.style.top = `${f.yCord}px`;
+
+            item.appendChild(newFish);
 
             fishContainer.appendChild(item);
         });
@@ -2058,6 +2074,8 @@ async function renderAquariumFish() {
         console.error(err);
     }
 }
+
+renderAquariumFish();
 
 // ----- Drag and Drop Logic
 let offSetX = 0;
@@ -2108,7 +2126,6 @@ document.addEventListener("pointermove", event => {
     selectedFish.style.left = `${event.clientX - selectedFish.offsetWidth / 2}px`;
     selectedFish.style.top = `${event.clientY - selectedFish.offsetHeight / 2}px`;
 });
-
 
 document.addEventListener("pointerup", async event => {
     const fishContainer =document.querySelector("#fishContainer");

@@ -152,7 +152,7 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpPost]
-        public async Task<IActionResult> PurchaseShopFish(string fishId) {
+        public async Task<IActionResult> PurchaseShopFish(string fishId, int xCord, int yCord) {
             try {
                 var user = await userManager.GetUserAsync(User);
 
@@ -173,8 +173,8 @@ namespace Inner_Tide.Controllers {
                         UserId = user.Id,
                         FishId = fishId,
                         IsInAquarium = false,
-                        xCord = 0,
-                        yCord = 0,
+                        xCord = xCord,
+                        yCord = yCord
                     };
 
                     _context.UserFish.Add(userFish);
@@ -277,15 +277,30 @@ namespace Inner_Tide.Controllers {
                     return NotFound();
                 }
 
-                var userFishInAquarium = await _context.UserFish.Where(uf => uf.UserId == user.Id 
-                    && uf.IsInAquarium == true 
-                    && uf.AquariumId == aquariumId).ToListAsync();
+                var userFishInAquarium = await _context.UserFish
+                    .Where(uf => uf.UserId == user.Id
+                        && uf.IsInAquarium
+                        && uf.AquariumId == aquariumId)
+                    .ToListAsync();
 
-                List<UserFish> userFishList = new List<UserFish>();
+                var fishList = new List<object>();
 
-                return Json(userFishList);
+                foreach (var uf in userFishInAquarium) {
+                    var fish = await _httpClient.GetFromJsonAsync<Fish>(
+                        $"https://innertideapi.vercel.app/api/v1/fish/{uf.FishId}");
+
+                    fishList.Add(new {
+                        uf.UserFishId,
+                        uf.FishId,
+                        uf.xCord,
+                        uf.yCord,
+                        fish.Sprite,
+                        fish.Species
+                    });
+                }
+
+                return Json(fishList);
             } catch (Exception e) {}
-
             return NotFound();
         }
 
@@ -301,7 +316,11 @@ namespace Inner_Tide.Controllers {
                 var aquariums = await _context.Aquariums.Where(a => a.UserId == user.Id).ToListAsync();
                 var userFish = _context.UserFish.Where(uf => uf.UserId == user.Id && uf.UserFishId.ToString() == userFishId);
 
-                if (aquariums.Any() || userFish.Any()) {
+                if (userFish == null) {
+                    return NotFound("Fish not found.");
+                }
+
+                if (!aquariums.Any() || !userFish.Any()) {
                     return NotFound();
                 }
 
