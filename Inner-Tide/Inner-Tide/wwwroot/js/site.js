@@ -2576,8 +2576,8 @@ document.addEventListener("pointerup", async event => {
             if (droppedInAquarium) {
                 console.log("ENTERED DROP LOGIC");
 
-                const x = event.clientX - aquariumRect.left;
-                const y = event.clientY - aquariumRect.top;
+                const x = window.innerWidth / 2;
+                const y = window.innerHeight / 2;
 
                 const aquariumId = aquariumBody.getAttribute("data-aquarium-id");
                 console.log(aquariumId);
