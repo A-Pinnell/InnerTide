@@ -2342,7 +2342,7 @@ async function renderAquariumFish() {
             item.style.position = "absolute";
             item.style.left = `${x}px`;
             item.style.top = `${y}px`;
-            item.style.zIndex = "9999";
+            item.style.zIndex = "1";
 
             item.appendChild(img);
             fishContainer.appendChild(item);
@@ -2474,9 +2474,8 @@ document.addEventListener("pointerdown", event => {
         inventoryPanel?.classList.remove("is-open");
 
     } else if (event.target.closest(".aquariumGrabbable")) {
-        console.log(removeFishBtn);
-
         dragSource = event.target.closest(".aquariumGrabbable");
+        inventoryBtn.hidden = true;
         removeFishBtn.hidden = false;
         removeFishBtn.classList.add("is-open");
 
@@ -2502,7 +2501,7 @@ document.addEventListener("pointerdown", event => {
 
     selectedFish.style.position = "fixed";
     selectedFish.style.pointerEvents = "none";
-    selectedFish.style.zIndex = "9999";
+    selectedFish.style.zIndex = "4";
     selectedFish.style.left = `${rect.left}px`;
     selectedFish.style.top = `${rect.top}px`;
     selectedFish.style.width = `${rect.width}px`;
@@ -2641,11 +2640,16 @@ document.addEventListener("pointerup", async event => {
         selectedFish = null;
         dragSource = null;
         removeFishBtn.hidden = true;
+        inventoryBtn.hidden = false;
         renderAquariumFish();
         return;
 
     } catch (error) {
         console.error("Drop failed:", error);
+        if (dragSource?.classList.contains("aquariumGrabbable")) {
+            removeFishBtn.hidden = true;
+            inventoryBtn.hidden = false;
+        }
     }     
 });
 
