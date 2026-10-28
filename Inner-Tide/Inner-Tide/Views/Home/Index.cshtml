@@ -8,19 +8,23 @@
     var accountId = ViewData["AccountId"] as string ?? "";
     var coinCount = 0;
     var userName = "Chris Concept";
+    var email = "";
+    var accountSettingsMessage = TempData["AccountSettingsMessage"] as string;
+    var accountSettingsMessageType = TempData["AccountSettingsMessageType"] as string ?? "error";
 
     if (User.Identity?.IsAuthenticated == true) {
         var currentUser = await UserManager.GetUserAsync(User);
 
         coinCount = currentUser.CoinCount;
         userName = currentUser.UserName;
+        email = currentUser.Email;
     } else {
         coinCount = 0;
 
     }
 }
 
-<body class="task-menu-page" data-account-id="@accountId">
+<body class="task-menu-page" data-account-id="@accountId" data-account-settings-message="@(accountSettingsMessage != null ? "true" : "false")">
     <main class="game-shell">
         <header class="player-card profile-collapsed">
             <div class="profile-details" id="profile-details">
@@ -72,47 +76,77 @@
             <div class="task-scroll" id="task-scroll">
                 <div class="task-list" id="task-list"></div>
             </div>
-            <div class="scroll-rail"><span></span></div>
         </section>
 
         <section class="options-panel" id="optionsPanel" inert hidden>
             <h2 id="optionsHeading">Options</h2>
-            <fieldset class="graphical-presentation">
-                <legend>Graphical Presentation</legend>
-                <label class="graphical-option">
-                    <input type="radio" name="graphicalPresentation" value="default">
-                    <span>Default</span>
-                </label>
-                <label class="graphical-option">
-                    <input type="radio" name="graphicalPresentation" value="advanced">
-                    <span>Advanced</span>
-                </label>
-            </fieldset>
-            <fieldset class="graphical-presentation">
-                <legend>Reduce Motion</legend>
-                <label class="graphical-option">
-                    <input type="radio" name="reduceMotion" value="on">
-                    <span>On</span>
-                </label>
-                <label class="graphical-option">
-                    <input type="radio" name="reduceMotion" value="off">
-                    <span>Off</span>
-                </label>
-            </fieldset>
-            <fieldset class="audio-volume-setting">
-                <legend>Music Volume</legend>
-                <label class="audio-volume-control">
-                    <input id="musicVolume" type="range" min="0" max="100" step="1" value="50">
-                    <output id="musicVolumeValue" for="musicVolume">50%</output>
-                </label>
-            </fieldset>
-            <fieldset class="audio-volume-setting">
-                <legend>SFX Volume</legend>
-                <label class="audio-volume-control">
-                    <input id="sfxVolume" type="range" min="0" max="100" step="1" value="50">
-                    <output id="sfxVolumeValue" for="sfxVolume">50%</output>
-                </label>
-            </fieldset>
+            @if (accountSettingsMessage != null) {
+                <p class="account-settings-message @accountSettingsMessageType" role="status">@accountSettingsMessage</p>
+            }
+            <details class="options-dropdown">
+                <summary>Graphic Settings</summary>
+                <div class="options-dropdown-content">
+                    <fieldset class="graphical-presentation">
+                        <legend>Graphical Presentation</legend>
+                        <label class="graphical-option">
+                            <input type="radio" name="graphicalPresentation" value="default">
+                            <span>Default</span>
+                        </label>
+                        <label class="graphical-option">
+                            <input type="radio" name="graphicalPresentation" value="advanced">
+                            <span>Advanced</span>
+                        </label>
+                    </fieldset>
+                    <fieldset class="graphical-presentation">
+                        <legend>Reduce Motion</legend>
+                        <label class="graphical-option">
+                            <input type="radio" name="reduceMotion" value="on">
+                            <span>On</span>
+                        </label>
+                        <label class="graphical-option">
+                            <input type="radio" name="reduceMotion" value="off">
+                            <span>Off</span>
+                        </label>
+                    </fieldset>
+                </div>
+            </details>
+            <details class="options-dropdown">
+                <summary>Sound Settings</summary>
+                <div class="options-dropdown-content">
+                    <fieldset class="audio-volume-setting">
+                        <legend>Music Volume</legend>
+                        <label class="audio-volume-control">
+                            <input id="musicVolume" type="range" min="0" max="100" step="1" value="50">
+                            <output id="musicVolumeValue" for="musicVolume">50%</output>
+                        </label>
+                    </fieldset>
+                    <fieldset class="audio-volume-setting">
+                        <legend>SFX Volume</legend>
+                        <label class="audio-volume-control">
+                            <input id="sfxVolume" type="range" min="0" max="100" step="1" value="50">
+                            <output id="sfxVolumeValue" for="sfxVolume">50%</output>
+                        </label>
+                    </fieldset>
+                </div>
+            </details>
+            <details class="account-settings">
+                <summary>Account Settings</summary>
+                <form asp-controller="Users" asp-action="UpdateAccountSettings" method="post">
+                    <label>
+                        <span>Username</span>
+                        <input type="text" name="NewUserName" autocomplete="username" value="@userName">
+                    </label>
+                    <label>
+                        <span>Email Address</span>
+                        <input type="email" name="NewEmail" autocomplete="email" value="@email">
+                    </label>
+                    <label>
+                        <span>Current Password (required to save)</span>
+                        <input type="password" name="CurrentPassword" autocomplete="current-password" required>
+                    </label>
+                    <button class="options-back" type="submit">Save Account Changes</button>
+                </form>
+            </details>
             <button class="options-back" id="optionsBackButton" type="button">Back to Tasks</button>
         </section>
 

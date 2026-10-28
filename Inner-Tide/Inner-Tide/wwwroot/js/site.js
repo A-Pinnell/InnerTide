@@ -697,6 +697,9 @@ if (gameShell) {
     creditsButton.addEventListener("click", () => setInfoPanel(activeInfoPanel === "credits" ? null : "credits"));
     optionsBackButton.addEventListener("click", () => setInfoPanel(null));
     creditsBackButton.addEventListener("click", () => setInfoPanel(null));
+    if (document.body.dataset.accountSettingsMessage === "true") {
+        setInfoPanel("options");
+    }
     window.addEventListener("keydown", event => {
         if (event.key === "Escape" && activeInfoPanel) {
             setInfoPanel(null);
@@ -1000,15 +1003,6 @@ if (gameShell) {
             if (!enabled && !aquariumSelector.hidden) closeAquariumSelector();
         });
     }
-
-    taskScroll.addEventListener("scroll", () => {
-        const rail = document.querySelector(".scroll-rail span");
-        const maxScroll = taskScroll.scrollHeight - taskScroll.clientHeight;
-        const progress = maxScroll > 0 ? taskScroll.scrollTop / maxScroll : 0;
-        const trackHeight = document.querySelector(".scroll-rail").clientHeight;
-        const thumbHeight = rail.clientHeight;
-        rail.style.transform = `translateY(${progress * Math.max(0, trackHeight - thumbHeight)}px)`;
-    });
 
     renderTasks("daily");
     positionTabCarousel("daily");
@@ -1620,6 +1614,16 @@ if (quizHelpButton && quizHelpTip) {
 
 const questionScreen = document.querySelector(".question-screen");
 if (questionScreen) {
+    Promise.all([
+        document.fonts.load('16px "Aquino"'),
+        document.fonts.load('16px "Neuropolx"'),
+        document.fonts.load('16px "Hydration"')
+    ]).then(() => {
+        window.requestAnimationFrame(() => questionScreen.classList.add("question-content-ready"));
+    }).catch(error => {
+        console.error("Unable to load quiz question fonts.", error);
+    });
+
     const questions = [
         "How often do you feel rested when you wake up?",
         "How often have you made time to relax this week?",
@@ -1695,8 +1699,7 @@ if (questionScreen) {
             const quizMenuUrl = new URL("/Quiz/Index", window.location.origin).href;
             sessionStorage.setItem("innerTide.quizExitTransition", "true");
             if (navigateWithReducedMotion(quizMenuUrl)) return;
-            document.querySelector(".question-screen").classList.add("quiz-exiting");
-            window.setTimeout(() => window.location.assign(quizMenuUrl), 700);
+            window.setTimeout(() => window.location.assign(quizMenuUrl), 350);
             return;
         }
         fadeThroughBlack(() => {
@@ -1977,8 +1980,7 @@ document.addEventListener("click", event => {
             return;
         }
 
-        document.querySelector(".question-screen").classList.add("quiz-exiting");
-        window.setTimeout(() => window.location.assign(link.href), 700);
+        window.setTimeout(() => window.location.assign(link.href), 350);
         return;
     }
     if (!isReducedMotionEnabled()) return;
@@ -1999,20 +2001,50 @@ document.addEventListener("click", event => {
 }, true);
 
 if (document.body.classList.contains("quiz-menu-page")) {
+    function createQuizCardTransition(card, bounds) {
+        const transitionCard = card.cloneNode(true);
+        const cardStyle = getComputedStyle(card);
+        const scaleX = bounds.width / window.innerWidth;
+        const scaleY = bounds.height / window.innerHeight;
+        const cornerRadius = Number.parseFloat(cardStyle.borderTopLeftRadius);
+        transitionCard.style.setProperty("--transition-top", `${bounds.top}px`);
+        transitionCard.style.setProperty("--transition-left", `${bounds.left}px`);
+        transitionCard.style.setProperty("--transition-scale-x", String(scaleX));
+        transitionCard.style.setProperty("--transition-scale-y", String(scaleY));
+        transitionCard.style.setProperty("--transition-radius", cardStyle.borderRadius);
+        transitionCard.style.setProperty("--transition-radius-x", `${cornerRadius / scaleX}px`);
+        transitionCard.style.setProperty("--transition-radius-y", `${cornerRadius / scaleY}px`);
+        transitionCard.style.setProperty("--transition-border-x", `${Number.parseFloat(cardStyle.borderLeftWidth) / scaleX}px`);
+        transitionCard.style.setProperty("--transition-border-y", `${Number.parseFloat(cardStyle.borderTopWidth) / scaleY}px`);
+        transitionCard.classList.add("is-transitioning");
+        card.style.visibility = "hidden";
+        document.body.appendChild(transitionCard);
+        return transitionCard;
+    }
+
     if (sessionStorage.getItem("innerTide.quizExitTransition") === "true") {
         sessionStorage.removeItem("innerTide.quizExitTransition");
         const card = document.querySelector(".quiz-card[href]");
         if (card && !isReducedMotionEnabled()) {
             const bounds = card.getBoundingClientRect();
-            card.style.setProperty("--transition-top", `${bounds.top}px`);
-            card.style.setProperty("--transition-left", `${bounds.left}px`);
-            card.style.setProperty("--transition-scale-x", String(bounds.width / window.innerWidth));
-            card.style.setProperty("--transition-scale-y", String(bounds.height / window.innerHeight));
-            card.style.setProperty("--transition-radius", getComputedStyle(card).borderRadius);
-            card.classList.add("is-transitioning", "is-zooming-out", "is-expanded");
+            const transitionCard = createQuizCardTransition(card, bounds);
+            transitionCard.classList.add("is-zooming-out", "is-expanded");
+            void transitionCard.offsetWidth;
             window.requestAnimationFrame(() => {
-                card.classList.remove("is-expanded");
-                window.setTimeout(() => card.classList.remove("is-transitioning", "is-zooming-out"), 950);
+                transitionCard.addEventListener("transitionend", event => {
+                    if (event.target !== transitionCard || event.propertyName !== "transform") return;
+                    transitionCard.remove();
+                    card.classList.add("is-content-fading");
+                    card.style.visibility = "";
+                    void card.offsetWidth;
+                    window.requestAnimationFrame(() => {
+                        card.classList.add("is-content-visible");
+                        window.setTimeout(() => {
+                            card.classList.remove("is-content-fading", "is-content-visible");
+                        }, 220);
+                    });
+                });
+                transitionCard.classList.remove("is-expanded");
             });
         }
     }
@@ -2026,19 +2058,14 @@ if (document.body.classList.contains("quiz-menu-page")) {
             if (navigateWithReducedMotion(card.href)) return;
 
             const bounds = card.getBoundingClientRect();
-            card.style.setProperty("--transition-top", `${bounds.top}px`);
-            card.style.setProperty("--transition-left", `${bounds.left}px`);
-            card.style.setProperty("--transition-scale-x", String(bounds.width / window.innerWidth));
-            card.style.setProperty("--transition-scale-y", String(bounds.height / window.innerHeight));
-            card.style.setProperty("--transition-radius", getComputedStyle(card).borderRadius);
-            card.classList.add("is-transitioning");
+            const transitionCard = createQuizCardTransition(card, bounds);
 
             const destination = card.href;
-            const transitionDuration = 700;
+            const transitionDuration = 500;
 
-            void card.offsetWidth;
+            void transitionCard.offsetWidth;
             window.requestAnimationFrame(() => {
-                card.classList.add("is-expanded");
+                transitionCard.classList.add("is-expanded");
                 window.setTimeout(() => window.location.assign(destination), transitionDuration);
             });
         });
@@ -2315,11 +2342,11 @@ async function renderAquariumFish() {
         }
 
         const fish = await res.json();
-        const fishContainer = document.querySelector("#fishContainer");
-
-        if (!fishContainer) {
-            console.error("#fishContainer was not found");
-            return;
+        if (document.querySelector("#fishContainer") != null) {
+            const fishContainer = document.querySelector("#fishContainer");
+        }
+        else {
+            console.warning("#fishContainer was not found");
         }
 
         fishContainer.replaceChildren();

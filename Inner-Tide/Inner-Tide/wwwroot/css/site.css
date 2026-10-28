@@ -466,13 +466,101 @@ html.graphical-advanced body.question-page .question-background {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     gap: clamp(18px, 4vh, 42px);
-    overflow: hidden;
+    overflow-y: auto;
     padding: clamp(24px, 5vw, 64px);
+    scrollbar-color: #fff8fc rgba(196,44,148,.45);
+    scrollbar-width: auto;
     pointer-events: none;
     transition: visibility 0s linear .32s;
     visibility: hidden;
+}
+
+.account-settings {
+    width: min(560px, 100%);
+    color: #fff;
+}
+
+.options-dropdown {
+    width: min(560px, 100%);
+    color: #fff;
+}
+
+.options-dropdown summary {
+    width: fit-content;
+    min-width: 240px;
+    margin: 0 auto;
+    padding: 12px 20px;
+    border: 2px solid rgba(255,255,255,.68);
+    border-radius: 14px;
+    background: rgba(102,74,139,.35);
+    font-size: clamp(18px, 2.5vw, 28px);
+    text-align: center;
+    cursor: pointer;
+}
+
+.options-dropdown[open] summary {
+    margin-bottom: 16px;
+}
+
+.options-dropdown-content {
+    display: grid;
+    gap: 16px;
+}
+
+.account-settings summary {
+    width: fit-content;
+    margin: 0 auto;
+    padding: 12px 20px;
+    border: 2px solid rgba(255,255,255,.68);
+    border-radius: 14px;
+    background: rgba(102,74,139,.35);
+    font-size: clamp(18px, 2.5vw, 28px);
+    cursor: pointer;
+}
+
+.account-settings form {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.account-settings form label {
+    display: grid;
+    gap: 5px;
+    font-size: clamp(14px, 1.5vw, 18px);
+}
+
+.account-settings form input {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255,255,255,.8);
+    border-radius: 10px;
+    color: #38244f;
+    background: rgba(255,255,255,.94);
+}
+
+.account-settings form button {
+    justify-self: center;
+}
+
+.account-settings-message {
+    width: min(560px, 100%);
+    margin: 0;
+    padding: 10px 16px;
+    border-radius: 12px;
+    color: #fff;
+    text-align: center;
+}
+
+.account-settings-message.success {
+    background: rgba(26, 117, 78, .82);
+}
+
+.account-settings-message.error {
+    background: rgba(157, 36, 78, .9);
 }
 
     .options-panel[hidden] {
@@ -795,19 +883,41 @@ body.task-menu-page .task-menu-version {
 .task-scroll {
     position: absolute;
     top: 17.5%;
-    right: 6.4%;
+    right: 3.4%;
     bottom: -12px;
     left: 3.2%;
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0 0 16px;
-    scrollbar-width: none;
+    scrollbar-color: #fff8fc rgba(196,44,148,.45);
+    scrollbar-width: auto;
     outline: none;
 }
 
-    .task-scroll::-webkit-scrollbar {
-        display: none;
-    }
+.task-scroll::-webkit-scrollbar,
+.options-panel::-webkit-scrollbar {
+    width: 16px;
+}
+
+.task-scroll::-webkit-scrollbar-track,
+.options-panel::-webkit-scrollbar-track {
+    border: 2px solid #dc28a0;
+    border-radius: 5px;
+    background: rgba(196,44,148,.27);
+}
+
+.task-scroll::-webkit-scrollbar-thumb,
+.options-panel::-webkit-scrollbar-thumb {
+    min-height: 36px;
+    border: 2px solid #dc28a0;
+    border-radius: 4px;
+    background: #fff8fc;
+}
+
+.task-scroll::-webkit-scrollbar-thumb:hover,
+.options-panel::-webkit-scrollbar-thumb:hover {
+    background: #f8d9ef;
+}
 
 .task-list {
     display: grid;
@@ -1044,27 +1154,6 @@ body.task-menu-page .task-menu-version {
 .task-row.completeable {
     cursor: pointer;
 }
-
-.scroll-rail {
-    position: absolute;
-    top: 16.5%;
-    right: 3.4%;
-    bottom: 6.1%;
-    width: 16px;
-    border: 2px solid #dc28a0;
-    border-radius: 5px;
-    background: rgba(196,44,148,.27);
-}
-
-    .scroll-rail span {
-        display: block;
-        width: 100%;
-        height: 12%;
-        border: 2px solid #dc28a0;
-        border-radius: 4px;
-        background: #fff8fc;
-        transition: transform .2s ease;
-    }
 
 .side-tab {
     position: absolute;
@@ -2922,6 +3011,18 @@ object-fit: cover;
     opacity: 0;
 }
 
+.aquarium-page #fishContainer {
+    opacity: 1;
+    transition: opacity .4s ease, visibility 0s;
+}
+
+.aquarium-page.editor-mode #fishContainer {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s ease, visibility 0s linear .4s;
+    visibility: hidden;
+}
+
 .aquarium-page.editor-mode .task-tab {
     opacity: 0;
     transform: translateX(-110%);
@@ -3242,28 +3343,40 @@ body.quiz-menu-page .quiz-card {
         transform: translate(var(--transition-left), var(--transition-top)) scale(var(--transition-scale-x), var(--transition-scale-y));
         transform-origin: top left;
         filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         will-change: transform;
         pointer-events: none;
         transition: none;
     }
 
+        body.quiz-menu-page .quiz-card.is-transitioning > * {
+            opacity: 0;
+            transition: opacity .2s ease;
+        }
+
+        body.quiz-menu-page .quiz-card.is-content-fading > * {
+            opacity: 0;
+            transition: opacity .2s ease;
+        }
+
+        body.quiz-menu-page .quiz-card.is-content-fading.is-content-visible > * {
+            opacity: 1;
+        }
+
         body.quiz-menu-page .quiz-card.is-transitioning.is-expanded {
             transform: translate(0, 0) scale(1, 1);
-            border-width: clamp(8px, 1.2vw, 16px);
-            border-radius: 0;
-            box-shadow: 0 0 18px 6px rgba(230, 123, 55, .58), 0 0 54px 18px rgba(230, 123, 55, .3), inset 0 0 28px rgba(255, 157, 82, .3);
-            transition: transform .7s cubic-bezier(.22, 1, .36, 1), border-radius .7s cubic-bezier(.22, 1, .36, 1), border-width .7s cubic-bezier(.22, 1, .36, 1);
+            transition: transform .5s cubic-bezier(.16, 1, .3, 1);
         }
 
         body.quiz-menu-page .quiz-card.is-transitioning.is-zooming-out {
-            transition: transform .7s cubic-bezier(.22, 1, .36, 1), border-radius .7s cubic-bezier(.22, 1, .36, 1), border-width .7s cubic-bezier(.22, 1, .36, 1);
+            transition: transform .5s cubic-bezier(.16, 1, .3, 1), border-width .5s cubic-bezier(.16, 1, .3, 1), border-radius .5s cubic-bezier(.16, 1, .3, 1);
         }
 
-            body.quiz-menu-page .quiz-card.is-transitioning.is-expanded::before,
-            body.quiz-menu-page .quiz-card.is-transitioning.is-expanded > * {
-                opacity: 0;
-                transition: opacity .2s ease;
-            }
+        body.quiz-menu-page .quiz-card.is-transitioning.is-zooming-out:not(.is-expanded) {
+            border-width: var(--transition-border-y) var(--transition-border-x);
+            border-radius: var(--transition-radius-x) / var(--transition-radius-y);
+        }
 
     body.quiz-menu-page .quiz-card:hover {
         transform: translateY(-6px);
@@ -3726,14 +3839,6 @@ body.question-page {
         background: #051b32;
     }
 
-    body.question-page .question-screen.quiz-exiting {
-        opacity: 0;
-        transform: scale(.06);
-        transform-origin: center;
-        transition: transform .7s cubic-bezier(.55, 0, .8, .35), opacity .55s ease;
-        will-change: transform, opacity;
-    }
-
     body.question-page .question-background {
         position: absolute;
         z-index: 0;
@@ -3746,9 +3851,10 @@ body.question-page {
         position: absolute;
         z-index: 8;
         inset: 0;
-        border: clamp(8px, 1.2vw, 16px) solid var(--quiz-accent);
+        border: 5px solid var(--quiz-accent);
+        border-radius: clamp(24px, 3.5vw, 48px);
         background: linear-gradient(180deg, rgba(232, 138, 78, .28), rgba(155, 64, 14, .24) 55%, rgba(58, 22, 3, .2));
-        box-shadow: 0 0 18px 6px var(--quiz-glow), 0 0 54px 18px rgba(230, 123, 55, .3), inset 0 0 28px rgba(255, 157, 82, .3);
+        box-shadow: inset 0 0 0 2px rgba(255, 185, 130, .45), inset 0 0 28px rgba(255, 157, 82, .3), 0 0 18px 6px var(--quiz-glow), 0 0 54px 18px rgba(230, 123, 55, .3);
         content: "";
         pointer-events: none;
         animation: question-glass-reveal .9s cubic-bezier(.22, 1, .36, 1) both;
@@ -3757,9 +3863,10 @@ body.question-page {
     body.question-page .question-screen::after {
         position: absolute;
         z-index: 9;
-        inset: clamp(8px, 1.2vw, 16px);
-        border: 2px solid var(--quiz-accent);
-        box-shadow: 0 0 18px 5px var(--quiz-glow), inset 0 0 12px rgba(255, 157, 82, .22);
+        inset: 7px;
+        border: 2px solid rgba(255, 185, 130, .72);
+        border-radius: clamp(17px, 3vw, 40px);
+        box-shadow: inset 0 0 0 2px rgba(230, 123, 55, .58), inset 0 0 12px rgba(255, 157, 82, .22), 0 0 18px 5px var(--quiz-glow);
         content: "";
         pointer-events: none;
     }
@@ -3777,7 +3884,27 @@ body.question-page {
 body.question-page .question-copy {
     position: absolute;
     inset: 0;
+    opacity: 0;
     pointer-events: none;
+    transition: opacity .55s ease;
+}
+
+body.question-page .question-screen .answer-panel,
+body.question-page .question-screen .question-actions {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .55s ease;
+}
+
+body.question-page .question-screen.question-content-ready .question-copy,
+body.question-page .question-screen.question-content-ready .answer-panel,
+body.question-page .question-screen.question-content-ready .question-actions {
+    opacity: 1;
+}
+
+body.question-page .question-screen.question-content-ready .answer-panel,
+body.question-page .question-screen.question-content-ready .question-actions {
+    pointer-events: auto;
 }
 
 body.question-page .question-number {
@@ -4370,6 +4497,18 @@ html.page-assets-loading::after {
     opacity: 0;
     animation: page-loading-label 1s linear forwards;
     pointer-events: none;
+}
+
+html.page-assets-loading:has(body.quiz-menu-page)::before,
+html.page-assets-loading:has(body.question-page)::before {
+    background: transparent;
+    opacity: 0;
+    pointer-events: none;
+}
+
+html.page-assets-loading:has(body.quiz-menu-page)::after,
+html.page-assets-loading:has(body.question-page)::after {
+    display: none;
 }
 
 @keyframes page-loading-label {
