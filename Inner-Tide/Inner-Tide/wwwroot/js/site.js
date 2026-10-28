@@ -2333,7 +2333,7 @@ async function renderAquariumFish() {
             img.alt = f.species;
 
             if (f.species == "Paddlefish") {
-                img.style.width = "250px";
+                img.style.width = "2px";
             }
 
             const x = Number(f.xCord) || 0;
@@ -2375,6 +2375,8 @@ async function renderAquariumFish() {
     }
 }
 
+const sand2 = document.querySelector("#sand2");
+
 renderAquariumFish();
 
 function animate() {
@@ -2406,18 +2408,13 @@ function animate() {
 
         const fishRect = fish.element.getBoundingClientRect();
         const aquariumRect = fishContainer.getBoundingClientRect();
+        const sandRect = sand2.getBoundingClientRect();
 
         if (fishRect.top <= aquariumRect.top) {
-            fish.targetY = randomRange(
-                fish.y + 50,
-                fishContainer.clientHeight - fish.element.offsetHeight
-            );
-        }
-        else if (fishRect.bottom >= aquariumRect.bottom) {
-            fish.targetY = randomRange(
-                0,
-                Math.max(0, fish.y - 50)
-            );
+            fish.targetY = randomRange(fish.y + 50, fishContainer.clientHeight - fish.element.offsetHeight);
+
+        } else if (fishRect.bottom >= sandRect.top + 100) {
+            fish.targetY = randomRange(0, Math.max(0, fish.y - 50) );
         }
 
         dx = fish.targetX - fish.x;
@@ -2426,19 +2423,10 @@ function animate() {
         const distance = Math.hypot(dx, dy);
 
         if (distance < 3) {
-            fish.targetX = randomRange(
-                0,
-                fishContainer.clientWidth - fish.element.offsetWidth
-            );
-
-            fish.targetY = randomRange(
-                0,
-                fishContainer.clientHeight - fish.element.offsetHeight
-            );;
+            fish.targetX = randomRange(0, fishContainer.clientWidth - fish.element.offsetWidth);
+            fish.targetY = randomRange(0, fishContainer.clientHeight - fish.element.offsetHeight);
             return;
         }
-
-        const speed = 0.5;
 
         fish.x += (dx / distance) * fish.speed;
         fish.y += (dy / distance) * fish.speed;
@@ -2450,14 +2438,8 @@ function animate() {
             maxX: width - fish.element.offsetWidth
         });
 
-        fish.x = Math.max(
-            0,
-            Math.min(
-                fish.x,
-                width - fish.element.offsetWidth
-            )
-        );
-
+        fish.x = Math.max(0, Math.min(fish.x, width - fish.element.offsetWidth) );
+        fish.y = Math.max(0, Math.min(fish.y, height - fish.element.offsetHeight) );
 
         fish.element.style.left = `${fish.x}px`;
         fish.element.style.top = `${fish.y}px`;

@@ -1,3 +1,4 @@
 - Add options for changing user name, profile image, email, and password
 - Have the fish moving
 - Quizzes working
+- Implement Remove all Fish Button
