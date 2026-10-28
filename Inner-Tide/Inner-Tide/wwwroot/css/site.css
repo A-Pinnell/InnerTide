@@ -156,7 +156,7 @@ html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-scene::be
 }
 
 .coin-counter {
-    z-index: 5;
+    z-index: 9999;
     top: 50%;
     display: flex;
     min-width: 0;
@@ -4367,7 +4367,10 @@ html.reduced-motion body.users-page .auth-submit:hover {
 
 #fishContainer {
     position: absolute;
+    inset: 0;
+    width: 100%;
     height: 100%;
+    overflow: hidden;
 }
 
 .aquariumFish {
@@ -4376,7 +4379,7 @@ html.reduced-motion body.users-page .auth-submit:hover {
 }
 
 .aquariumFish img {
-    width: 150px;
+    width: 125px;
     height: auto;
 
     user-select: none;

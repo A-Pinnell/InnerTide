@@ -2290,67 +2290,191 @@ if (
     });
 }
 
+let fishList = [];
+let aquariumAnimationRunning = false;
+
+function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
 async function renderAquariumFish() {
-    console.log('Rendering Fish');
+    console.log("Rendering Fish");
+
     try {
         const aquariumId = Number(document.body.dataset.aquariumId) || 1;
-        const res = await fetch(`/Aquarium/GetAllAquariumFish?aquariumId=${aquariumId}`);
+        const res = await fetch(
+            `/Aquarium/GetAllAquariumFish?aquariumId=${aquariumId}`
+        );
 
         if (!res.ok) {
-            throw new Error("Failed to load fish");
+            throw new Error(`Failed to load fish: ${res.status}`);
         }
 
         const fish = await res.json();
+        const fishContainer = document.querySelector("#fishContainer");
 
-        //console.log("Aquarium Fish:", fish);
+        if (!fishContainer) {
+            console.error("#fishContainer was not found");
+            return;
+        }
 
-        const fishContainer =
-            document.querySelector("#fishContainer");
-
-        if (!fishContainer) return;
-
-        fishContainer.innerHTML = "";
-
-        //console.log("Length:", fish.length);
-        //console.log("First fish:", fish[0]);
+        fishContainer.replaceChildren();
+        fishList = [];
 
         fish.forEach(f => {
-            //console.log(f);
-
             const item = document.createElement("div");
-            item.classList.add("aquariumFish");
-            item.classList.add("aquariumGrabbable");
+            item.classList.add("aquariumFish", "aquariumGrabbable");
             item.setAttribute("value", f.userFishId);
             item.setAttribute("value2", f.fishId);
 
-            const newFish = document.createElement("img");
-            newFish.setAttribute("src", f.sprite);
-            newFish.setAttribute("draggable", false);
-            newFish.setAttribute("loading", "lazy");
-            newFish.setAttribute("decoding", "async");
-            newFish.setAttribute("alt", f.species);
+            const img = document.createElement("img");
+            img.src = f.sprite;
+            img.draggable = false;
+            img.alt = f.species;
+
+            if (f.species == "Paddlefish") {
+                img.style.width = "250px";
+            }
+
+            const x = Number(f.xCord) || 0;
+            const y = Number(f.yCord) || 0;
 
             item.style.position = "absolute";
-            item.style.left = `${f.xCord}px`;
-            item.style.top = `${f.yCord}px`;
+            item.style.left = `${x}px`;
+            item.style.top = `${y}px`;
+            item.style.zIndex = "9999";
 
-            item.appendChild(newFish);
-
+            item.appendChild(img);
             fishContainer.appendChild(item);
+
+            fishList.push({
+                element: item,
+                x,
+                y,
+                targetX: x,
+                targetY: y,
+                speed: randomRange(0.2, 0.8),
+                moving: false
+            });
         });
 
-    }
-    catch (err) {
-        console.error(err);
+        fishList.forEach(fish => {
+            fish.targetX = randomRange(0, fishContainer.clientWidth);
+            fish.targetY = randomRange(0, fishContainer.clientHeight);
+            fish.moving = true;
+        });
+
+        console.log(aquariumAnimationRunning);
+
+        if (aquariumAnimationRunning == false) {
+            aquariumAnimationRunning = true;
+            requestAnimationFrame(animate);
+        }
+    } catch (error) {
+        console.error("Could not render aquarium fish:", error);
     }
 }
 
 renderAquariumFish();
 
-const btn = document.querySelector("#removeFishBtn");
+function animate() {
+    const fishContainer = document.querySelector("#fishContainer");
+    if (!fishContainer) return;
 
-console.log(btn.hidden);
-console.log(btn.hasAttribute("hidden"));
+    const width = fishContainer.clientWidth;
+    const height = fishContainer.clientHeight;
+
+
+    fishList.forEach(fish => {
+        if (!fish.moving || !fish.element.isConnected) return;
+
+
+        const fishWidth = fish.element.offsetWidth;
+        const fishHeight = fish.element.offsetHeight;
+
+        const maxX = Math.max(0, width - fishWidth);
+
+        console.log({
+            containerWidth: width,
+            fishWidth: fishWidth,
+            maxX: maxX,
+            containerRect: fishContainer.getBoundingClientRect().width
+        });
+
+        let dx = fish.targetX - fish.x;
+        let dy = fish.targetY - fish.y;
+
+        const fishRect = fish.element.getBoundingClientRect();
+        const aquariumRect = fishContainer.getBoundingClientRect();
+
+        if (fishRect.top <= aquariumRect.top) {
+            fish.targetY = randomRange(
+                fish.y + 50,
+                fishContainer.clientHeight - fish.element.offsetHeight
+            );
+        }
+        else if (fishRect.bottom >= aquariumRect.bottom) {
+            fish.targetY = randomRange(
+                0,
+                Math.max(0, fish.y - 50)
+            );
+        }
+
+        dx = fish.targetX - fish.x;
+        dy = fish.targetY - fish.y;
+
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < 3) {
+            fish.targetX = randomRange(
+                0,
+                fishContainer.clientWidth - fish.element.offsetWidth
+            );
+
+            fish.targetY = randomRange(
+                0,
+                fishContainer.clientHeight - fish.element.offsetHeight
+            );;
+            return;
+        }
+
+        const speed = 0.5;
+
+        fish.x += (dx / distance) * fish.speed;
+        fish.y += (dy / distance) * fish.speed;
+
+        console.log({
+            width,
+            fishWidth: fish.element.offsetWidth,
+            x: fish.x,
+            maxX: width - fish.element.offsetWidth
+        });
+
+        fish.x = Math.max(
+            0,
+            Math.min(
+                fish.x,
+                width - fish.element.offsetWidth
+            )
+        );
+
+
+        fish.element.style.left = `${fish.x}px`;
+        fish.element.style.top = `${fish.y}px`;
+
+        if (dx > 0) {
+            fish.element.style.transform = "scaleX(-1)";
+        } else {
+            fish.element.style.transform = "scaleX(1)";
+        }
+
+    });
+    if (fishList.length > 0) {
+        requestAnimationFrame(animate);
+    } else {
+        aquariumAnimationRunning = false;
+    }
+}
 
 // ----- Drag and Drop Logic
 let offSetX = 0;
@@ -2376,6 +2500,16 @@ document.addEventListener("pointerdown", event => {
 
     } else {
         return;
+    }
+
+    if (dragSource.classList.contains("aquariumGrabbable")) {
+        const fish = fishList.find(
+            f => f.element === dragSource
+        );
+
+        if (fish) {
+            fish.moving = false;
+        }
     }
 
     const rect = dragSource.getBoundingClientRect();
@@ -2502,6 +2636,21 @@ document.addEventListener("pointerup", async event => {
                     ]);
 
                 }
+            }
+        }
+
+        if (dragSource?.classList.contains("aquariumGrabbable")) {
+            const fish = fishList.find(
+                f => f.element === dragSource
+            );
+
+            if (fish) {
+                fish.x = parseFloat(dragSource.style.left) || fish.x;
+                fish.y = parseFloat(dragSource.style.top) || fish.y;
+
+                fish.targetX = randomRange(0, aquarium.clientWidth);
+                fish.targetY = randomRange(0, aquarium.clientHeight);
+                fish.moving = true;
             }
         }
 
