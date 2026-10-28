@@ -1781,6 +1781,28 @@ a.element-action:hover {
     transform: translateY(-2px);
 }
 
+#removeFishBtn:hover:not(:active) {
+    animation: remove-fish-wiggle .4s ease-in-out infinite;
+}
+
+#removeFishBtn:active {
+    animation: none;
+}
+
+@keyframes remove-fish-wiggle {
+    0%, 100% {
+        transform: rotate(0);
+    }
+
+    25% {
+        transform: rotate(-5deg);
+    }
+
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
 #sand {
     position: absolute;
     bottom: -45px;
@@ -1872,6 +1894,25 @@ a.element-action:hover {
     box-shadow: inset -3px -4px 8px rgba(157,246,255,.2), inset 2px 2px 5px rgba(255,255,255,.55), 0 0 8px rgba(188,250,255,.25);
     opacity: 0;
     animation: aquarium-bubble-rise var(--bubble-duration) linear var(--bubble-delay) infinite;
+}
+
+.fish-trail-bubble {
+    position: absolute;
+    z-index: 2;
+    border: 1px solid rgba(225, 255, 255, .8);
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 25%, rgba(255,255,255,.95), rgba(147,240,255,.2) 70%);
+    box-shadow: 0 0 5px rgba(188,250,255,.35);
+    opacity: .8;
+    pointer-events: none;
+    animation: fish-bubble-rise 2.2s ease-out forwards;
+}
+
+@keyframes fish-bubble-rise {
+    to {
+        opacity: 0;
+        transform: translate3d(var(--bubble-drift), -34px, 0) scale(.5);
+    }
 }
 
     .aquarium-bubble::before {
@@ -2290,7 +2331,7 @@ a.element-action:hover {
 
 #storeCoinDiv {
     position: absolute;
-    z-index: 2;
+    z-index: 5;
     top: 5%;
     right: 2%;
     display: flex;

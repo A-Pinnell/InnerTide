@@ -2354,6 +2354,7 @@ async function renderAquariumFish() {
                 targetX: x,
                 targetY: y,
                 speed: randomRange(0.2, 0.8),
+                nextBubbleAt: 0,
                 moving: false
             });
         });
@@ -2378,6 +2379,24 @@ async function renderAquariumFish() {
 const sand2 = document.querySelector("#sand2");
 
 renderAquariumFish();
+
+function emitFishBubble(fish, direction) {
+    const bubble = document.createElement("span");
+    const fishWidth = fish.element.offsetWidth;
+    const fishHeight = fish.element.offsetHeight;
+    const size = randomRange(5, 9);
+    const tailX = fish.x + fishWidth / 2 - Math.cos(direction) * fishWidth * 0.4;
+    const tailY = fish.y + fishHeight / 2 - Math.sin(direction) * fishWidth * 0.4;
+
+    bubble.className = "fish-trail-bubble";
+    bubble.style.left = `${tailX - size / 2}px`;
+    bubble.style.top = `${tailY - size / 2}px`;
+    bubble.style.width = `${size}px`;
+    bubble.style.height = `${size}px`;
+    bubble.style.setProperty("--bubble-drift", `${randomRange(-12, 12)}px`);
+    fish.element.parentElement.appendChild(bubble);
+    window.setTimeout(() => bubble.remove(), 2200);
+}
 
 function animate() {
     const fishContainer = document.querySelector("#fishContainer");
@@ -2444,10 +2463,15 @@ function animate() {
         fish.element.style.left = `${fish.x}px`;
         fish.element.style.top = `${fish.y}px`;
 
-        if (dx > 0) {
-            fish.element.style.transform = "scaleX(-1)";
-        } else {
-            fish.element.style.transform = "scaleX(1)";
+        const direction = Math.atan2(dy, dx) * (180 / Math.PI);
+        const rotation = dx > 0 ? direction : direction - 180;
+        const flip = dx > 0 ? -1 : 1;
+        fish.element.style.transform = `rotate(${rotation}deg) scaleX(${flip})`;
+
+        const now = performance.now();
+        if (now >= fish.nextBubbleAt) {
+            emitFishBubble(fish, direction);
+            fish.nextBubbleAt = now + randomRange(500, 900);
         }
 
     });
