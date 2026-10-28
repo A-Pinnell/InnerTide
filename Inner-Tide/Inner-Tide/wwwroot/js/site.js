@@ -2299,6 +2299,10 @@ function randomRange(min, max) {
 
 async function renderAquariumFish() {
     console.log("Rendering Fish");
+    const fishLoadingIndicator = document.querySelector("#fishLoadingIndicator");
+    if (fishLoadingIndicator) {
+        fishLoadingIndicator.hidden = false;
+    }
 
     try {
         const aquariumId = Number(document.body.dataset.aquariumId) || 1;
@@ -2320,6 +2324,7 @@ async function renderAquariumFish() {
 
         fishContainer.replaceChildren();
         fishList = [];
+        const imageLoads = [];
 
         fish.forEach(f => {
             const item = document.createElement("div");
@@ -2328,9 +2333,27 @@ async function renderAquariumFish() {
             item.setAttribute("value2", f.fishId);
 
             const img = document.createElement("img");
-            img.src = f.sprite;
             img.draggable = false;
             img.alt = f.species;
+
+            imageLoads.push(new Promise(resolve => {
+                const revealFish = () => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            item.classList.add("is-loaded");
+                            resolve();
+                        });
+                    });
+                };
+
+                img.addEventListener("load", () => {
+                    revealFish();
+                }, { once: true });
+                img.addEventListener("error", () => {
+                    console.error(`Could not load fish image: ${f.sprite}`);
+                    revealFish();
+                }, { once: true });
+            }));
 
             if (f.species == "Paddlefish") {
                 img.style.width = "200px";
@@ -2346,6 +2369,7 @@ async function renderAquariumFish() {
 
             item.appendChild(img);
             fishContainer.appendChild(item);
+            img.src = f.sprite;
 
             fishList.push({
                 element: item,
@@ -2358,6 +2382,8 @@ async function renderAquariumFish() {
                 moving: false
             });
         });
+
+        await Promise.all(imageLoads);
 
         fishList.forEach(fish => {
             fish.targetX = randomRange(0, fishContainer.clientWidth);
@@ -2373,6 +2399,10 @@ async function renderAquariumFish() {
         }
     } catch (error) {
         console.error("Could not render aquarium fish:", error);
+    } finally {
+        if (fishLoadingIndicator) {
+            fishLoadingIndicator.hidden = true;
+        }
     }
 }
 
@@ -2559,6 +2589,8 @@ document.addEventListener("pointerup", async event => {
 
     const userFishId = dragSource.getAttribute("value");
     const fishId = dragSource.getAttribute("value2");
+    const aquariumFish = dragSource.classList.contains("aquariumGrabbable") ? fishList.find(fish => fish.element === dragSource) : null;
+    let aquariumFishRemoved = false;
 
     try {
         if (dragSource.classList.contains("inventoryGrabbable")) {
@@ -2635,37 +2667,38 @@ document.addEventListener("pointerup", async event => {
                 });
 
                 if (res.ok) {
-                    await Promise.all([
-                        renderInventoryFish(),
-                        renderAquariumFish(),
-                    ]);
+                    await renderInventoryFish();
+                    aquariumFishRemoved = true;
 
                 }
             }
         }
 
-        if (dragSource?.classList.contains("aquariumGrabbable")) {
-            const fish = fishList.find(
-                f => f.element === dragSource
-            );
-
-            if (fish) {
-                fish.x = parseFloat(dragSource.style.left) || fish.x;
-                fish.y = parseFloat(dragSource.style.top) || fish.y;
-
-                fish.targetX = randomRange(0, aquarium.clientWidth);
-                fish.targetY = randomRange(0, aquarium.clientHeight);
-                fish.moving = true;
+        if (aquariumFish) {
+            if (aquariumFishRemoved) {
+                aquariumFish.element.remove();
+                fishList = fishList.filter(fish => fish !== aquariumFish);
+            } else {
+                const maxX = Math.max(0, fishContainer.clientWidth - aquariumFish.element.offsetWidth);
+                const maxY = Math.max(0, fishContainer.clientHeight - aquariumFish.element.offsetHeight);
+                aquariumFish.x = Math.min(maxX, Math.max(0, event.clientX - aquariumRect.left - aquariumFish.element.offsetWidth / 2));
+                aquariumFish.y = Math.min(maxY, Math.max(0, event.clientY - aquariumRect.top - aquariumFish.element.offsetHeight / 2));
+                aquariumFish.element.style.left = `${aquariumFish.x}px`;
+                aquariumFish.element.style.top = `${aquariumFish.y}px`;
+                aquariumFish.targetX = randomRange(0, maxX);
+                aquariumFish.targetY = randomRange(0, maxY);
+                aquariumFish.moving = true;
             }
         }
 
-        dragSource.remove();
+        if (!aquariumFish || aquariumFishRemoved) {
+            dragSource.remove();
+        }
         selectedFish.remove();
         selectedFish = null;
         dragSource = null;
         removeFishBtn.hidden = true;
         inventoryBtn.hidden = false;
-        renderAquariumFish();
         return;
 
     } catch (error) {
