@@ -2333,7 +2333,7 @@ async function renderAquariumFish() {
             img.alt = f.species;
 
             if (f.species == "Paddlefish") {
-                img.style.width = "2px";
+                img.style.width = "200px";
             }
 
             const x = Number(f.xCord) || 0;
