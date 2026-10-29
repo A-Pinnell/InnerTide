@@ -6,11 +6,7 @@ namespace Inner_Tide.Models {
         public int QuestionId { get; set; }
 
         [Required]
-        public string QuestionTitle { get; set; }   
-
-        [Required]
-        [Range(1, 5)]
-        public int AnswerValue { get; set; }    
+        public string QuestionTitle { get; set; }      
 
         [Required]
         public string CategoryTag { get; set; }

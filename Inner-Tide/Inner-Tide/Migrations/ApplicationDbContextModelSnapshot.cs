@@ -94,9 +94,6 @@ namespace Inner_Tide.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuestionId"));
 
-                    b.Property<int>("AnswerValue")
-                        .HasColumnType("int");
-
                     b.Property<string>("CategoryTag")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -137,6 +134,9 @@ namespace Inner_Tide.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuizQuestionId"));
+
+                    b.Property<int>("AnswerValue")
+                        .HasColumnType("int");
 
                     b.Property<int>("QuestionId")
                         .HasColumnType("int");
