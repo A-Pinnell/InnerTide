@@ -1,4 +1,5 @@
-- Add options for changing user name, profile image, email, and password
-- Have the fish moving
-- Quizzes working
-- Implement Remove all Fish Button
+- All Quiz logic (questions, keywords, task influence)
+- First sign in stuff (inital quiz)
+- The P2 PDF
+- Unit Testing
+- General Polish / Testing
