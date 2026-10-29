@@ -45,7 +45,7 @@ Music and Sound Effects are also included
 # Development Status
 
 # Repository
-<a href="https://github.com/A-Pinnell/InnerTide"> To Main Repository </a>
-<a href="https://github.com/johnstonMatthew/Inner-Tide-API"> To Repository Storing API Code </a>
-<a href="https://github.com/johnstonMatthew/InnerTideFishSprites"> To Repository Storing Fish Sprites </a>
-<a href="https://github.com/johnstonMatthew/InnerTideItemSprites"> To Repository Storing Item Sprites </a>
+<p> - <a href="https://github.com/A-Pinnell/InnerTide"> To Main Repository </a> </p>
+<p> - <a href="https://github.com/johnstonMatthew/Inner-Tide-API"> To Repository Storing API Code </a> </p>
+<p> - <a href="https://github.com/johnstonMatthew/InnerTideFishSprites"> To Repository Storing Fish Sprites </a> </p>
+<p> - <a href="https://github.com/johnstonMatthew/InnerTideItemSprites"> To Repository Storing Item Sprites </a> </p>
