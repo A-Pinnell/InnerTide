@@ -3,4 +3,13 @@
 - The P2 PDF
 - Unit Testing
 - General Polish / Testing
+
 - Mix down volume of intro videos
+- Add loading icon for processing log in
+- Fix "doubled" fish when selecting
+- Add darker blue remove chest icon (open chest)
+- add coin sfx
+- fix credits fade out to settings
+- have a test sfx and test short music track when changing volumes
+- stylize account settings better
+- Make back to tasks button the same as close button (i know what this means)
