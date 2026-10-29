@@ -30,13 +30,13 @@
             <div class="profile-details" id="profile-details">
                 <div class="player-copy">
                     <strong> @userName </strong>
-                    <small>30 More Pearls needed to level up!</small>
+                    <!-- <small>30 More Pearls needed to level up!</small> -->
                 </div>
-                <div class="xp-track"><span></span></div>
+                <!-- <div class="xp-track"><span></span></div> -->
             </div>
             <button class="avatar" type="button">
                 <img src="img/placeholder.webp" alt="">
-                <span class="player-level">Lv 10</span>
+                <span class="player-level">DEMO ACCOUNT</span>
             </button>
             <div class="coin-counter" id="coinCounterTask">
                 <img src="img/coin.png" alt="">
@@ -160,7 +160,7 @@
             <button class="options-back" id="creditsBackButton" type="button">Back to Tasks</button>
         </section>
 
-        <button class="help-button" type="button" data-message="Choose a task, complete it, and collect your reward!">
+        <button class="help-button" type="button" aria-label="Open menu help">
             <img src="img/help_icon.png" alt="">
         </button>
 
@@ -179,24 +179,24 @@
                     <span class="element-action-icon element-icon"><img src="img/task_stats.png" alt=""></span>
                     <span>Task Generation Stats</span>
                 </button>
-                <button class="element-action elements-list" type="button" disabled>
+                <button class="element-action elements-list" type="button">
                     <span class="element-action-icon element-icon"><img src="img/aquarium_list.png" alt=""></span>
                     <span>Aquarium List</span>
                 </button>
             </div>
 
-            <div class="elements-status" data-percent="55">
+            <div class="elements-status" data-percent="0">
                 <div class="status-tank">
                     <div class="tank-water">
                         <span class="wave wave-back"></span>
                         <span class="wave wave-front"></span>
                     </div>
-                    <span class="status-percent">55%</span>
+                    <span class="status-percent">0%</span>
                     <span class="tank-stand"></span>
                 </div>
                 <div class="status-copy">
                     <strong>Aquarium Status</strong>
-                    <em>Keep it up!</em>
+                    <em id="aquariumStatusMessage">A great start!</em>
                 </div>
             </div>
 
@@ -214,6 +214,7 @@
             </filter>
         </svg>
         @await Html.PartialAsync("_DeveloperTools")
+        @await Html.PartialAsync("_HelpPopup")
     </main>
     <section class="aquarium-selector" id="aquariumSelector" hidden inert>
         <div class="aquarium-selector-stage" id="aquariumSelectorStage"></div>
@@ -222,5 +223,11 @@
         <h2 class="aquarium-selector-title" id="aquariumSelectorTitle">Aquarium 1</h2>
         <button class="aquarium-selector-choose" id="aquariumSelectorChoose" type="button">Choose</button>
         <button class="aquarium-selector-close" id="aquariumSelectorClose" type="button">×</button>
+        <div class="aquarium-unlock-popup" id="aquariumUnlockPopup" role="alertdialog" aria-modal="true" aria-labelledby="aquariumUnlockMessage" hidden>
+            <div class="aquarium-unlock-popup-card">
+                <p id="aquariumUnlockMessage"></p>
+                <button id="aquariumUnlockClose" type="button">Confirm</button>
+            </div>
+        </div>
     </section>
 </body>

@@ -1,5 +1,6 @@
 using Inner_Tide.Data;
 using Inner_Tide.Models;
+using Inner_Tide.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,16 +14,43 @@ namespace Inner_Tide.Controllers {
         private readonly UserManager<User> _userManager;
         private readonly HttpClient _httpClient;
         private readonly IWebHostEnvironment _environment;
+        private readonly AquariumProgressLimitSettings _progressLimitSettings;
 
         public DeveloperToolsController(
             ApplicationDbContext context,
             UserManager<User> userManager,
             HttpClient httpClient,
-            IWebHostEnvironment environment) {
+            IWebHostEnvironment environment,
+            AquariumProgressLimitSettings progressLimitSettings) {
             _context = context;
             _userManager = userManager;
             _httpClient = httpClient;
             _environment = environment;
+            _progressLimitSettings = progressLimitSettings;
+        }
+
+        [HttpGet]
+        public IActionResult GetAquariumProgressLimit() {
+            var available = IsDeveloperEnvironment();
+            return Json(new {
+                available,
+                disabled = available && _progressLimitSettings.IsDisabled
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SetAquariumProgressLimit([FromBody] SetAquariumProgressLimitRequest request) {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+
+            if (request == null || !ModelState.IsValid || request.Disabled == null) {
+                return BadRequest("Provide whether aquarium progress limits should be disabled.");
+            }
+
+            _progressLimitSettings.IsDisabled = request.Disabled.Value;
+            return Ok(new { disabled = _progressLimitSettings.IsDisabled });
         }
 
         [HttpPost]
@@ -259,5 +287,10 @@ namespace Inner_Tide.Controllers {
     public class SetInventoryRequest {
         [Required]
         public List<string>? Ids { get; set; }
+    }
+
+    public class SetAquariumProgressLimitRequest {
+        [Required]
+        public bool? Disabled { get; set; }
     }
 }

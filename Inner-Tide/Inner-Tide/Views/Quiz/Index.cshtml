@@ -40,13 +40,13 @@
             <div class="profile-details" id="profile-details">
                 <div class="player-copy">
                     <strong> @userName </strong>
-                    <small>30 More Pearls needed to level up!</small>
+                    <!-- <small>30 More Pearls needed to level up!</small> -->
                 </div>
-                <div class="xp-track"><span></span></div>
+                <!-- <div class="xp-track"><span></span></div> -->
             </div>
             <button class="avatar" type="button">
                 <img src="../img/placeholder.webp" alt="">
-                <span class="player-level">Lv 10</span>
+                <span class="player-level">DEMO ACCOUNT</span>
             </button>
             <div class="coin-counter" id="coinCounterTask">
                 <img src="../img/coin.png" alt="">
@@ -75,7 +75,7 @@
             <span class="page-title-label">QUIZ MENU</span>
         </h1>
 
-        <button class="help-button" id="helpButton" type="button">
+        <button class="help-button" id="helpButton" type="button" aria-label="Open quiz menu help">
             <img src="../img/help_icon.png" alt="">
         </button>
         <svg focusable="false" width="0" height="0">
@@ -86,5 +86,6 @@
                 <feDisplacementMap in="SourceGraphic" in2="water-noise" scale="42" xChannelSelector="R" yChannelSelector="G" />
             </filter>
         </svg>
+        @await Html.PartialAsync("_HelpPopup")
     </main>
 </body>

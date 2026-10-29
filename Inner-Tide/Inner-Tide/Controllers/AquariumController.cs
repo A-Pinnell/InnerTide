@@ -1,5 +1,6 @@
 ﻿using Inner_Tide.Data;
 using Inner_Tide.Models;
+using Inner_Tide.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,16 +14,19 @@ namespace Inner_Tide.Controllers {
         private readonly UserManager<User> userManager;
         private readonly HttpClient _httpClient;
         private readonly ILogger<AquariumController> _logger;
+        private readonly AquariumProgressLimitSettings _progressLimitSettings;
 
         // Shared db connection obj
         ApplicationDbContext _context;
 
         public AquariumController(ApplicationDbContext context, SignInManager<User> signInManager, 
-                                    UserManager<User> userManager, HttpClient httpClient, ILogger<AquariumController> logger) {
+                                    UserManager<User> userManager, HttpClient httpClient, ILogger<AquariumController> logger,
+                                    AquariumProgressLimitSettings progressLimitSettings) {
             this.signInManager = signInManager;
             this.userManager = userManager;
             _httpClient = httpClient;
             _logger = logger;
+            _progressLimitSettings = progressLimitSettings;
             _context = context;
         }
         public async Task<IActionResult> Index(int aquarium = 1) {
@@ -375,6 +379,13 @@ namespace Inner_Tide.Controllers {
 
             if (aquariumNumber != aquariums.Count + 1) {
                 return BadRequest("Aquariums must be created in order.");
+            }
+
+            var previousAquariumNumber = aquariums.Count;
+            if (!_progressLimitSettings.IsDisabled &&
+                GetAquariumCompletionPercentage(aquariums[previousAquariumNumber - 1]) < 100) {
+                return BadRequest(
+                    $"Another aquarium can not be made until aquarium {previousAquariumNumber} reaches 100%.");
             }
 
             var newAquarium = new Aquarium {

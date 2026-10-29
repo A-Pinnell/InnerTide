@@ -23,8 +23,17 @@
             sandMiddle: "#a83b3b",
             sandFront: "#d86666"
         },
-        4: { ...defaultColors },
-        5: { ...defaultColors }
+        4: { ...defaultColors,
+            base: "#000",
+            sandBack: "#71834a",
+            sandMiddle: "#8fa85a",
+            sandFront: "#b7c87a" },
+        5: { ...defaultColors,
+            base: "#343038dd",
+            sandBack: "#28280a",
+            sandMiddle: "#4b4b12",
+            sandFront: "#7e7414"
+        }
     };
 
     function getAquariumColors(aquariumNumber) {

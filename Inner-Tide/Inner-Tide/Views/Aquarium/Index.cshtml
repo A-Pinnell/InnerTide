@@ -35,7 +35,7 @@
                 <a asp-area="" asp-controller="Home" asp-action="Index"> <span> Task Menu </span> <b> ‹ </b> </a>
             </aside>
 
-            <button class="help-button" type="button" data-message="Choose a task, complete it, and collect your reward!">
+            <button class="help-button" type="button" aria-label="Open aquarium help">
                 <img src="../img/help_icon.png" alt="">
             </button>
 
@@ -183,6 +183,9 @@
                     </div>
                 </div>
             </section>
+            <div class="inventory-fish-limit-message" id="inventoryFishLimitMessage" role="alert" hidden>
+                Can not add more then 10 fish. Please remove a fish or start a new aquarium!
+            </div>
 
             <!-- <div id="journalButton">
                 <a class="journalText" asp-area="" asp-controller="Journals" asp-action="Index"> <span> Journals </span> <b> ˅ </b> </a>
@@ -207,5 +210,6 @@
             </clipPath>
         </svg>
         @await Html.PartialAsync("_DeveloperTools")
+        @await Html.PartialAsync("_HelpPopup")
     </main>
 </body>

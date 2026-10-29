@@ -115,6 +115,7 @@ const coinCount = document.querySelector("#coin-count");
 const aquariumStatus = document.querySelector(".elements-status");
 const aquariumTank = document.querySelector(".status-tank");
 const aquariumPercentLabel = document.querySelector(".status-percent");
+const aquariumStatusMessage = document.querySelector("#aquariumStatusMessage");
 const aquariumListButton = document.querySelector(".elements-list");
 const aquariumSelector = document.querySelector("#aquariumSelector");
 const coinStorageKey = "innerTide.coinBalance";
@@ -123,7 +124,6 @@ const reduceMotionKey = "innerTide.reduceMotion";
 const musicVolumeStorageKey = "innerTide.musicVolume";
 const sfxVolumeStorageKey = "innerTide.sfxVolume";
 
-const multiAquariumStorageKey = "innerTide.multiAquariumEnabled";
 const readStoredVolume = key => {
     const storedValue = localStorage.getItem(key);
     if (storedValue === null) return 0.5;
@@ -469,6 +469,15 @@ function setAquariumPercent(percent) {
     aquariumStatus.dataset.percent = String(value);
     aquariumTank.style.setProperty("--water-level", `${value}%`);
     aquariumPercentLabel.textContent = `${value}%`;
+    aquariumStatusMessage.textContent = value === 100
+        ? "Aquarium complete!"
+        : value >= 75
+        ? "Almost complete!"
+        : value >= 50
+        ? "Halfway there!"
+        : value >= 25
+        ? "Your aquarium is growing!"
+        : "A great start!";
 }
 
 function animateCoinReward(taskRow, amount) {
@@ -792,6 +801,9 @@ if (gameShell) {
         const aquariumSelectorPrevious = document.querySelector("#aquariumSelectorPrevious");
         const aquariumSelectorNext = document.querySelector("#aquariumSelectorNext");
         const aquariumSelectorClose = document.querySelector("#aquariumSelectorClose");
+        const aquariumUnlockPopup = document.querySelector("#aquariumUnlockPopup");
+        const aquariumUnlockMessage = document.querySelector("#aquariumUnlockMessage");
+        const aquariumUnlockClose = document.querySelector("#aquariumUnlockClose");
         const aquariumLink = document.querySelector(".aquarium-tab a");
         let aquariumPreviews = [];
         let aquariumEntries = [];
@@ -803,6 +815,29 @@ if (gameShell) {
         if (!isValidAquariumNumber(selectedAquariumNumber)) {
             selectedAquariumNumber = 1;
             localStorage.setItem(selectedAquariumStorageKey, String(selectedAquariumNumber));
+        }
+
+        async function loadAquariumEntries() {
+            const response = await fetch("/Aquarium/GetAquariums");
+            if (!response.ok) {
+                throw new Error(`Unable to load aquariums (${response.status}).`);
+            }
+
+            const entries = await response.json();
+            if (!Array.isArray(entries) || entries.length === 0) {
+                throw new Error("No aquariums are available.");
+            }
+
+            aquariumEntries = entries;
+            createdAquariumCount = entries.length;
+            selectedAquariumNumber = Number(localStorage.getItem(selectedAquariumStorageKey));
+            if (!isValidAquariumNumber(selectedAquariumNumber)) selectedAquariumNumber = 1;
+            selectedAquariumNumber = Math.min(selectedAquariumNumber, createdAquariumCount + 1);
+        }
+
+        function updateAquariumStatusProgress() {
+            const selectedAquarium = aquariumEntries[selectedAquariumNumber - 1];
+            setAquariumPercent(selectedAquarium?.completionPercentage ?? 0);
         }
 
         function renderAquariumSelector() {
@@ -846,6 +881,7 @@ if (gameShell) {
                 preview.style.filter = "none";
                 progress.textContent = entry ? `${entry.completionPercentage}%` : "";
             });
+            updateAquariumStatusProgress();
             const isCreatePlaceholder = selectedAquariumNumber === createdAquariumCount + 1;
             aquariumSelectorTitle.textContent = isCreatePlaceholder
                 ? `Create Aquarium ${selectedAquariumNumber}`
@@ -855,8 +891,16 @@ if (gameShell) {
             window.requestAnimationFrame(() => aquariumSelector.classList.remove("is-repositioning"));
         }
 
-        function setAquariumListEnabled(enabled) {
-            aquariumListButton.disabled = !enabled;
+        function showAquariumUnlockMessage(requiredAquariumNumber) {
+            aquariumUnlockMessage.textContent =
+                `Another aquarium can not be made until Aquarium ${requiredAquariumNumber} reaches 100%.`;
+            aquariumUnlockPopup.hidden = false;
+            aquariumUnlockClose.focus();
+        }
+
+        function closeAquariumUnlockMessage() {
+            aquariumUnlockPopup.hidden = true;
+            aquariumSelectorChoose.focus();
         }
 
         function closeAquariumSelector(restoreFocus = true) {
@@ -867,13 +911,12 @@ if (gameShell) {
             gameShell.inert = false;
             gameShell.classList.remove("aquarium-selector-open");
             document.body.classList.remove("aquarium-selector-open");
-            setAquariumListEnabled(localStorage.getItem(multiAquariumStorageKey) === "true");
             window.setTimeout(() => {
                 if (!aquariumSelector.classList.contains("is-open")) {
                     aquariumSelector.hidden = true;
                 }
             }, isReducedMotionEnabled() ? 0 : 560);
-            if (restoreFocus) (aquariumListButton.disabled ? elementsToggle : aquariumListButton).focus();
+            if (restoreFocus) aquariumListButton.focus();
         }
 
         function moveAquariumSelection(direction) {
@@ -896,25 +939,11 @@ if (gameShell) {
         }
 
         aquariumListButton.addEventListener("click", async () => {
-            if (aquariumListButton.disabled) return;
-            setAquariumListEnabled(false);
             try {
-                const response = await fetch("/Aquarium/GetAquariums");
-                if (!response.ok) {
-                    throw new Error(`Unable to load aquariums (${response.status}).`);
-                }
-                aquariumEntries = await response.json();
-                if (!Array.isArray(aquariumEntries) || aquariumEntries.length === 0) {
-                    throw new Error("No aquariums are available.");
-                }
-                createdAquariumCount = aquariumEntries.length;
-                selectedAquariumNumber = Number(localStorage.getItem(selectedAquariumStorageKey));
-                if (!isValidAquariumNumber(selectedAquariumNumber)) selectedAquariumNumber = 1;
-                selectedAquariumNumber = Math.min(selectedAquariumNumber, createdAquariumCount + 1);
+                await loadAquariumEntries();
             } catch (error) {
                 console.error("Could not load aquarium list.", error);
                 window.alert(error instanceof Error ? error.message : "Could not load aquariums.");
-                setAquariumListEnabled(true);
                 return;
             }
 
@@ -926,7 +955,6 @@ if (gameShell) {
             gameShell.inert = true;
             gameShell.classList.add("aquarium-selector-open");
             document.body.classList.add("aquarium-selector-open");
-            setAquariumListEnabled(true);
             if (isReducedMotionEnabled()) {
                 aquariumSelector.classList.add("is-open");
             } else {
@@ -938,6 +966,10 @@ if (gameShell) {
         aquariumSelectorPrevious.addEventListener("click", () => moveAquariumSelection(-1));
         aquariumSelectorNext.addEventListener("click", () => moveAquariumSelection(1));
         aquariumSelectorClose.addEventListener("click", () => closeAquariumSelector());
+        aquariumUnlockClose.addEventListener("click", closeAquariumUnlockMessage);
+        aquariumUnlockPopup.addEventListener("click", event => {
+            if (event.target === aquariumUnlockPopup) closeAquariumUnlockMessage();
+        });
         aquariumSelectorChoose.addEventListener("click", async () => {
             if (aquariumChoiceInProgress) return;
             aquariumChoiceInProgress = true;
@@ -949,6 +981,14 @@ if (gameShell) {
                     });
                     if (!response.ok) {
                         const message = await response.text();
+                        const unlockMessage = message.match(
+                            /Another aquarium can not be made until aquarium (\d+) reaches 100%\./i
+                        );
+                        if (unlockMessage) {
+                            aquariumChoiceInProgress = false;
+                            showAquariumUnlockMessage(Number(unlockMessage[1]));
+                            return;
+                        }
                         throw new Error(message || `Could not create aquarium (${response.status}).`);
                     }
                     const createdAquarium = await response.json();
@@ -985,6 +1025,11 @@ if (gameShell) {
                 event.preventDefault();
                 return;
             }
+            if (event.key === "Escape" && !aquariumUnlockPopup.hidden) {
+                event.preventDefault();
+                closeAquariumUnlockMessage();
+                return;
+            }
             if (event.key === "ArrowLeft") {
                 event.preventDefault();
                 moveAquariumSelection(-1);
@@ -1000,13 +1045,11 @@ if (gameShell) {
             if (event.target === aquariumSelector) closeAquariumSelector();
         });
 
-        setAquariumListEnabled(localStorage.getItem(multiAquariumStorageKey) === "true");
+        loadAquariumEntries()
+            .then(updateAquariumStatusProgress)
+            .catch(error => console.error("Could not load aquarium status progress.", error));
+
         aquariumSelector.inert = true;
-        document.addEventListener("innerTide:multi-aquarium-changed", event => {
-            const enabled = event.detail?.enabled === true;
-            setAquariumListEnabled(enabled);
-            if (!enabled && !aquariumSelector.hidden) closeAquariumSelector();
-        });
     }
 
     renderTasks("daily");
@@ -1440,6 +1483,10 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
         button.classList.toggle("is-open", open);
         if (open || restoreFocus) playAquariumMenuSound(open);
 
+        if (!open && panel === inventoryPanel) {
+            hideInventoryFishLimitMessage();
+        }
+
         if (open) {
             if (!contentLoaded && loadContent) {
                 contentLoaded = true;
@@ -1586,9 +1633,6 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
     });
 }
 
-const quizHelpButton = document.querySelector("#helpButton");
-const quizHelpTip = document.querySelector("#helpTip");
-
 document.querySelectorAll(".quiz-progress[data-progress]").forEach(progress => {
     const value = Number(progress.dataset.progress);
     if (!Number.isFinite(value) || value < 0 || value > 100) {
@@ -1605,20 +1649,6 @@ document.querySelectorAll(".quiz-progress[data-progress]").forEach(progress => {
     fill.style.width = `${percent}%`;
     label.textContent = `${percent}%`;
 });
-
-if (quizHelpButton && quizHelpTip) {
-    quizHelpButton.addEventListener("click", () => {
-        const isOpen = !quizHelpTip.hidden;
-        quizHelpTip.hidden = isOpen;
-    });
-
-    document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && !quizHelpTip.hidden) {
-            quizHelpTip.hidden = true;
-            quizHelpButton.focus();
-        }
-    });
-}
 
 const questionScreen = document.querySelector(".question-screen");
 if (questionScreen) {
@@ -2364,6 +2394,7 @@ if (
 
 let fishList = [];
 let aquariumAnimationRunning = false;
+let aquariumFishReady = Promise.resolve();
 
 function randomRange(min, max) {
     return Math.random() * (max - min) + min;
@@ -2411,9 +2442,17 @@ function appendAquariumFish(f, x, y, startMoving = false) {
         }, { once: true });
     });
 
+    var speed = randomRange(60, 90);
+
     if (f.species === "Paddlefish") {
         img.style.width = "270px";
     }
+
+    if (f.species === "Butterfly Ray") {
+        img.style.width = "350px";
+        speed = randomRange(30, 60);
+    }
+
 
     item.style.position = "absolute";
     item.style.left = `${x}px`;
@@ -2436,7 +2475,7 @@ function appendAquariumFish(f, x, y, startMoving = false) {
         y,
         targetX: randomRange(0, Math.max(0, fishContainer.clientWidth - 125)),
         targetY: randomRange(0, Math.max(0, fishContainer.clientHeight - 80)),
-        speed: randomRange(50, 90),
+        speed: speed,
         nextBubbleAt: 0,
         moving: startMoving
     };
@@ -2497,7 +2536,7 @@ async function renderAquariumFish() {
 
 const sand2 = document.querySelector("#sand2");
 
-renderAquariumFish();
+aquariumFishReady = renderAquariumFish();
 
 function emitFishBubble(fish, direction) {
     const bubble = document.createElement("span");
@@ -2588,6 +2627,45 @@ let offSetY = 0;
 let selectedFish = null; // Dragged Ghost
 let dragSource = null;   // Original Fish
 let fishPlacementInProgress = false;
+let inventorySelectionPending = false;
+let inventoryFishLimitTimeout;
+let inventoryFishLimitHideTimeout;
+
+function hideInventoryFishLimitMessage() {
+    const message = document.querySelector("#inventoryFishLimitMessage");
+    if (!message || message.hidden) return;
+
+    window.clearTimeout(inventoryFishLimitTimeout);
+    message.classList.remove("is-visible");
+    window.clearTimeout(inventoryFishLimitHideTimeout);
+    inventoryFishLimitHideTimeout = window.setTimeout(() => {
+        message.hidden = true;
+    }, 250);
+}
+
+function showInventoryFishLimitMessage() {
+    const aquarium = document.querySelector("#aquarium");
+    const message = document.querySelector("#inventoryFishLimitMessage");
+    const panel = document.querySelector("#tankInventoryPanel");
+    if (!aquarium || !message || !panel) {
+        throw new Error("Cannot show the fish limit message because aquarium inventory elements are missing.");
+    }
+
+    const aquariumRect = aquarium.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    message.style.left = `${panelRect.left - aquariumRect.left}px`;
+    message.style.top = `${panelRect.bottom - aquariumRect.top + 8}px`;
+    message.style.width = `${panelRect.width}px`;
+    window.clearTimeout(inventoryFishLimitHideTimeout);
+    message.hidden = false;
+    void message.offsetWidth;
+    message.classList.add("is-visible");
+
+    window.clearTimeout(inventoryFishLimitTimeout);
+    inventoryFishLimitTimeout = window.setTimeout(() => {
+        hideInventoryFishLimitMessage();
+    }, 5000);
+}
 
 async function placeSelectedInventoryFish(event) {
     if (!selectedFish || !dragSource?.classList.contains("inventoryGrabbable") || fishPlacementInProgress) {
@@ -2683,7 +2761,7 @@ async function placeSelectedInventoryFish(event) {
     }
 }
 
-document.addEventListener("pointerdown", event => {
+document.addEventListener("pointerdown", async event => {
     const inventoryPanel = document.querySelector("#tankInventoryPanel");
     const target = event.target instanceof Element ? event.target : null;
     const inventoryFish = target?.closest(".inventoryGrabbable");
@@ -2696,6 +2774,27 @@ document.addEventListener("pointerdown", event => {
     }
 
     if (inventoryFish) {
+        if (inventorySelectionPending) {
+            return;
+        }
+        inventorySelectionPending = true;
+        try {
+            await aquariumFishReady;
+            if (fishList.length >= 10) {
+                showInventoryFishLimitMessage();
+                return;
+            }
+        } catch (error) {
+            console.error("Could not check the aquarium fish limit.", error);
+            return;
+        } finally {
+            inventorySelectionPending = false;
+        }
+
+        const limitMessage = document.querySelector("#inventoryFishLimitMessage");
+        if (limitMessage) {
+            hideInventoryFishLimitMessage();
+        }
         selectedFish?.remove();
         dragSource = inventoryFish;
         inventoryPanel?.classList.remove("is-open");

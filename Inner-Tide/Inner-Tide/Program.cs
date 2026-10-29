@@ -1,5 +1,6 @@
 using Inner_Tide.Data;
 using Inner_Tide.Models;
+using Inner_Tide.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ builder.Services.AddIdentity<User, IdentityRole>()
     .AddDefaultTokenProviders();
 
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<AquariumProgressLimitSettings>();
 
 builder.Services.AddSession();
 

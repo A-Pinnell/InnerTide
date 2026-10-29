@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <section class="help-popup" id="helpPopup" role="dialog" aria-modal="true" aria-labelledby="helpPopupTitle" hidden>
+        <div class="help-popup-card">
+            <button class="help-popup-close" id="helpPopupClose" type="button" aria-label="Close help">
+                <img src="/img/close_icon.png" alt="">
+            </button>
+            <p class="help-popup-subtitle" id="helpPopupSubtitle"></p>
+            <h2 id="helpPopupTitle">TIDE GUIDE</h2>
+            <div class="help-popup-content" id="helpPopupContent">
+                <section data-help-page="task-menu">
+                    <h3>Tasks</h3>
+                    <p>Choose Daily, Weekly, or Monthly to view tasks for that period. Complete a task to earn its coin reward.</p>
+                    <h3>Elements</h3>
+                    <p>Open Elements for task actions, the Aquarium List, and your current aquarium status. Regenerate Tasks replaces your available tasks.</p>
+                    <h3>Aquarium List</h3>
+                    <p>Browse your aquariums with the arrows and choose one to enter. A new aquarium unlocks after the previous aquarium reaches 100%.</p>
+                    <h3>Profile and options</h3>
+                    <p>Open your profile for account options. Settings control graphics, motion, and sound; Credits shows the people behind Inner Tide.</p>
+                </section>
+                <section data-help-page="aquarium">
+                    <h3>Task Menu tab</h3>
+                    <p>Return to your tasks and rewards.</p>
+                    <h3>Tank Store</h3>
+                    <p>Browse fish and aquarium objects, then use coins to purchase items for your collection.</p>
+                    <h3>Inventory</h3>
+                    <p>Select a fish from your inventory, then click a spot in the aquarium to place it. Fish already in the aquarium can be dragged to reposition them.</p>
+                    <h3>Remove</h3>
+                    <p>Grab a fish in the aquarium and drop it on the Remove button to return it to your inventory.</p>
+                    <h3>Hide</h3>
+                    <p>Hide the aquarium controls for a cleaner view. Use the close button to bring them back.</p>
+                </section>
+                <section data-help-page="quiz-menu">
+                    <h3>Quiz Menu</h3>
+                    <p>Select a quiz card to begin. The card shows the estimated time, coin reward, and your completion progress.</p>
+                    <h3>Navigation</h3>
+                    <p>Use Task Menu or Aquarium at the top to return to those areas. Your coin total is shown in the corner.</p>
+                </section>
+                <section data-help-page="quiz-question">
+                    <h3>Answer choices</h3>
+                    <p>Choose the response that best matches how often the statement applies to you, from Never to Always. You must answer before moving on.</p>
+                    <h3>Move through the quiz</h3>
+                    <p>Use the right arrow to continue and the left arrow to revisit an earlier question. Your fish marks the answer you selected.</p>
+                    <h3>Quit</h3>
+                    <p>Select Quit to leave the quiz and return to the Quiz Menu.</p>
+                </section>
+            </div>
+            <button class="help-popup-done" id="helpPopupDone" type="button">Got it</button>
+        </div>
+    </section>
+
+    <style>
+        .help-popup[hidden] {
+            display: none;
+        }
+
+        .help-popup {
+            position: fixed;
+            z-index: 2000;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: clamp(14px, 3vw, 36px);
+            background: rgba(3, 18, 38, .52);
+            -webkit-backdrop-filter: blur(9px);
+            backdrop-filter: blur(9px);
+        }
+
+        .help-popup-card {
+            position: relative;
+            display: flex;
+            width: min(820px, 100%);
+            max-height: min(86vh, 900px);
+            flex-direction: column;
+            gap: 16px;
+            overflow: hidden;
+            padding: clamp(24px, 5vw, 48px);
+            border: 8px solid transparent;
+            border-radius: 30px;
+            background:
+                linear-gradient(145deg, rgba(151, 45, 122, .24), rgba(104, 49, 145, .3) 48%, rgba(57, 34, 100, .36)) padding-box,
+                linear-gradient(135deg, rgba(244, 202, 255, .98), rgba(198, 71, 154, .95) 24%, rgba(129, 72, 185, .98) 52%, rgba(181, 76, 151, .96) 78%, rgba(236, 199, 255, .98)) border-box;
+            -webkit-backdrop-filter: blur(28px) saturate(165%);
+            backdrop-filter: blur(28px) saturate(165%);
+            box-shadow:
+                0 18px 60px rgba(0, 0, 0, .4),
+                0 0 32px rgba(158, 69, 196, .36),
+                inset 0 0 0 2px rgba(255, 248, 255, .62),
+                inset 0 0 0 5px rgba(165, 88, 199, .2),
+                inset 0 1px 1px rgba(255, 255, 255, .78),
+                inset 0 -18px 38px rgba(119, 49, 155, .26);
+            color: #fff;
+            opacity: 1;
+        }
+
+        .help-popup-card > * {
+            opacity: 1;
+        }
+
+        .help-popup-subtitle {
+            margin: 0;
+            color: #f2c7ee;
+            font: 700 14px/1.2 "Neuropolx", sans-serif;
+        }
+
+        .help-popup-card h2 {
+            margin: 0;
+            font: 400 clamp(30px, 5vw, 48px)/1.1 "Aquino", "Neuropolx", sans-serif;
+        }
+
+        .help-popup-content {
+            overflow-y: auto;
+            padding: 2px 8px 2px 2px;
+        }
+
+        .help-popup-content h3 {
+            margin: 18px 0 6px;
+            color: #edb6e4;
+            font-size: clamp(18px, 2.4vw, 22px);
+        }
+
+        .help-popup-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .help-popup-content p {
+            margin: 0;
+            font: 16px/1.55 Arial, sans-serif;
+        }
+
+        .help-popup-close,
+        .help-popup-done {
+            border: 0;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .help-popup-close {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            width: 42px;
+            height: 42px;
+            padding: 3px;
+            background: transparent;
+        }
+
+        .help-popup-close img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .help-popup-done {
+            align-self: flex-end;
+            min-width: 130px;
+            min-height: 48px;
+            padding: 10px 24px;
+            border-radius: 14px;
+            background: #8d32b5;
+            font: 700 18px/1.2 Arial, sans-serif;
+        }
+
+        .help-popup-close:hover,
+        .help-popup-done:hover {
+            filter: brightness(1.12);
+        }
+
+        @media (max-width: 520px) {
+            .help-popup-card {
+                max-height: 90vh;
+                gap: 12px;
+                padding: 24px 20px;
+                border-radius: 22px;
+            }
+
+            .help-popup-content p {
+                font-size: 15px;
+            }
+        }
+    </style>
+
+    <script>
+        (() => {
+            const popup = document.querySelector("#helpPopup");
+            const closeButton = document.querySelector("#helpPopupClose");
+            const doneButton = document.querySelector("#helpPopupDone");
+            const subtitle = document.querySelector("#helpPopupSubtitle");
+            const sections = [...popup.querySelectorAll("[data-help-page]")];
+            const main = document.querySelector("main");
+            const activePage = document.body.classList.contains("aquarium-page")
+                ? "aquarium"
+                : document.body.classList.contains("question-page")
+                ? "quiz-question"
+                : document.body.classList.contains("quiz-menu-page")
+                ? "quiz-menu"
+                : "task-menu";
+            subtitle.textContent = activePage === "aquarium"
+                ? "Aquarium"
+                : activePage === "quiz-question"
+                ? "Quiz Question"
+                : activePage === "quiz-menu"
+                ? "Quiz Menu"
+                : "Task Menu";
+            let lastFocusedElement = null;
+
+            sections.forEach(section => {
+                section.hidden = section.dataset.helpPage !== activePage;
+            });
+
+            function closeHelp() {
+                popup.hidden = true;
+                if (main) main.inert = false;
+                lastFocusedElement?.focus();
+            }
+
+            document.querySelectorAll(".help-button").forEach(button => {
+                button.addEventListener("click", () => {
+                    lastFocusedElement = button;
+                    popup.hidden = false;
+                    if (main) main.inert = true;
+                    closeButton.focus();
+                });
+            });
+
+            closeButton.addEventListener("click", closeHelp);
+            doneButton.addEventListener("click", closeHelp);
+            popup.addEventListener("click", event => {
+                if (event.target === popup) closeHelp();
+            });
+            document.addEventListener("keydown", event => {
+                if (event.key === "Escape" && !popup.hidden) closeHelp();
+            });
+        })();
+    </script>
+</body>
+</html>
