@@ -264,6 +264,70 @@ namespace Inner_Tide.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Inner_Tide.Models.UserCategoryValues", b =>
+                {
+                    b.Property<int>("UserCategoryValuesId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserCategoryValuesId"));
+
+                    b.Property<int>("Creativity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Exploration")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Finance")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Fitness")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Habit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Hobby")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Hydration")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Learning")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Mood")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Nutritiion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Organization")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Productivity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Sleep")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Social")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Wellness")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserCategoryValuesId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("userCategoryValues");
+                });
+
             modelBuilder.Entity("Inner_Tide.Models.UserFish", b =>
                 {
                     b.Property<int>("UserFishId")
@@ -538,6 +602,17 @@ namespace Inner_Tide.Migrations
                     b.Navigation("Question");
 
                     b.Navigation("Quiz");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Inner_Tide.Models.UserCategoryValues", b =>
+                {
+                    b.HasOne("Inner_Tide.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
