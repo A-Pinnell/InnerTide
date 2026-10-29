@@ -399,6 +399,9 @@ namespace Inner_Tide.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserTaskId"));
 
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("Completed")
                         .HasColumnType("bit");
 

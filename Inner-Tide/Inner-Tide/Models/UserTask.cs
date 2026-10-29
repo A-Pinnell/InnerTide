@@ -15,6 +15,9 @@ namespace Inner_Tide.Models {
         [Required]
         public bool Completed { get; set; }
 
+        [Required]
+        public DateTime AssignedAt { get; set; }
+
         //Foreign Key
         public string UserId { get; set; }
         public User? User { get; set; }
