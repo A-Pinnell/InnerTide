@@ -22,6 +22,133 @@
     font-display: swap;
 }
 
+html.error-page-transitioning body {
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+
+body.error-page {
+    min-height: 100vh;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    padding: clamp(24px, 6vw, 80px);
+    color: #f7fbff;
+    background: radial-gradient(ellipse at 75% 45%, #1c6681 0, #103d5a 48%, #09283f 100%);
+}
+
+.error-page-layout {
+    width: min(1240px, 100%);
+    display: grid;
+    grid-template-columns: minmax(0, .95fr) minmax(320px, 1.05fr);
+    align-items: center;
+    gap: clamp(28px, 6vw, 88px);
+}
+
+.error-page-copy {
+    position: relative;
+    z-index: 1;
+}
+
+.error-page-title {
+    margin: 0 0 20px;
+    color: #fff;
+    font-family: "Aquino", sans-serif;
+    font-size: clamp(68px, 10vw, 128px);
+    line-height: .95;
+}
+
+.error-page-description {
+    margin: 0;
+    font-family: "Neuropolx", sans-serif;
+    font-size: clamp(17px, 2vw, 23px);
+    line-height: 1.65;
+}
+
+.error-page-details {
+    margin-top: 28px;
+    padding: 18px 20px;
+    border: 1px solid rgba(202, 236, 249, .3);
+    border-radius: 14px;
+    background: rgba(3, 24, 42, .42);
+}
+
+.error-page-details h2 {
+    margin: 0 0 10px;
+    font-family: "Neuropolx", sans-serif;
+    font-size: 15px;
+}
+
+.error-page-details pre {
+    max-height: 170px;
+    margin: 0;
+    overflow: auto;
+    color: #d7ecf5;
+    font: 13px/1.5 Consolas, monospace;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.error-page-refresh {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+    padding: 12px 24px;
+    border: 1px solid rgba(218, 243, 255, .65);
+    border-radius: 999px;
+    color: #09283f;
+    background: #d9f3ff;
+    font-family: "Neuropolx", sans-serif;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+}
+
+.error-page-refresh:hover {
+    color: #09283f;
+    background: #fff;
+    transform: translateY(-2px);
+}
+
+.error-page-art {
+    display: block;
+    width: 100%;
+    max-height: 78vh;
+    object-fit: contain;
+    object-position: right center;
+    filter: drop-shadow(0 24px 40px rgba(0, 12, 27, .3));
+}
+
+@media (max-width: 760px) {
+    body.error-page {
+        padding: 32px 22px;
+    }
+
+    .error-page-layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .error-page-art {
+        width: min(82%, 440px);
+        max-height: 38vh;
+        margin: 0 auto;
+        grid-row: 1;
+    }
+
+    .error-page-copy {
+        grid-row: 2;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.error-page-transitioning body,
+    .error-page-refresh {
+        transition: none;
+    }
+}
+
 :root {
     font-family: "Neuropolx", sans-serif;
     color: #fffafc;
@@ -2783,10 +2910,18 @@ a.element-action:hover {
     display: block;
     width: clamp(150px, 18vw, 220px);
     height: auto;
+    transform-origin: center;
+    transition: transform .25s ease-out;
+    will-change: transform;
+}
+
+.fish-drag-preview img {
+    display: block;
+    width: 100%;
+    height: auto;
     object-fit: contain;
     transform-origin: center;
     animation: fish-drag-wiggle .4s ease-in-out infinite;
-    will-change: transform;
 }
 
 @keyframes fish-drag-wiggle {
