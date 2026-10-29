@@ -299,7 +299,7 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("Mood")
                         .HasColumnType("int");
 
-                    b.Property<int>("Nutritiion")
+                    b.Property<int>("Nutrition")
                         .HasColumnType("int");
 
                     b.Property<int>("Organization")
@@ -325,7 +325,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("userCategoryValues");
+                    b.ToTable("UserCategoryValues");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserFish", b =>

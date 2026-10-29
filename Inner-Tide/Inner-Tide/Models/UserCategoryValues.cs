@@ -31,7 +31,7 @@ namespace Inner_Tide.Models {
 
         [Required]
         [Range(0, 100)]
-        public int Nutritiion { get; set; }
+        public int Nutrition { get; set; }
 
         [Required]
         [Range(0, 100)]
