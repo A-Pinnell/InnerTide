@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inner-Tide", "Inner-Tide\In
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnerTide.Desktop", "InnerTide.Desktop\InnerTide.Desktop.csproj", "{F36F4687-A361-4C0E-ABD8-4C615F958F47}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inner-TideMVCTest", "Inner-TideMVCTest\Inner-TideMVCTest.csproj", "{5A7CA344-4465-45DA-8D73-86F32D91D462}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{F36F4687-A361-4C0E-ABD8-4C615F958F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F36F4687-A361-4C0E-ABD8-4C615F958F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F36F4687-A361-4C0E-ABD8-4C615F958F47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A7CA344-4465-45DA-8D73-86F32D91D462}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A7CA344-4465-45DA-8D73-86F32D91D462}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A7CA344-4465-45DA-8D73-86F32D91D462}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A7CA344-4465-45DA-8D73-86F32D91D462}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

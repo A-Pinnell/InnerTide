@@ -3,7 +3,11 @@
 namespace Inner_Tide.Controllers {
     public class TaskController : Controller {
         public IActionResult Index() {
-            return View();
+            if (User.Identity?.IsAuthenticated != true) {
+                return Redirect("/Users/Index");
+            }
+
+            return View("Index");
         }
     }
 }

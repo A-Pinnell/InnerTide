@@ -23,6 +23,12 @@ namespace Inner_Tide.Data {
 
         public DbSet<Inner_Tide.Models.UserTask> UserTasks { get; set; } = default!;
 
+        public DbSet<Inner_Tide.Models.Quiz> Quizzes { get; set; } = default!;
+
+        public DbSet<Inner_Tide.Models.Question> Questions { get; set; } = default!;
+
+        public DbSet<Inner_Tide.Models.QuizQuestion> QuizQuestions { get; set; } = default!;
+
 
     }
 }
