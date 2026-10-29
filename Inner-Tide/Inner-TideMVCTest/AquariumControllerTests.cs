@@ -87,7 +87,7 @@ namespace Inner_TideMVCTest {
             var result = (RedirectResult) await controller.Index();
 
             //Assert
-            Assert.AreEqual("/Users/Index", ((RedirectResult)result).Url);
+            Assert.AreEqual("/Users/Index", (result).Url);
         }
 
         [TestMethod]

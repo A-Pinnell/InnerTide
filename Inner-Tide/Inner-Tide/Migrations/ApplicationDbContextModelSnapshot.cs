@@ -144,11 +144,17 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("QuizId")
                         .HasColumnType("int");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("QuizQuestionId");
 
                     b.HasIndex("QuestionId");
 
                     b.HasIndex("QuizId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("QuizQuestions");
                 });
@@ -523,9 +529,17 @@ namespace Inner_Tide.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Inner_Tide.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Question");
 
                     b.Navigation("Quiz");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserFish", b =>
