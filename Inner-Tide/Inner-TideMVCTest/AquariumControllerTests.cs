@@ -102,6 +102,125 @@ namespace Inner_TideMVCTest {
             Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
         }
 
+        [TestMethod]
+        public async System.Threading.Tasks.Task IndexReturnsNotFoundWhenAquariumLessThanOne() {
+            // Act
+            var result = await controller.Index(0);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task IndexReturnsNotFoundWhenAquariumDoesNotExist() {
+            // Act
+            var result = await controller.Index(999);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region "Aquarium"
+        #region "GET Aquarium"
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetAquariumsReturnsUnauthorizedWhenUserIsNull() {
+            // Arrange
+            _userManagerMock.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync((User)null);
+
+            // Act
+            var result = await controller.GetAquariums();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetAquariumsReturnsJsonResult() {
+            // Arrange
+            _context.Aquariums.Add(new Aquarium {
+                UserId = "1",
+                MaxFish = 10,
+                MaxObjects = 10,
+                CurrentFish = 0,
+                CurrentObjects = 0
+            });
+
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetAquariums();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetAquariumsCreatesAquariumWhenNoneExist() {
+            // Act
+            await controller.GetAquariums();
+
+            // Assert
+            Assert.AreEqual(1, _context.Aquariums.Count());
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetAquariumsReturnsAllAquariums() {
+            // Arrange
+            _context.Aquariums.Add(new Aquarium { UserId = "1" });
+            _context.Aquariums.Add(new Aquarium { UserId = "1" });
+
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = (JsonResult)await controller.GetAquariums();
+            var aquariums = ((IEnumerable<object>)result.Value).ToList();
+
+            // Assert
+            Assert.AreEqual(2, aquariums.Count);
+        }
+        #endregion
+
+        #region "GET & POST Aquarium"
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetAquariumsCreatesFirstAquariumWhenNoneExist() {
+            // Act
+            await controller.GetAquariums();
+
+            // Assert
+            Assert.AreEqual(1, _context.Aquariums.Count());
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetAquariumsDoesNotCreateDuplicateAquarium() {
+            // Arrange
+            _context.Aquariums.Add(new Aquarium {
+                UserId = "1",
+                MaxFish = 10,
+                MaxObjects = 5
+            });
+
+            await _context.SaveChangesAsync();
+
+            // Act
+            await controller.GetAquariums();
+
+            // Assert
+            Assert.AreEqual(1, _context.Aquariums.Count());
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetAquariumsCreatesAquariumWithMaxFishTen() {
+            // Act
+            await controller.GetAquariums();
+
+            // Assert
+            Assert.AreEqual(10, _context.Aquariums.First().MaxFish);
+        }
+
+        #endregion
+
         #endregion
     }
 }
