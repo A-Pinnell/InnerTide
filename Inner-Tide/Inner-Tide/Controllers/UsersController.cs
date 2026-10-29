@@ -182,6 +182,74 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpPost]
+        public async Task<IActionResult> UpdateAccountSettings(AccountSettingsViewModel model) {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            model.NewUserName = string.IsNullOrWhiteSpace(model.NewUserName) ? null : model.NewUserName.Trim();
+            model.NewEmail = string.IsNullOrWhiteSpace(model.NewEmail) ? null : model.NewEmail.Trim();
+
+            if (!ModelState.IsValid) {
+                return AccountSettingsFailure(string.Join(" ", ModelState.Values
+                    .SelectMany(value => value.Errors)
+                    .Select(error => error.ErrorMessage)));
+            }
+            var changesUserName = model.NewUserName != null && model.NewUserName != user.UserName;
+            var changesEmail = model.NewEmail != null && model.NewEmail != user.Email;
+
+            if (!changesUserName && !changesEmail) {
+                return AccountSettingsFailure("Enter at least one new account value.");
+            }
+
+            if (!await userManager.CheckPasswordAsync(user, model.CurrentPassword)) {
+                return AccountSettingsFailure("Your current password is incorrect.");
+            }
+
+            if (changesUserName) {
+                var existingUser = await userManager.FindByNameAsync(model.NewUserName!);
+                if (existingUser != null && existingUser.Id != user.Id) {
+                    return AccountSettingsFailure("That username is already in use.");
+                }
+            }
+
+            if (changesEmail) {
+                var existingUser = await userManager.FindByEmailAsync(model.NewEmail!);
+                if (existingUser != null && existingUser.Id != user.Id) {
+                    return AccountSettingsFailure("That email address is already in use.");
+                }
+            }
+
+            if (changesUserName || changesEmail) {
+                if (changesUserName) {
+                    user.UserName = model.NewUserName;
+                }
+
+                if (changesEmail) {
+                    user.Email = model.NewEmail;
+                    user.EmailConfirmed = false;
+                }
+
+                var updateResult = await userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded) {
+                    return AccountSettingsFailure(string.Join(" ", updateResult.Errors.Select(error => error.Description)));
+                }
+            }
+
+            await signInManager.RefreshSignInAsync(user);
+            TempData["AccountSettingsMessage"] = "Your account settings were updated.";
+            TempData["AccountSettingsMessageType"] = "success";
+            return RedirectToAction("Index", "Home");
+        }
+
+        private IActionResult AccountSettingsFailure(string message) {
+            TempData["AccountSettingsMessage"] = message;
+            TempData["AccountSettingsMessageType"] = "error";
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
         public async Task<IActionResult> AddCoins([FromBody] AddCoinModel model) {
             var user = await userManager.GetUserAsync(User);
 
