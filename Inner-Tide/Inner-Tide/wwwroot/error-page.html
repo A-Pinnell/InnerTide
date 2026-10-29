@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#09283f">
+    <title>Uh Oh! - Inner Tide</title>
+    <link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="error-page">
+    <main class="error-page-layout">
+        <section class="error-page-copy" aria-labelledby="error-title">
+            <h1 class="error-page-title" id="error-title">Uh Oh!</h1>
+            <p class="error-page-description">Looks like Inner Tide isn't quite ready to be dived into. We're sorry about this issue, and hope to resolve it soon.</p>
+            <section class="error-page-details" aria-labelledby="error-details-title">
+                <h2 id="error-details-title">Error details</h2>
+                <pre id="error-message">An unexpected error occurred.</pre>
+            </section>
+            <button class="error-page-refresh" id="error-page-refresh" type="button">Refresh</button>
+        </section>
+        <img class="error-page-art" src="/img/bereef.png" alt="Beneath the reef">
+    </main>
+    <script>
+        const errorMessage = new URLSearchParams(window.location.search).get("error");
+        if (errorMessage) {
+            document.querySelector("#error-message").textContent = errorMessage;
+        }
+        const returnUrl = new URLSearchParams(window.location.search).get("returnUrl");
+        const safeReturnUrl = returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//") && !returnUrl.toLowerCase().startsWith("/error.html")
+            ? returnUrl
+            : "/";
+        document.querySelector("#error-page-refresh").addEventListener("click", () => {
+            window.location.assign(safeReturnUrl);
+        });
+    </script>
+</body>
+</html>

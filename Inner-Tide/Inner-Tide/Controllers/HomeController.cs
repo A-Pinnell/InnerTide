@@ -82,11 +82,7 @@ namespace Inner_Tide.Controllers
                     monthly = userTasks.Where(t => t.TimeFrame == "Monthly")
                 });
             } catch (Exception ex) {
-                return Content(
-                    ex.Message + Environment.NewLine +
-                    ex.InnerException?.Message + Environment.NewLine +
-                    ex.StackTrace
-                );
+                return StatusCode(500, ex.GetBaseException().Message);
             }
         }
 

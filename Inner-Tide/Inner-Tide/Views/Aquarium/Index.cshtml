@@ -24,7 +24,7 @@
     <audio id="aquarium-music" autoplay preload="auto"></audio>
     <main>
         <div id="aquarium">
-            <div class="fish-loading-indicator" id="fishLoadingIndicator" role="status" aria-label="Loading fish">
+            <div class="fish-loading-indicator" id="fishLoadingIndicator" role="status">
                 <img src="../img/loading.gif" alt="">
             </div>
             <div id="fishContainer"> 
@@ -35,7 +35,7 @@
                 <a asp-area="" asp-controller="Home" asp-action="Index"> <span> Task Menu </span> <b> ‹ </b> </a>
             </aside>
 
-            <button class="help-button" type="button" aria-label="Open aquarium help">
+            <button class="help-button" type="button">
                 <img src="../img/help_icon.png" alt="">
             </button>
 
@@ -93,14 +93,14 @@
 
                 <button class="aquariumMenuBtn" id="removeFishBtn" hidden>
                     <span class="aquarium-icon-frame">
-                        <img src="../img/aquarium_inventory.png" alt="">
+                        <img src="../img/aquarium_remove.png" alt="">
                     </span>
                     <span class="aquarium-menu-label"> Remove </span>
                 </button>
             </div>
             <button class="aquariumMenuBtn aquarium-hide-button" id="aquariumHideButton" type="button">
                 <span class="aquarium-icon-frame">
-                    <img src="../img/aquarium_inventory.png" alt="">
+                    <img src="../img/close_crab.png" alt="">
                 </span>
                 <span class="aquarium-menu-label">Hide</span>
             </button>
@@ -190,7 +190,12 @@
             <!-- <div id="journalButton">
                 <a class="journalText" asp-area="" asp-controller="Journals" asp-action="Index"> <span> Journals </span> <b> ˅ </b> </a>
             </div> -->
-            <button class="aquarium-hide-exit editor-close-button" id="aquariumHideExit" type="button" hidden><img src="../img/close_icon.png" alt=""></button>
+            <button class="aquariumMenuBtn aquarium-hide-exit" id="aquariumHideExit" type="button" hidden>
+                <span class="aquarium-icon-frame">
+                    <img src="../img/open_crab.png" alt="">
+                </span>
+                <span class="aquarium-menu-label">Unhide</span>
+            </button>
         </div>
         <svg focusable="false" width="0" height="0">
             <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">

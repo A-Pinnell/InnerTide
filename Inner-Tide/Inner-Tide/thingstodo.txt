@@ -1,4 +1,15 @@
-- Add options for changing user name, profile image, email, and password
-- Have the fish moving
-- Quizzes working
-- Implement Remove all Fish Button
+- All Quiz logic (questions, keywords, task influence)
+- First sign in stuff (inital quiz)
+- The P2 PDF
+- Unit Testing
+- General Polish / Testing
+
+- Mix down volume of intro videos
+- Add loading icon for processing log in
+- fix credits fade out to settings
+- stylize account settings better
+- Make back to tasks button the same as close button (i know what this means)
+- enhance css for aquarium list menu
+- mix aquarium 4 track slightly higher
+- fix percentage number on aquarium list
+- (if time) enhance rotations to be smoother/smaller

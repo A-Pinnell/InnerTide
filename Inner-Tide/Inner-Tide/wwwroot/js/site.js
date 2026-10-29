@@ -4,6 +4,45 @@ let taskData = {
     weekly: []
 };
 
+let errorPageRedirectStarted = false;
+
+function redirectToErrorPage(message) {
+    if (errorPageRedirectStarted || window.location.pathname.toLowerCase().endsWith("/error.html")) return;
+
+    errorPageRedirectStarted = true;
+    document.documentElement.classList.add("error-page-transitioning");
+    const errorMessage = String(message || "An unexpected error occurred.").slice(0, 4000);
+    const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.setTimeout(() => {
+        const query = new URLSearchParams({ error: errorMessage, returnUrl });
+        window.location.assign(`/error.html?${query}`);
+    }, 350);
+}
+
+const originalFetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+    let response;
+    try {
+        response = await originalFetch(...args);
+    } catch (error) {
+        redirectToErrorPage(error instanceof Error ? error.message : String(error));
+        throw error;
+    }
+
+    const request = args[0] instanceof Request ? args[0] : null;
+    const method = args[1]?.method || request?.method || "GET";
+    const url = new URL(request?.url || String(args[0]), window.location.href);
+    const isDataLoadRequest = method.toUpperCase() === "GET" &&
+        /\/(?:Home\/GetTasks|Users\/GetCoins|Aquarium\/(?:GetAquariums|GetAllFish|GetUserFish|GetAllItems|GetUserItems|GetAllAquariumFish))$/i.test(url.pathname);
+
+    if (response.status >= 500 || (isDataLoadRequest && !response.ok)) {
+        const details = (await response.clone().text().catch(() => "")).trim();
+        redirectToErrorPage(details || `The request failed with status ${response.status}.`);
+    }
+
+    return response;
+};
+
 const selectedAquariumStorageKey = `innerTide.selectedAquarium.${document.body.dataset.accountId}`;
 
 function getAquariumBackgroundNumber(aquariumNumber) {
@@ -165,6 +204,32 @@ function setAudioVolume(type, volume) {
     });
 }
 
+const soundPathPrefix = document.body.classList.contains("aquarium-page") || document.body.classList.contains("question-page") || document.body.classList.contains("quiz-menu-page")
+    ? "../sfx/"
+    : "sfx/";
+const coinGainSound = registerAudioPlayer(new Audio(`${soundPathPrefix}coin_gain.mp3`), "sfx");
+const musicVolumeTestSound = new Audio(`${soundPathPrefix}../music/test_music.mp3`);
+const sfxVolumeTestSound = new Audio(`${soundPathPrefix}Open.mp3`);
+registerAudioPlayer(musicVolumeTestSound, "music");
+registerAudioPlayer(sfxVolumeTestSound, "sfx");
+
+function playCoinChangeSound() {
+    const sound = registerAudioPlayer(coinGainSound.cloneNode(), "sfx");
+    sound.addEventListener("ended", () => audioPlayers.sfx.delete(sound), { once: true });
+    sound.play().catch(error => {
+        audioPlayers.sfx.delete(sound);
+        console.error("Unable to play coin change sound.", error);
+    });
+}
+
+function playVolumeTestSound(sound) {
+    sound.pause();
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error("Unable to play volume test sound.", error);
+    });
+}
+
 const musicVolumeSlider = document.querySelector("#musicVolume");
 const musicVolumeValue = document.querySelector("#musicVolumeValue");
 const sfxVolumeSlider = document.querySelector("#sfxVolume");
@@ -180,16 +245,19 @@ function initializeVolumeSlider(slider, output, type, volume) {
         output.value = `${percentage}%`;
         setAudioVolume(type, percentage / 100);
     });
+    slider.addEventListener("change", () => {
+        playVolumeTestSound(type === "music" ? musicVolumeTestSound : sfxVolumeTestSound);
+    });
 }
 
 initializeVolumeSlider(musicVolumeSlider, musicVolumeValue, "music", musicVolume);
 initializeVolumeSlider(sfxVolumeSlider, sfxVolumeValue, "sfx", sfxVolume);
 
-let aquariumMenuSounds;
 let aquariumMusicPlayer = null;
-const soundPathPrefix = document.body.classList.contains("aquarium-page") || document.body.classList.contains("question-page") || document.body.classList.contains("quiz-menu-page")
-    ? "../sfx/"
-    : "sfx/";
+const aquariumMenuSounds = {
+    open: new Audio(`${soundPathPrefix}Open.mp3`),
+    close: new Audio(`${soundPathPrefix}Close.mp3`)
+};
 const sideNavigationSounds = {
     left: new Audio(`${soundPathPrefix}left.mp3`),
     right: new Audio(`${soundPathPrefix}right.mp3`)
@@ -202,6 +270,7 @@ const quizArrowSounds = {
     left: new Audio(`${soundPathPrefix}Close.mp3`),
     right: new Audio(`${soundPathPrefix}Open.mp3`)
 };
+Object.values(aquariumMenuSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 Object.values(sideNavigationSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 Object.values(elementsBarSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 Object.values(quizArrowSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
@@ -272,6 +341,7 @@ function incrementDisplayedCoinCount() {
     }
 
     coinCount.textContent = String(displayedBalance + 1);
+    playCoinChangeSound();
     pulseCoinCounter();
 }
 
@@ -284,6 +354,7 @@ function decrementDisplayedCoinCount(shouldPulse = true) {
     }
 
     coinCount.textContent = String(displayedBalance - 1);
+    playCoinChangeSound();
     if (shouldPulse) pulseCoinCounter();
 }
 
@@ -371,6 +442,9 @@ function animateCoinCount(nextBalance) {
             coinCountAnimationTimeout = null;
         }
         coinCount.textContent = String(nextBalance);
+        if (Number.isSafeInteger(currentBalance) && currentBalance !== nextBalance) {
+            playCoinChangeSound();
+        }
         return;
     }
 
@@ -383,6 +457,7 @@ function animateCoinCount(nextBalance) {
         const displayedBalance = Number(coinCount.textContent.trim());
         const nextStep = displayedBalance + direction;
         coinCount.textContent = String(nextStep);
+        playCoinChangeSound();
         pulseCoinCounter();
 
         if (nextStep !== nextBalance) {
@@ -866,7 +941,7 @@ if (gameShell) {
                 const backgroundNumber = getAquariumBackgroundNumber(aquariumNumber);
                 const backgroundUrl = new URL(`../backgrounds/Aquarium_${backgroundNumber}.png`, document.baseURI);
                 const colors = window.aquariumColors.get(aquariumNumber);
-                const tintColor = colors.backgroundTint;
+                const tintColor = colors.backgroundTint ?? colors.base;
                 const progress = preview.querySelector(".aquarium-selector-progress");
                 preview.classList.toggle("is-current", offset === 0);
                 preview.classList.toggle("is-create-placeholder", isCreatePlaceholder);
@@ -906,6 +981,7 @@ if (gameShell) {
         function closeAquariumSelector(restoreFocus = true) {
             window.clearTimeout(aquariumSlideTimeout);
             selectorIsAnimating = false;
+            playAquariumMenuSound(false);
             aquariumSelector.classList.remove("is-open");
             aquariumSelector.inert = true;
             gameShell.inert = false;
@@ -924,6 +1000,7 @@ if (gameShell) {
                 (direction < 0 && selectedAquariumNumber === 1) ||
                 (direction > 0 && selectedAquariumNumber >= createdAquariumCount + 1)) return;
             selectorIsAnimating = true;
+            playSideNavigationSound(direction < 0 ? "left" : "right");
             aquariumPreviews.forEach((preview, index) => {
                 const offset = index - 1 + (direction > 0 ? -1 : 1);
                 preview.style.left = `calc(50% + ${offset * 100}vw)`;
@@ -948,6 +1025,7 @@ if (gameShell) {
             }
 
             setaquariumOpen(false);
+            playAquariumMenuSound(true);
             renderAquariumSelector();
             aquariumSelector.hidden = false;
             aquariumSelector.inert = false;
@@ -1004,6 +1082,7 @@ if (gameShell) {
             }
             localStorage.setItem(selectedAquariumStorageKey, String(selectedAquariumNumber));
 
+            playAquariumMenuSound(false);
             const currentPreview = aquariumSelectorStage.querySelector(".aquarium-selector-preview.is-current");
             const previewBounds = currentPreview.getBoundingClientRect();
             currentPreview.style.setProperty("--aquarium-preview-zoom-scale", String(Math.max(
@@ -1137,11 +1216,8 @@ async function purchaseStoreItem(_id, item) {
     }
 
     const result = await res.json();
-    animateCoinCount(result.remainingCoins);
-    console.log("Updated Coins Visually");
-
-    console.log(result.remainingCoins);
-
+    coinBalance = result.remainingCoins;
+    await animateCoinSpend(result.coinsSpent, item || storePanel, result.remainingCoins);
     renderInventoryItems();
 }
 
@@ -1365,7 +1441,7 @@ async function renderInventoryFish() {
             <div class="store-item-details">
                 <p class="store-product-name">${f.species}</p>
             </div>
-            <span class="inventory-drag-indicator" aria-hidden="true"><i></i><i></i><i></i></span>`;
+            <span class="inventory-drag-indicator"><i></i><i></i><i></i></span>`;
 
             showStoreImageLoading(item);
             inventoryContainer.appendChild(item);
@@ -1865,9 +1941,7 @@ function fadeOutAquariumMusic(duration) {
 }
 
 function playAquariumMenuSound(opening) {
-    const sound = aquariumMenuSounds?.[opening ? "open" : "close"];
-    if (!sound) return;
-
+    const sound = aquariumMenuSounds[opening ? "open" : "close"];
     sound.pause();
     sound.currentTime = 0;
     sound.play().catch(error => {
@@ -1903,11 +1977,6 @@ function syncRippleMotion() {
 }
 
 if (document.body.classList.contains("aquarium-page")) {
-    aquariumMenuSounds = {
-        open: new Audio("../sfx/Open.mp3"),
-        close: new Audio("../sfx/Close.mp3")
-    };
-    Object.values(aquariumMenuSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
     const aquariumMusic = document.querySelector("#aquarium-music");
     aquariumMusicPlayer = registerAudioPlayer(aquariumMusic, "music");
     const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
@@ -2750,6 +2819,7 @@ async function placeSelectedInventoryFish(event) {
             placedFish.fish.targetX = randomRange(0, maxX);
             placedFish.fish.targetY = randomRange(0, maxY);
         });
+        playElementsTransitionSound("out");
         preview.remove();
         selectedFish = null;
         dragSource = null;
@@ -2825,18 +2895,46 @@ document.addEventListener("pointerdown", async event => {
         throw new Error("Cannot drag a fish because its image is missing.");
     }
 
-    selectedFish = fishImage.cloneNode(true);
+    const fishWidthBeforePickup = fishImage.getBoundingClientRect().width;
+    const fishTransform = dragSource.style.transform.match(/rotate\(([-\d.]+)deg\)(?:\s+scaleX\(([-\d.]+)\))?/);
+    const pickupRotation = fishTransform ? Number(fishTransform[1]) : 0;
+    const pickupFlip = fishTransform ? Number(fishTransform[2] ?? 1) : 1;
+
+    selectedFish = document.createElement("div");
     selectedFish.className = "fish-drag-preview";
+    if (fishImage.alt === "Paddlefish") {
+        selectedFish.style.width = "300px";
+    } else if (fishImage.alt === "Butterfly Ray") {
+        selectedFish.style.width = "400px";
+    }
+
+    const previewImage = fishImage.cloneNode(true);
+    previewImage.style.removeProperty("width");
+    selectedFish.appendChild(previewImage);
+    selectedFish.style.transform = `rotate(${pickupRotation}deg) scaleX(${pickupFlip})`;
 
     document.body.appendChild(selectedFish);
 
     selectedFish.style.position = "fixed";
     selectedFish.style.pointerEvents = "none";
     selectedFish.style.zIndex = "4";
-    selectedFish.style.removeProperty("width");
+    const pickupScale = fishWidthBeforePickup / selectedFish.offsetWidth;
+    selectedFish.style.transform = `rotate(${pickupRotation}deg) scaleX(${pickupFlip}) scale(${pickupScale})`;
     selectedFish.style.left = `${event.clientX - selectedFish.offsetWidth / 2}px`;
     selectedFish.style.top = `${event.clientY - selectedFish.offsetHeight / 2}px`;
 
+    const preview = selectedFish;
+    requestAnimationFrame(() => {
+        if (preview.isConnected) {
+            preview.style.transform = `rotate(${pickupRotation}deg) scaleX(${pickupFlip}) scale(1)`;
+        }
+    });
+
+    if (dragSource.classList.contains("aquariumGrabbable")) {
+        dragSource.classList.add("is-dragging");
+    }
+
+    playElementsTransitionSound("in");
     console.log("Dragging:", dragSource);
 });
 
@@ -2939,6 +3037,8 @@ document.addEventListener("pointerup", async event => {
         if (aquariumFishRemoved) {
             dragSource.remove();
         }
+        playElementsTransitionSound("out");
+        dragSource.classList.remove("is-dragging");
         selectedFish.remove();
         selectedFish = null;
         dragSource = null;

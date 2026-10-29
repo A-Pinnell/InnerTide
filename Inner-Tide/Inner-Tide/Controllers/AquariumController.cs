@@ -163,10 +163,9 @@ namespace Inner_Tide.Controllers {
                 return Json(fishList);
 
             } catch (Exception ex) {
-
+                _logger.LogError(ex, "Could not load fish from the user's inventory.");
+                return StatusCode(500, ex.GetBaseException().Message);
             }
-
-            return NotFound();
         }
 
         public async Task<IActionResult> GetAllItems() {
@@ -218,10 +217,9 @@ namespace Inner_Tide.Controllers {
                 return Json(itemList);
 
             } catch (Exception ex) {
-
+                _logger.LogError(ex, "Could not load items from the user's inventory.");
+                return StatusCode(500, ex.GetBaseException().Message);
             }
-
-            return NotFound();
         }
 
         [HttpPost]
@@ -335,14 +333,16 @@ namespace Inner_Tide.Controllers {
                         success = true,
                         itemId = item.ItemId,
                         itemName = item.Name,
+                        coinsSpent = itemPrice,
                         remainingCoins = user.CoinCount
                     });
                 }
 
+                return NotFound();
             } catch (Exception ex) {
+                _logger.LogError(ex, "Could not purchase the aquarium item.");
+                return StatusCode(500, ex.GetBaseException().Message);
             }
-
-            return NotFound();
         }
 
         //[HttpGet]
@@ -438,8 +438,10 @@ namespace Inner_Tide.Controllers {
                 }
 
                 return Json(fishList);
-            } catch (Exception e) {}
-            return NotFound();
+            } catch (Exception e) {
+                _logger.LogError(e, "Could not load fish placed in the aquarium.");
+                return StatusCode(500, e.GetBaseException().Message);
+            }
         }
 
         [HttpPost]
@@ -488,9 +490,9 @@ namespace Inner_Tide.Controllers {
                 }
 
             } catch (Exception e) {
-                return BadRequest(e.Message);
+                _logger.LogError(e, "Could not place a fish in the aquarium.");
+                return StatusCode(500, e.GetBaseException().Message);
             }
-            return NotFound();
         }
 
         [HttpPost]
