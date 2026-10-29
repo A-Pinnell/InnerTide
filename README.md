@@ -11,7 +11,7 @@ Matthew Johnston
 # Current Implementation
 This current version contains the following functionality:
 - Accounts: Register and login forms, “Remember me,” and password recovery links.
-- Task menu: Daily, weekly, and monthly task tabs; task completion; priority-task styling; coin rewards; a coin balance; profile details; and a scrollable task list.
+- Task menu: Daily, weekly, and monthly task tabs; task completion; priority-task styling; coin rewards; a coin balance; profile details; and a scroll-able task list.
 - Elements panel: An aquarium status display and actions for regenerating tasks and viewing task-generation stats. The Aquarium List button is disabled in the page markup.
 - Aquarium: Fish and object shop/inventory panels, server-backed purchases, and fish drag-and-drop between inventory and the aquarium.
 - Aquarium editor and controls: Editor toolbar with layer switching, an inventory panel, Hide mode, and navigation back to the task menu.
@@ -45,3 +45,7 @@ Music and Sound Effects are also included
 # Development Status
 
 # Repository
+<a href="https://github.com/A-Pinnell/InnerTide"> To Main Repository </a>
+<a href="https://github.com/johnstonMatthew/Inner-Tide-API"> To Repository Storing API Code </a>
+<a href="https://github.com/johnstonMatthew/InnerTideFishSprites"> To Repository Storing Fish Sprites </a>
+<a href="https://github.com/johnstonMatthew/InnerTideItemSprites"> To Repository Storing Item Sprites </a>
