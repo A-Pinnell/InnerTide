@@ -37,45 +37,16 @@ namespace Inner_Tide.Controllers {
                 return Unauthorized();
             }
 
-            var assignments = await _context.UserTasks
-                .Where(userTask => userTask.UserId == user.Id)
-                .Include(userTask => userTask.Task)
+            var userTasks = await _context.UserTasks
+                .Where(ut => ut.UserId == user.Id && ut.Completed)
                 .ToListAsync();
-            var taskIds = assignments
-                .Where(assignment => assignment.Task != null)
-                .Select(assignment => assignment.TaskId)
-                .Distinct()
-                .ToList();
-            var sharedTaskIds = await _context.UserTasks
-                .Where(userTask => taskIds.Contains(userTask.TaskId) && userTask.UserId != user.Id)
-                .Select(userTask => userTask.TaskId)
-                .Distinct()
-                .ToHashSetAsync();
 
-            foreach (var assignment in assignments) {
-                if (assignment.Task == null || !assignment.Task.Completed) {
-                    continue;
-                }
-
-                if (sharedTaskIds.Contains(assignment.TaskId)) {
-                    var task = assignment.Task;
-                    var resetTask = new Inner_Tide.Models.Task {
-                        Title = task.Title,
-                        TimeFrame = task.TimeFrame,
-                        CoinReward = task.CoinReward,
-                        Multiplier = task.Multiplier,
-                        Priority = task.Priority,
-                        Completed = false,
-                        CategoryTag = task.CategoryTag
-                    };
-                    _context.Tasks.Add(resetTask);
-                    assignment.Task = resetTask;
-                } else {
-                    assignment.Task.Completed = false;
-                }
+            foreach (var userTask in userTasks) {
+                userTask.Completed = false;
             }
 
             await _context.SaveChangesAsync();
+
             return Ok(new { reset = true });
         }
 

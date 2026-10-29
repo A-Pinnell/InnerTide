@@ -101,15 +101,6 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("CoinReward")
                         .HasColumnType("int");
 
-                    b.Property<bool>("Completed")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Multiplier")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Priority")
-                        .HasColumnType("bit");
-
                     b.Property<string>("TimeFrame")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -146,6 +137,9 @@ namespace Inner_Tide.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("FirstTimeLogin")
                         .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
@@ -267,6 +261,15 @@ namespace Inner_Tide.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserTaskId"));
+
+                    b.Property<bool>("Completed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Multiplier")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Priority")
+                        .HasColumnType("bit");
 
                     b.Property<int>("TaskId")
                         .HasColumnType("int");

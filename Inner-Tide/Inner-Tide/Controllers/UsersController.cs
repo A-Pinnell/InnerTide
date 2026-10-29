@@ -47,7 +47,8 @@ namespace Inner_Tide.Controllers {
                 Email = user.Email,
                 CoinCount = 0,
                 AccountLevel = 1,
-                XPForNextLevel = 100
+                XPForNextLevel = 100,
+                FirstTimeLogin = false
             };
 
             await _context.SaveChangesAsync();

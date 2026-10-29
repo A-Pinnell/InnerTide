@@ -55,44 +55,38 @@ namespace Inner_Tide.Controllers
         [HttpGet]
         public async Task<IActionResult> GetTasks() {
             try {
-            var user = await userManager.GetUserAsync(User);
+                var user = await userManager.GetUserAsync(User);
 
-            if (user == null) {
-                return NotFound();
-            }
+                if (user == null) {
+                    return NotFound();
+                }
 
-            if (userManager == null) {
-                return Content("userManager is null");
-            }
+                var userTasks = await _context.UserTasks
+                    .Where(ut => ut.UserId == user.Id)
+                    .Include(ut => ut.Task)
+                    .Select(ut => new {
+                        ut.UserTaskId,
+                        ut.TaskId,
+                        ut.Task.Title,
+                        ut.Task.TimeFrame,
+                        ut.Task.CoinReward,
+                        ut.Multiplier,
+                        ut.Priority,
+                        ut.Completed,
+                    })
+                    .ToListAsync();
 
-            if (_context == null) {
-                return Content("_context is null");
-            }
-
-                var userId = user.Id;
-
-            var userTasks = await _context.UserTasks.Where(ut => ut.UserId == user.Id && ut.Task != null)
-                                                    .Select(ut => new {
-                                                        ut.Task.TaskId,
-                                                        ut.Task.Title,
-                                                        ut.Task.TimeFrame,
-                                                        ut.Task.CoinReward,
-                                                        ut.Task.Multiplier,
-                                                        ut.Task.Priority,
-                                                        ut.Task.Completed
-                                                    }).ToListAsync();
-
-            return Json(new {
-                daily = userTasks.Where(c => c.TimeFrame == "Daily"),
-                weekly = userTasks.Where(c => c.TimeFrame == "Weekly"),
-                monthly = userTasks.Where(c => c.TimeFrame == "Monthly")
-            });
+                return Json(new {
+                    daily = userTasks.Where(t => t.TimeFrame == "Daily"),
+                    weekly = userTasks.Where(t => t.TimeFrame == "Weekly"),
+                    monthly = userTasks.Where(t => t.TimeFrame == "Monthly")
+                });
             } catch (Exception ex) {
                 return Content(
-                ex.Message + Environment.NewLine +
-                ex.InnerException?.Message + Environment.NewLine +
-                ex.StackTrace
-            );
+                    ex.Message + Environment.NewLine +
+                    ex.InnerException?.Message + Environment.NewLine +
+                    ex.StackTrace
+                );
             }
         }
 

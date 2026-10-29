@@ -14,16 +14,6 @@ namespace Inner_Tide.Models {
         [Required]
         public int CoinReward { get; set; }
 
-        [Range(1, 2)]
-        [Required] 
-        public int Multiplier { get; set; }
-
-        [Required]
-        public bool Priority { get; set; }
-
-        [Required]
-        public bool Completed { get; set; }
-
         [Required]
         public string CategoryTag { get; set; }
     }

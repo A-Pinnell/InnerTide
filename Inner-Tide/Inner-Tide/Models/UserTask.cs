@@ -5,6 +5,15 @@ namespace Inner_Tide.Models {
         [Required]
         public int UserTaskId { get; set; }
 
+        [Required]
+        public bool Priority { get; set; }
+
+        [Range(1, 2)]
+        [Required]
+        public int Multiplier { get; set; }
+
+        [Required]
+        public bool Completed { get; set; }
 
         //Foreign Key
         public string UserId { get; set; }

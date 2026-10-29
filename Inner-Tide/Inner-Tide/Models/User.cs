@@ -13,5 +13,8 @@ namespace Inner_Tide.Models {
         [Range(0, 999)]
         [Required]
         public int CoinCount { get; set; }
+
+        [Required]
+        public bool FirstTimeLogin { get; set; }
     }
 }
