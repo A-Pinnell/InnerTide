@@ -4,7 +4,12 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>@ViewData["Title"] - Inner Tide</title>
-        <script>document.documentElement.classList.add("page-assets-loading");</script>
+        <script>
+            document.documentElement.classList.add("page-assets-loading");
+            if (sessionStorage.getItem("innerTide.quizExitTransition") === "true") {
+                document.documentElement.classList.add("quiz-return-pending");
+            }
+        </script>
         <link rel="stylesheet" href="../css/site.css">
         <script src="../js/color.js" defer></script>
         <script src="../js/site.js" defer></script>

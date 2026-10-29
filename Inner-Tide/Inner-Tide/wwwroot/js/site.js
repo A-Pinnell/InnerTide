@@ -198,8 +198,13 @@ const elementsBarSounds = {
     in: new Audio(`${soundPathPrefix}elements_in.mp3`),
     out: new Audio(`${soundPathPrefix}elements_out.mp3`)
 };
+const quizArrowSounds = {
+    left: new Audio(`${soundPathPrefix}Close.mp3`),
+    right: new Audio(`${soundPathPrefix}Open.mp3`)
+};
 Object.values(sideNavigationSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 Object.values(elementsBarSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
+Object.values(quizArrowSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 registerAudioPlayer(document.querySelector("#aquarium-music"), "music");
 registerAudioPlayer(document.querySelector("#login-music"), "music");
 
@@ -1301,6 +1306,8 @@ async function renderInventoryFish() {
             item.className = "store-item inventoryGrabbable";
             item.setAttribute("value", f.userFishId);
             item.setAttribute("value2", f.fishId);
+            item.dataset.sprite = f.sprite;
+            item.dataset.species = f.species;
 
             item.innerHTML = `
             <div class="store-item-image">
@@ -1314,7 +1321,8 @@ async function renderInventoryFish() {
 
             <div class="store-item-details">
                 <p class="store-product-name">${f.species}</p>
-            </div>`;
+            </div>
+            <span class="inventory-drag-indicator" aria-hidden="true"><i></i><i></i><i></i></span>`;
 
             showStoreImageLoading(item);
             inventoryContainer.appendChild(item);
@@ -1636,10 +1644,9 @@ if (questionScreen) {
     const answerButtons = Array.from(questionScreen.querySelectorAll(".answer-choice"));
     const previousButton = questionScreen.querySelector("#previousQuestion");
     const nextButton = questionScreen.querySelector("#nextQuestion");
-    const skipButton = questionScreen.querySelector("#skipQuestion");
     const quitLink = questionScreen.querySelector(".question-action[href]");
 
-    if (!questionNumber || !questionPrompt || !answerTrack || !answerFish || answerButtons.length === 0 || !previousButton || !nextButton || !skipButton || !quitLink) {
+    if (!questionNumber || !questionPrompt || !answerTrack || !answerFish || answerButtons.length === 0 || !previousButton || !nextButton || !quitLink) {
         throw new Error("The question screen requires its prompt, answers, and navigation controls.");
     }
 
@@ -1672,6 +1679,7 @@ if (questionScreen) {
         questionNumber.textContent = String(currentQuestion + 1);
         questionPrompt.textContent = questions[currentQuestion];
         previousButton.disabled = currentQuestion === 0;
+        nextButton.disabled = answers[currentQuestion] === null;
         questionAnimations.forEach(animation => animation.cancel());
         questionAnimations = [];
         if (animate && !isReducedMotionEnabled()) {
@@ -1691,6 +1699,9 @@ if (questionScreen) {
 
         if (answers[currentQuestion] !== null) {
             moveFishTo(Number(answers[currentQuestion]));
+        } else {
+            answerFish.hidden = true;
+            fishAnswerIndex = null;
         }
     }
 
@@ -1703,11 +1714,22 @@ if (questionScreen) {
             return;
         }
         fadeThroughBlack(() => {
+            currentQuestion += 1;
+            renderQuestion(true);
         });
     }
 
     answerButtons.forEach(button => {
         button.addEventListener("click", () => {
+            const answerIndex = Number(button.dataset.answer);
+            if (!Number.isInteger(answerIndex) || !answerButtons[answerIndex]) {
+                throw new RangeError(`Unknown quiz answer index: ${button.dataset.answer}`);
+            }
+
+            const soundDirection = fishAnswerIndex === null
+                ? (answerIndex < answerButtons.length / 2 ? "left" : "right")
+                : (answerIndex < fishAnswerIndex ? "left" : "right");
+            playSideNavigationSound(soundDirection);
             answers[currentQuestion] = String(answerIndex);
             renderQuestion();
         });
@@ -1715,14 +1737,18 @@ if (questionScreen) {
 
     previousButton.addEventListener("click", () => {
         if (currentQuestion === 0) return;
+        playQuizArrowSound("left");
         fadeThroughBlack(() => {
             currentQuestion -= 1;
             renderQuestion(true);
         });
     });
 
-    nextButton.addEventListener("click", advanceQuestion);
-    skipButton.addEventListener("click", advanceQuestion);
+    nextButton.addEventListener("click", () => {
+        if (answers[currentQuestion] === null) return;
+        playQuizArrowSound("right");
+        advanceQuestion();
+    });
     renderQuestion();
 }
 
@@ -1761,6 +1787,17 @@ function playSideNavigationSound(position) {
     sound.currentTime = 0;
     sound.play().catch(error => {
         console.error(`Unable to play ${position} navigation sound.`, error);
+    });
+}
+
+function playQuizArrowSound(direction) {
+    if (direction !== "left" && direction !== "right") return;
+
+    const sound = quizArrowSounds[direction];
+    sound.pause();
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+        console.error(`Unable to play ${direction} quiz arrow sound.`, error);
     });
 }
 
@@ -1974,6 +2011,7 @@ document.addEventListener("click", event => {
     if (document.body.classList.contains("question-page") && link.closest(".question-actions")) {
         event.preventDefault();
         sessionStorage.setItem("innerTide.quizExitTransition", "true");
+        questionScreen?.classList.add("quiz-exiting");
         const reducedMotion = isReducedMotionEnabled();
         if (reducedMotion) {
             navigateWithReducedMotion(link.href);
@@ -2024,6 +2062,7 @@ if (document.body.classList.contains("quiz-menu-page")) {
 
     if (sessionStorage.getItem("innerTide.quizExitTransition") === "true") {
         sessionStorage.removeItem("innerTide.quizExitTransition");
+        document.documentElement.classList.add("quiz-return-pending");
         const card = document.querySelector(".quiz-card[href]");
         if (card && !isReducedMotionEnabled()) {
             const bounds = card.getBoundingClientRect();
@@ -2034,18 +2073,24 @@ if (document.body.classList.contains("quiz-menu-page")) {
                 transitionCard.addEventListener("transitionend", event => {
                     if (event.target !== transitionCard || event.propertyName !== "transform") return;
                     transitionCard.remove();
+                    document.body.classList.add("quiz-return-content-hidden");
                     card.classList.add("is-content-fading");
                     card.style.visibility = "";
+                    document.documentElement.classList.remove("quiz-return-pending");
                     void card.offsetWidth;
                     window.requestAnimationFrame(() => {
+                        document.body.classList.add("quiz-return-content-visible");
                         card.classList.add("is-content-visible");
                         window.setTimeout(() => {
                             card.classList.remove("is-content-fading", "is-content-visible");
+                            document.body.classList.remove("quiz-return-content-hidden", "quiz-return-content-visible");
                         }, 220);
                     });
                 });
                 transitionCard.classList.remove("is-expanded");
             });
+        } else {
+            document.documentElement.classList.remove("quiz-return-pending");
         }
     }
 
@@ -2324,8 +2369,90 @@ function randomRange(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+function startAquariumAnimation() {
+    if (aquariumAnimationRunning || fishList.length === 0) return;
+
+    aquariumAnimationRunning = true;
+    requestAnimationFrame(animate);
+}
+
+function appendAquariumFish(f, x, y, startMoving = false) {
+    const fishContainer = document.querySelector("#fishContainer");
+    if (!fishContainer) {
+        throw new Error("Cannot add a fish because the aquarium fish container is missing.");
+    }
+
+    const item = document.createElement("div");
+    item.classList.add("aquariumFish", "aquariumGrabbable");
+    item.setAttribute("value", f.userFishId);
+    item.setAttribute("value2", f.fishId);
+
+    const img = document.createElement("img");
+    img.draggable = false;
+    img.alt = f.species;
+
+    let revealFish;
+    const imageLoaded = new Promise(resolve => {
+        let revealed = false;
+        revealFish = () => {
+            if (revealed) return;
+            revealed = true;
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    item.classList.add("is-loaded");
+                    resolve();
+                });
+            });
+        };
+        img.addEventListener("load", revealFish, { once: true });
+        img.addEventListener("error", () => {
+            console.error(`Could not load fish image: ${f.sprite}`);
+            revealFish();
+        }, { once: true });
+    });
+
+    if (f.species === "Paddlefish") {
+        img.style.width = "270px";
+    }
+
+    item.style.position = "absolute";
+    item.style.left = `${x}px`;
+    item.style.top = `${y}px`;
+    item.style.zIndex = "1";
+    item.appendChild(img);
+    fishContainer.appendChild(item);
+    img.src = f.sprite;
+    if (img.complete) {
+        if (img.naturalWidth > 0) {
+            revealFish();
+        } else {
+            img.dispatchEvent(new Event("error"));
+        }
+    }
+
+    const fish = {
+        element: item,
+        x,
+        y,
+        targetX: randomRange(0, Math.max(0, fishContainer.clientWidth - 125)),
+        targetY: randomRange(0, Math.max(0, fishContainer.clientHeight - 80)),
+        speed: randomRange(50, 90),
+        nextBubbleAt: 0,
+        moving: startMoving
+    };
+    fishList.push(fish);
+    if (startMoving) {
+        startAquariumAnimation();
+    }
+
+    return { fish, imageLoaded };
+}
+
 async function renderAquariumFish() {
     console.log("Rendering Fish");
+    const fishContainer = document.querySelector("#fishContainer");
+    if (!fishContainer) return;
+
     const fishLoadingIndicator = document.querySelector("#fishLoadingIndicator");
     if (fishLoadingIndicator) {
         fishLoadingIndicator.hidden = false;
@@ -2342,90 +2469,25 @@ async function renderAquariumFish() {
         }
 
         const fish = await res.json();
-        if (document.querySelector("#fishContainer") != null) {
-            const fishContainer = document.querySelector("#fishContainer");
-        }
-        else {
-            console.warning("#fishContainer was not found");
-        }
-
         fishContainer.replaceChildren();
         fishList = [];
-        const imageLoads = [];
+        const renderedFish = fish.map(f => appendAquariumFish(
+            f,
+            Number(f.xCord) || 0,
+            Number(f.yCord) || 0
+        ));
 
-        fish.forEach(f => {
-            const item = document.createElement("div");
-            item.classList.add("aquariumFish", "aquariumGrabbable");
-            item.setAttribute("value", f.userFishId);
-            item.setAttribute("value2", f.fishId);
+        await Promise.all(renderedFish.map(({ imageLoaded }) => imageLoaded));
 
-            const img = document.createElement("img");
-            img.draggable = false;
-            img.alt = f.species;
-
-            imageLoads.push(new Promise(resolve => {
-                const revealFish = () => {
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            item.classList.add("is-loaded");
-                            resolve();
-                        });
-                    });
-                };
-
-                img.addEventListener("load", () => {
-                    revealFish();
-                }, { once: true });
-                img.addEventListener("error", () => {
-                    console.error(`Could not load fish image: ${f.sprite}`);
-                    revealFish();
-                }, { once: true });
-            }));
-
-            if (f.species == "Paddlefish") {
-                img.style.width = "200px";
-            }
-
-            const x = Number(f.xCord) || 0;
-            const y = Number(f.yCord) || 0;
-
-            item.style.position = "absolute";
-            item.style.left = `${x}px`;
-            item.style.top = `${y}px`;
-            item.style.zIndex = "1";
-
-            item.appendChild(img);
-            fishContainer.appendChild(item);
-            img.src = f.sprite;
-
-            fishList.push({
-                element: item,
-                x,
-                y,
-                targetX: x,
-                targetY: y,
-                speed: randomRange(0.2, 0.8),
-                nextBubbleAt: 0,
-                moving: false
-            });
+        renderedFish.forEach(({ fish: rendered }) => {
+            rendered.targetX = randomRange(0, Math.max(0, fishContainer.clientWidth - rendered.element.offsetWidth));
+            rendered.targetY = randomRange(0, Math.max(0, fishContainer.clientHeight - rendered.element.offsetHeight));
+            rendered.moving = true;
         });
 
-        await Promise.all(imageLoads);
-
-        fishList.forEach(fish => {
-            fish.targetX = randomRange(0, fishContainer.clientWidth);
-            fish.targetY = randomRange(0, fishContainer.clientHeight);
-            fish.moving = true;
-        });
-
-        console.log(aquariumAnimationRunning);
-
-        if (aquariumAnimationRunning == false) {
-            aquariumAnimationRunning = true;
-            requestAnimationFrame(animate);
-        }
+        startAquariumAnimation();
     } catch (error) {
-        console.error("Could not render aquarium fish:", error);
+        console.warn("Could not render aquarium fish:", error);
     } finally {
         if (fishLoadingIndicator) {
             fishLoadingIndicator.hidden = true;
@@ -2455,67 +2517,47 @@ function emitFishBubble(fish, direction) {
     window.setTimeout(() => bubble.remove(), 2200);
 }
 
-function animate() {
+function animate(now) {
     const fishContainer = document.querySelector("#fishContainer");
     if (!fishContainer) return;
 
     const width = fishContainer.clientWidth;
     const height = fishContainer.clientHeight;
+    const aquariumRect = fishContainer.getBoundingClientRect();
+    const sandRect = sand2.getBoundingClientRect();
+    const elapsedSeconds = Math.min((now - (animate.lastFrameTime ?? now)) / 1000, 0.05);
+    animate.lastFrameTime = now;
 
 
     fishList.forEach(fish => {
         if (!fish.moving || !fish.element.isConnected) return;
 
-
         const fishWidth = fish.element.offsetWidth;
         const fishHeight = fish.element.offsetHeight;
-
         const maxX = Math.max(0, width - fishWidth);
-
-        console.log({
-            containerWidth: width,
-            fishWidth: fishWidth,
-            maxX: maxX,
-            containerRect: fishContainer.getBoundingClientRect().width
-        });
+        const maxY = Math.max(0, Math.min(
+            height - fishHeight,
+            sandRect.top + 100 - aquariumRect.top - fishHeight
+        ));
+        fish.x = Math.max(0, Math.min(fish.x, maxX));
+        fish.y = Math.max(0, Math.min(fish.y, maxY));
+        fish.targetX = Math.max(0, Math.min(fish.targetX, maxX));
+        fish.targetY = Math.max(0, Math.min(fish.targetY, maxY));
 
         let dx = fish.targetX - fish.x;
         let dy = fish.targetY - fish.y;
 
-        const fishRect = fish.element.getBoundingClientRect();
-        const aquariumRect = fishContainer.getBoundingClientRect();
-        const sandRect = sand2.getBoundingClientRect();
-
-        if (fishRect.top <= aquariumRect.top) {
-            fish.targetY = randomRange(fish.y + 50, fishContainer.clientHeight - fish.element.offsetHeight);
-
-        } else if (fishRect.bottom >= sandRect.top + 100) {
-            fish.targetY = randomRange(0, Math.max(0, fish.y - 50) );
-        }
-
-        dx = fish.targetX - fish.x;
-        dy = fish.targetY - fish.y;
-
         const distance = Math.hypot(dx, dy);
 
         if (distance < 3) {
-            fish.targetX = randomRange(0, fishContainer.clientWidth - fish.element.offsetWidth);
-            fish.targetY = randomRange(0, fishContainer.clientHeight - fish.element.offsetHeight);
+            fish.targetX = randomRange(0, maxX);
+            fish.targetY = randomRange(0, maxY);
             return;
         }
 
-        fish.x += (dx / distance) * fish.speed;
-        fish.y += (dy / distance) * fish.speed;
-
-        console.log({
-            width,
-            fishWidth: fish.element.offsetWidth,
-            x: fish.x,
-            maxX: width - fish.element.offsetWidth
-        });
-
-        fish.x = Math.max(0, Math.min(fish.x, width - fish.element.offsetWidth) );
-        fish.y = Math.max(0, Math.min(fish.y, height - fish.element.offsetHeight) );
+        const step = Math.min(distance, fish.speed * elapsedSeconds);
+        fish.x += (dx / distance) * step;
+        fish.y += (dy / distance) * step;
 
         fish.element.style.left = `${fish.x}px`;
         fish.element.style.top = `${fish.y}px`;
@@ -2525,7 +2567,6 @@ function animate() {
         const flip = dx > 0 ? -1 : 1;
         fish.element.style.transform = `rotate(${rotation}deg) scaleX(${flip})`;
 
-        const now = performance.now();
         if (now >= fish.nextBubbleAt) {
             emitFishBubble(fish, direction);
             fish.nextBubbleAt = now + randomRange(500, 900);
@@ -2546,16 +2587,121 @@ let offSetY = 0;
 // Drag and Drop Logic
 let selectedFish = null; // Dragged Ghost
 let dragSource = null;   // Original Fish
+let fishPlacementInProgress = false;
+
+async function placeSelectedInventoryFish(event) {
+    if (!selectedFish || !dragSource?.classList.contains("inventoryGrabbable") || fishPlacementInProgress) {
+        return;
+    }
+
+    const fishContainer = document.querySelector("#fishContainer");
+    const fishContainerRect = fishContainer?.getBoundingClientRect();
+    if (!fishContainer || !fishContainerRect) {
+        throw new Error("An active fish placement requires an aquarium fish container.");
+    }
+
+    if (
+        event.clientX < fishContainerRect.left ||
+        event.clientX > fishContainerRect.right ||
+        event.clientY < fishContainerRect.top ||
+        event.clientY > fishContainerRect.bottom
+    ) {
+        return;
+    }
+
+    const source = dragSource;
+    const preview = selectedFish;
+    const userFishId = source.getAttribute("value");
+    const fishId = source.getAttribute("value2");
+    const species = source.dataset.species;
+    const sprite = source.dataset.sprite;
+    if (!species || !sprite) {
+        throw new Error("The selected inventory fish is missing its display data.");
+    }
+
+    const inventoryImage = source.querySelector("img");
+    const fishWidth = species === "Paddlefish" ? 200 : 125;
+    const fishHeight = inventoryImage?.naturalWidth
+        ? fishWidth * inventoryImage.naturalHeight / inventoryImage.naturalWidth
+        : 80;
+    const x = Math.max(0, Math.min(
+        fishContainer.clientWidth - fishWidth,
+        event.clientX - fishContainerRect.left - fishWidth / 2
+    ));
+    const y = Math.max(0, Math.min(
+        fishContainer.clientHeight - fishHeight,
+        event.clientY - fishContainerRect.top - fishHeight / 2
+    ));
+    const aquariumId = aquariumBody?.getAttribute("data-aquarium-id");
+    if (!aquariumId) {
+        throw new Error("Cannot place a fish because the aquarium ID is missing.");
+    }
+
+    fishPlacementInProgress = true;
+    try {
+        const res = await fetch(`/Aquarium/AddFishToAquarium`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                userFishId: Number(userFishId),
+                fishId,
+                aquariumId: Number(aquariumId),
+                x: Math.round(x),
+                y: Math.round(y)
+            })
+        });
+        if (!res.ok) {
+            throw new Error(`Failed to place fish: ${res.status}`);
+        }
+
+        const placedFish = appendAquariumFish({
+            userFishId: Number(userFishId),
+            fishId,
+            sprite,
+            species
+        }, x, y, true);
+        void placedFish.imageLoaded.then(() => {
+            const maxX = Math.max(0, fishContainer.clientWidth - placedFish.fish.element.offsetWidth);
+            const maxY = Math.max(0, fishContainer.clientHeight - placedFish.fish.element.offsetHeight);
+            placedFish.fish.x = Math.min(maxX, Math.max(0, placedFish.fish.x));
+            placedFish.fish.y = Math.min(maxY, Math.max(0, placedFish.fish.y));
+            placedFish.fish.element.style.left = `${placedFish.fish.x}px`;
+            placedFish.fish.element.style.top = `${placedFish.fish.y}px`;
+            placedFish.fish.targetX = randomRange(0, maxX);
+            placedFish.fish.targetY = randomRange(0, maxY);
+        });
+        preview.remove();
+        selectedFish = null;
+        dragSource = null;
+        void renderInventoryFish();
+    } catch (error) {
+        console.error("Fish placement failed:", error);
+    } finally {
+        fishPlacementInProgress = false;
+    }
+}
 
 document.addEventListener("pointerdown", event => {
     const inventoryPanel = document.querySelector("#tankInventoryPanel");
+    const target = event.target instanceof Element ? event.target : null;
+    const inventoryFish = target?.closest(".inventoryGrabbable");
 
-    if (event.target.closest(".inventoryGrabbable")) {
-        dragSource = event.target.closest(".inventoryGrabbable");
+    if (selectedFish && dragSource?.classList.contains("inventoryGrabbable") && !inventoryFish) {
+        void placeSelectedInventoryFish(event).catch(error => {
+            console.error("Fish placement failed:", error);
+        });
+        return;
+    }
+
+    if (inventoryFish) {
+        selectedFish?.remove();
+        dragSource = inventoryFish;
         inventoryPanel?.classList.remove("is-open");
 
-    } else if (event.target.closest(".aquariumGrabbable")) {
-        dragSource = event.target.closest(".aquariumGrabbable");
+    } else if (target?.closest(".aquariumGrabbable")) {
+        dragSource = target.closest(".aquariumGrabbable");
         inventoryBtn.hidden = true;
         removeFishBtn.hidden = false;
         removeFishBtn.classList.add("is-open");
@@ -2574,19 +2720,23 @@ document.addEventListener("pointerdown", event => {
         }
     }
 
-    const rect = dragSource.getBoundingClientRect();
+    const fishImage = dragSource.querySelector("img");
+    if (!fishImage) {
+        dragSource = null;
+        throw new Error("Cannot drag a fish because its image is missing.");
+    }
 
-    selectedFish = dragSource.cloneNode(true);
+    selectedFish = fishImage.cloneNode(true);
+    selectedFish.className = "fish-drag-preview";
 
     document.body.appendChild(selectedFish);
 
     selectedFish.style.position = "fixed";
     selectedFish.style.pointerEvents = "none";
     selectedFish.style.zIndex = "4";
-    selectedFish.style.left = `${rect.left}px`;
-    selectedFish.style.top = `${rect.top}px`;
-    selectedFish.style.width = `${rect.width}px`;
-    selectedFish.style.height = `${rect.height}px`;
+    selectedFish.style.removeProperty("width");
+    selectedFish.style.left = `${event.clientX - selectedFish.offsetWidth / 2}px`;
+    selectedFish.style.top = `${event.clientY - selectedFish.offsetHeight / 2}px`;
 
     console.log("Dragging:", dragSource);
 });
@@ -2604,70 +2754,39 @@ document.addEventListener("pointermove", event => {
 const aquariumBody = document.querySelector("#aquariumBody");
 
 document.addEventListener("pointerup", async event => {
-    const fishContainer=document.querySelector("#fishContainer");
+    if (!selectedFish || !dragSource || fishPlacementInProgress) {
+        return;
+    }
+
+    if (dragSource.classList.contains("inventoryGrabbable")) {
+        return;
+    }
+
+    const fishContainer = document.querySelector("#fishContainer");
     const aquarium = document.querySelector("#aquarium");
-    const inventoryPanel = document.querySelector("#tankInventoryPanel");
+
+    if (!aquarium) {
+        throw new Error("An active fish drag requires an aquarium.");
+    }
 
     const aquariumRect = aquarium.getBoundingClientRect();
-
-    if (!selectedFish || !dragSource) {
-        return;
+    if (!fishContainer) {
+        throw new Error("An active fish placement requires an aquarium fish container.");
     }
 
     const userFishId = dragSource.getAttribute("value");
     const fishId = dragSource.getAttribute("value2");
-    const aquariumFish = dragSource.classList.contains("aquariumGrabbable") ? fishList.find(fish => fish.element === dragSource) : null;
+    const aquariumFish = fishList.find(fish => fish.element === dragSource);
     let aquariumFishRemoved = false;
 
     try {
-        if (dragSource.classList.contains("inventoryGrabbable")) {
-            console.log("Mouse:", event.clientX, event.clientY);
-            console.log("Aquarium Rect:", aquariumRect);
-
-            const droppedInAquarium =
-                event.clientX >= aquariumRect.left &&
-                event.clientX <= aquariumRect.right &&
-                event.clientY >= aquariumRect.top &&
-                event.clientY <= aquariumRect.bottom;
-
-            console.log("Dropped:", droppedInAquarium);
-
-            if (droppedInAquarium) {
-                console.log("ENTERED DROP LOGIC");
-
-                const x = window.innerWidth / 2;
-                const y = window.innerHeight / 2;
-
-                const aquariumId = aquariumBody.getAttribute("data-aquarium-id");
-                console.log(aquariumId);
-
-                const res = await fetch(`/Aquarium/AddFishToAquarium`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                    body: JSON.stringify({
-                        userFishId: Number(userFishId),
-                        fishId,
-                        aquariumId: Number(aquariumId),
-                        x: Math.round(x),
-                        y: Math.round(y)
-                    })
-                });
-
-                if (res.ok) {
-                    await Promise.all([
-                        renderInventoryFish(),
-                        renderAquariumFish(),
-                    ]);
-                }
-            }
-        } else if ( dragSource.classList.contains("aquariumGrabbable") ) {
-
+        if (aquariumFish) {
             const removeRect = removeFishBtn.getBoundingClientRect();
 
-            const aquariumId = aquariumBody.getAttribute("data-aquarium-id");
-            console.log(aquariumId);
+            const aquariumId = aquariumBody?.getAttribute("data-aquarium-id");
+            if (!aquariumId) {
+                throw new Error("Cannot remove a fish because the aquarium ID is missing.");
+            }
 
             const droppedInRemove =
                 event.clientX >= removeRect.left &&
@@ -2718,7 +2837,7 @@ document.addEventListener("pointerup", async event => {
             }
         }
 
-        if (!aquariumFish || aquariumFishRemoved) {
+        if (aquariumFishRemoved) {
             dragSource.remove();
         }
         selectedFish.remove();
@@ -2729,6 +2848,7 @@ document.addEventListener("pointerup", async event => {
         return;
 
     } catch (error) {
+        fishPlacementInProgress = false;
         console.error("Drop failed:", error);
         if (dragSource?.classList.contains("aquariumGrabbable")) {
             removeFishBtn.hidden = true;
