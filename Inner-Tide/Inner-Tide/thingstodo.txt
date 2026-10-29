@@ -3,3 +3,4 @@
 - The P2 PDF
 - Unit Testing
 - General Polish / Testing
+- Mix down volume of intro videos
