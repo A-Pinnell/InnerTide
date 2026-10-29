@@ -13,3 +13,8 @@
 - have a test sfx and test short music track when changing volumes
 - stylize account settings better
 - Make back to tasks button the same as close button (i know what this means)
+- add sfx to aquarium list menu
+- enhance css for aquarium list menu
+- aquarium list previews should have color tint matching what they look like
+- mix aquarium 4 track slightly higher
+- fix percentage number on aquarium list
