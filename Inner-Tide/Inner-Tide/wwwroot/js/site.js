@@ -1365,7 +1365,7 @@ async function renderInventoryFish() {
             <div class="store-item-details">
                 <p class="store-product-name">${f.species}</p>
             </div>
-            <span class="inventory-drag-indicator" aria-hidden="true"><i></i><i></i><i></i></span>`;
+            <span class="inventory-drag-indicator"><i></i><i></i><i></i></span>`;
 
             showStoreImageLoading(item);
             inventoryContainer.appendChild(item);
