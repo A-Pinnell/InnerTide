@@ -133,6 +133,7 @@ revealPageAfterAssetsLoad();
 const bedIcon = '<svg viewBox="0 0 64 48"><path d="M5 8h8v17h46v17h-6v-6H11v6H5V8Zm9 17v-9h15a8 8 0 0 1 8 9H14Z"/></svg>';
 const taskList = document.querySelector("#task-list");
 const taskScroll = document.querySelector("#task-scroll");
+const taskLoadingIndicator = document.querySelector("#taskLoadingIndicator");
 const taskCompletionUrl = taskList?.dataset.completeUrl;
 const taskRequestVerificationToken = document.querySelector('#regenerateTasksForm input[name="__RequestVerificationToken"]')?.value;
 const tabsContainer = document.querySelector(".tabs");
@@ -178,12 +179,22 @@ const audioPlayers = {
     music: new Set(),
     sfx: new Set()
 };
+const videoPlayers = new Set();
+const videoMusicVolumeMultiplier = 0.5;
 
 function registerAudioPlayer(player, type) {
     if (!player) return;
 
     audioPlayers[type].add(player);
     player.volume = type === "music" ? musicVolume : sfxVolume;
+    return player;
+}
+
+function registerVideoPlayer(player) {
+    if (!player) return;
+
+    videoPlayers.add(player);
+    player.volume = musicVolume * videoMusicVolumeMultiplier;
     return player;
 }
 
@@ -204,11 +215,17 @@ function setAudioVolume(type, volume) {
     audioPlayers[type].forEach(player => {
         player.volume = boundedVolume;
     });
+    if (type === "music") {
+        videoPlayers.forEach(player => {
+            player.volume = boundedVolume * videoMusicVolumeMultiplier;
+        });
+    }
 }
 
 const soundPathPrefix = new URL("/sfx/", document.baseURI).pathname;
 const musicPathPrefix = new URL("/music/", document.baseURI).pathname;
 const coinGainSound = registerAudioPlayer(new Audio(`${soundPathPrefix}coin_gain.mp3`), "sfx");
+const coinChangeSounds = new Set();
 const musicVolumeTestSound = new Audio(`${musicPathPrefix}test_music.mp3`);
 const sfxVolumeTestSound = new Audio(`${soundPathPrefix}Open.mp3`);
 registerAudioPlayer(musicVolumeTestSound, "music");
@@ -216,9 +233,14 @@ registerAudioPlayer(sfxVolumeTestSound, "sfx");
 
 function playCoinChangeSound() {
     const sound = registerAudioPlayer(coinGainSound.cloneNode(), "sfx");
-    sound.addEventListener("ended", () => audioPlayers.sfx.delete(sound), { once: true });
+    coinChangeSounds.add(sound);
+    sound.addEventListener("ended", () => {
+        audioPlayers.sfx.delete(sound);
+        coinChangeSounds.delete(sound);
+    }, { once: true });
     sound.play().catch(error => {
         audioPlayers.sfx.delete(sound);
+        coinChangeSounds.delete(sound);
         console.error("Unable to play coin change sound.", error);
     });
 }
@@ -277,6 +299,7 @@ Object.values(elementsBarSounds).forEach(sound => registerAudioPlayer(sound, "sf
 Object.values(quizArrowSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 registerAudioPlayer(document.querySelector("#aquarium-music"), "music");
 registerAudioPlayer(document.querySelector("#login-music"), "music");
+registerAudioPlayer(document.querySelector("#welcome-music"), "music");
 
 async function getTaskData() {
     setTaskListLoading(true);
@@ -288,7 +311,7 @@ async function getTaskData() {
 
         taskData = await response.json();
         const activePeriod = document.querySelector(".tab.active")?.dataset.period ?? "daily";
-        renderTasks(activePeriod);
+        renderTasks(activePeriod, true);
     } catch (error) {
         taskList.textContent = "Could not load tasks.";
         throw error;
@@ -300,14 +323,12 @@ async function getTaskData() {
 function setTaskListLoading(isLoading) {
     if (!taskList) return;
 
-    taskList.classList.toggle("is-loading", isLoading);
-    if (isLoading) {
-        const loadingImage = document.createElement("img");
-        loadingImage.className = "task-loading-indicator";
-        loadingImage.src = "/img/loading.gif";
-        loadingImage.alt = "Loading tasks";
-        taskList.replaceChildren(loadingImage);
+    if (!taskScroll || !taskLoadingIndicator) {
+        throw new Error("The task list requires its loading indicator and scroll container.");
     }
+
+    taskScroll.classList.toggle("is-loading", isLoading);
+    taskLoadingIndicator.hidden = !isLoading;
 }
 
 if (taskList) {
@@ -334,6 +355,9 @@ if (regenerateTasksButton) {
     }
 
     regenerateTasksButton.addEventListener("click", async () => {
+        if (gameShell.classList.contains("elements-open")) {
+            setAquariumOpen(false);
+        }
         regenerateTasksButton.disabled = true;
         regenerateTasksStatus.hidden = true;
         setTaskListLoading(true);
@@ -359,19 +383,15 @@ if (regenerateTasksButton) {
                 regenerationCost.textContent = getTaskRegenerationCost(taskRegenerationCount);
             }
             if (coinCount) {
-                coinBalance = result.coins;
-                coinCount.textContent = coinBalance;
+                skipCoinChangeAnimation(result.coins);
             }
             await getTaskData();
         } catch (error) {
             console.error("Unable to regenerate tasks.", error);
             regenerateTasksStatus.textContent = "Could not regenerate your tasks. Please try again.";
             regenerateTasksStatus.hidden = false;
-            if (taskList?.classList.contains("is-loading")) {
-                const activePeriod = document.querySelector(".tab.active")?.dataset.period ?? "daily";
-                renderTasks(activePeriod);
-            }
         } finally {
+            setTaskListLoading(false);
             regenerateTasksButton.disabled = false;
         }
     });
@@ -398,7 +418,10 @@ async function loadCoinBalance() {
     }
 }
 let coinBalance = 0;
-let coinCountAnimationTimeout = null;
+let coinChangeSequence = 0;
+let coinChangeAnimationRunning = false;
+let coinChangeTargetBalance = null;
+const coinSpendTimeouts = new Set();
 
 function pulseCoinCounter() {
     if (!coinCounter) return;
@@ -442,23 +465,93 @@ function decrementDisplayedCoinCount(shouldPulse = true) {
     if (shouldPulse) pulseCoinCounter();
 }
 
+function setCoinBalanceImmediately(nextBalance) {
+    if (!Number.isSafeInteger(nextBalance)) {
+        throw new TypeError("Coin balance must be a safe integer.");
+    }
+
+    coinBalance = nextBalance;
+    if (coinCount) {
+        coinCount.textContent = String(nextBalance);
+    }
+}
+
+function skipCoinChangeAnimation(nextBalance) {
+    coinChangeSequence++;
+    coinChangeAnimationRunning = false;
+    coinChangeTargetBalance = null;
+    cancelCoinAnimations();
+    setCoinBalanceImmediately(nextBalance);
+}
+
+function cancelCoinAnimations() {
+    coinChangeSounds.forEach(sound => {
+        sound.pause();
+        sound.currentTime = 0;
+        audioPlayers.sfx.delete(sound);
+    });
+    coinChangeSounds.clear();
+    if (typeof coinCount?.getAnimations === "function") {
+        coinCount.getAnimations().forEach(animation => animation.cancel());
+    }
+    coinCounter?.classList.remove("coin-arrived");
+    document.querySelectorAll(".coin-flight").forEach(coin => {
+        if (typeof coin.getAnimations === "function") {
+            coin.getAnimations().forEach(animation => animation.cancel());
+        }
+        coin.remove();
+    });
+    coinSpendTimeouts.forEach(timeout => clearTimeout(timeout));
+    coinSpendTimeouts.clear();
+}
+
+function beginCoinChangeAnimation(nextBalance) {
+    if (!Number.isSafeInteger(nextBalance)) {
+        throw new TypeError("Coin balance must be a safe integer.");
+    }
+
+    const sequence = ++coinChangeSequence;
+    const animationAlreadyRunning = coinChangeAnimationRunning
+        || document.querySelector(".coin-flight") !== null;
+
+    if (animationAlreadyRunning) {
+        coinChangeAnimationRunning = false;
+        cancelCoinAnimations();
+        if (coinChangeTargetBalance !== null) {
+            setCoinBalanceImmediately(coinChangeTargetBalance);
+        }
+    }
+
+    coinChangeAnimationRunning = true;
+    coinChangeTargetBalance = nextBalance;
+    coinBalance = nextBalance;
+    return { sequence };
+}
+
 function animateCoinSpend(amount, destination, nextBalance) {
     if (!Number.isSafeInteger(amount) || amount < 0) {
         throw new TypeError("Coin spend must be a non-negative safe integer.");
     }
 
+    const coinChange = beginCoinChangeAnimation(nextBalance);
     if (!destination || !coinCounter || !coinCount) {
-        animateCoinCount(nextBalance);
+        coinChangeAnimationRunning = false;
+        coinChangeTargetBalance = null;
+        setCoinBalanceImmediately(nextBalance);
         return Promise.resolve(false);
     }
 
     if (amount === 0) {
-        animateCoinCount(nextBalance);
+        coinChangeAnimationRunning = false;
+        coinChangeTargetBalance = null;
+        setCoinBalanceImmediately(nextBalance);
         return Promise.resolve(true);
     }
 
     if (typeof Element.prototype.animate !== "function" || isReducedMotionEnabled()) {
-        animateCoinCount(nextBalance);
+        coinChangeAnimationRunning = false;
+        coinChangeTargetBalance = null;
+        setCoinBalanceImmediately(nextBalance);
         return Promise.resolve(false);
     }
 
@@ -491,7 +584,11 @@ function animateCoinSpend(amount, destination, nextBalance) {
             fill: "both"
         });
 
-        window.setTimeout(() => decrementDisplayedCoinCount(false), delay);
+        const timeout = window.setTimeout(() => {
+            coinSpendTimeouts.delete(timeout);
+            decrementDisplayedCoinCount(false);
+        }, delay);
+        coinSpendTimeouts.add(timeout);
 
         return animation.finished.then(() => {
             coin.remove();
@@ -504,81 +601,27 @@ function animateCoinSpend(amount, destination, nextBalance) {
 
     return Promise.all(flights).then(results => {
         const allCoinsArrived = results.every(Boolean);
+        if (coinChange.sequence !== coinChangeSequence) {
+            return false;
+        }
+        coinChangeAnimationRunning = false;
+        coinChangeTargetBalance = null;
         if (!allCoinsArrived || Number(coinCount.textContent.trim()) !== nextBalance) {
-            animateCoinCount(nextBalance);
+            setCoinBalanceImmediately(nextBalance);
         }
         return allCoinsArrived;
     });
 }
 
-function animateCoinCount(nextBalance) {
-    if (!Number.isSafeInteger(nextBalance)) {
-        throw new TypeError("Coin balance must be a safe integer.");
-    }
-
-    coinBalance = nextBalance;
-    if (!coinCount) return;
-
-    const currentBalance = Number(coinCount.textContent.trim());
-    if (!Number.isSafeInteger(currentBalance) || isReducedMotionEnabled() || currentBalance === nextBalance) {
-        if (coinCountAnimationTimeout !== null) {
-            clearTimeout(coinCountAnimationTimeout);
-            coinCountAnimationTimeout = null;
-        }
-        coinCount.textContent = String(nextBalance);
-        if (Number.isSafeInteger(currentBalance) && currentBalance !== nextBalance) {
-            playCoinChangeSound();
-        }
+async function updateDisplayedCoinBalance(nextBalance, coinAnimation, coinChange) {
+    const allCoinsArrived = await coinAnimation;
+    if (coinChange.sequence !== coinChangeSequence) {
         return;
     }
-
-    if (coinCountAnimationTimeout !== null) {
-        clearTimeout(coinCountAnimationTimeout);
-    }
-
-    const direction = Math.sign(nextBalance - currentBalance);
-    const update = () => {
-        const displayedBalance = Number(coinCount.textContent.trim());
-        const nextStep = displayedBalance + direction;
-        coinCount.textContent = String(nextStep);
-        playCoinChangeSound();
-        pulseCoinCounter();
-
-        if (nextStep !== nextBalance) {
-            coinCountAnimationTimeout = window.setTimeout(update, 200);
-        } else {
-            coinCountAnimationTimeout = null;
-        }
-    };
-
-    coinCountAnimationTimeout = window.setTimeout(update, 35);
-}
-
-async function saveCoinBalance(coinAmount, coinAnimation) {
-    try {
-        const res = await fetch('/Users/AddCoins', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ amount: coinAmount })
-        });
-
-        console.log("Status:", res.status);
-
-        if (!res.ok) {
-            throw new Error('Failed to save coins.');
-        }
-
-        const data = await res.json();
-        coinBalance = data.coins;
-        const allCoinsArrived = await coinAnimation;
-        if (!allCoinsArrived || Number(coinCount?.textContent.trim()) !== data.coins) {
-            animateCoinCount(data.coins);
-        }
-    }
-    catch (error) {
-        console.error(error);
+    coinChangeAnimationRunning = false;
+    coinChangeTargetBalance = null;
+    if (!allCoinsArrived || Number(coinCount?.textContent.trim()) !== nextBalance) {
+        setCoinBalanceImmediately(nextBalance);
     }
 }
 
@@ -690,16 +733,22 @@ function animateCoinReward(taskRow, amount) {
     return Promise.all(arrivals).then(results => results.every(Boolean));
 }
 
-function renderTasks(period) {
+function renderTasks(period, fadeIn = false) {
     if (!taskList) return;// Safe Guard for When on Other Pages
 
     const tasks = taskData[period];
     taskList.replaceChildren();
-    taskList.classList.remove("is-loading");
 
     tasks.forEach((task, index) => {
         const row = document.createElement("article");
         row.className = `task-row completeable${task.completed ? " completed" : ""}${task.priority ? " priority-task" : ""}`;
+        if (fadeIn) {
+            row.classList.add("task-row-fade-in");
+            row.style.setProperty("--task-row-fade-delay", `${index * 85}ms`);
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(() => row.classList.add("is-visible"));
+            });
+        }
 
         console.log(task);
         console.log(task.coinReward);
@@ -779,9 +828,11 @@ function renderTasks(period) {
                     throw new Error(details || `Completing the task failed with status ${response.status}.`);
                 }
 
+                const result = await response.json();
                 task.completed = true;
-                const coinAnimation = animateCoinReward(row, task.coinReward);
-                await saveCoinBalance(task.coinReward, coinAnimation);
+                const coinChange = beginCoinChangeAnimation(result.coins);
+                const coinAnimation = animateCoinReward(row, result.reward);
+                await updateDisplayedCoinBalance(result.coins, coinAnimation, coinChange);
                 renderTasks(period);
             } catch (error) {
                 task.completing = false;
@@ -816,6 +867,27 @@ function setProfileOpen(open) {
     playElementsTransitionSound(open ? "in" : "out");
     playerCard.classList.toggle("profile-open", open);
     playerCard.classList.toggle("profile-collapsed", !open);
+}
+
+function setAquariumOpen(open) {
+    playElementsTransitionSound(open ? "in" : "out");
+    if (open) {
+        aquariumTank.style.setProperty("--water-level", "0%");
+        void aquariumTank.offsetWidth;
+    }
+    gameShell.classList.toggle("elements-open", open);
+    if (open) {
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                if (gameShell.classList.contains("elements-open")) {
+                    aquariumTank.style.setProperty("--water-level", `${aquariumStatus.dataset.percent}%`);
+                }
+            });
+        });
+    } else {
+        aquariumTank.style.setProperty("--water-level", "0%");
+    }
+    elementsToggle.querySelector("b").textContent = open ? "‹" : "›";
 }
 
 if (playerCard && profileToggle) {
@@ -954,31 +1026,10 @@ if (gameShell) {
         });
     }
 
-    function setaquariumOpen(open) {
-        playElementsTransitionSound(open ? "in" : "out");
-        if (open) {
-            aquariumTank.style.setProperty("--water-level", "0%");
-            void aquariumTank.offsetWidth;
-        }
-        gameShell.classList.toggle("elements-open", open);
-        if (open) {
-            window.requestAnimationFrame(() => {
-                window.requestAnimationFrame(() => {
-                    if (gameShell.classList.contains("elements-open")) {
-                        aquariumTank.style.setProperty("--water-level", `${aquariumStatus.dataset.percent}%`);
-                    }
-                });
-            });
-        } else {
-            aquariumTank.style.setProperty("--water-level", "0%");
-        }
-        elementsToggle.querySelector("b").textContent = open ? "‹" : "›";
-    }
-
     elementsToggle.addEventListener("click", () => {
-        setaquariumOpen(!gameShell.classList.contains("elements-open"));
+        setAquariumOpen(!gameShell.classList.contains("elements-open"));
     });
-    aquariumBackdrop.addEventListener("click", () => setaquariumOpen(false));
+    aquariumBackdrop.addEventListener("click", () => setAquariumOpen(false));
 
     if (aquariumListButton && aquariumSelector) {
         const aquariumSelectorStage = document.querySelector("#aquariumSelectorStage");
@@ -1136,7 +1187,7 @@ if (gameShell) {
                 return;
             }
 
-            setaquariumOpen(false);
+            setAquariumOpen(false);
             playAquariumMenuSound(true);
             renderAquariumSelector();
             aquariumSelector.hidden = false;
@@ -1243,7 +1294,6 @@ if (gameShell) {
         aquariumSelector.inert = true;
     }
 
-    renderTasks("daily");
     positionTabCarousel("daily");
     setAquariumPercent(aquariumStatus.dataset.percent);
     loadCoinBalance();
@@ -1860,6 +1910,9 @@ if (questionScreen) {
     const questionPrompt = questionScreen.querySelector("#questionPrompt");
     const answerTrack = questionScreen.querySelector("#answerTrack");
     const answerFish = questionScreen.querySelector("#answerFish");
+    const setupQuizProgress = questionScreen.querySelector("#setupQuizProgress");
+    const setupQuizProgressFill = questionScreen.querySelector("#setupQuizProgressFill");
+    const setupQuizProgressFish = questionScreen.querySelector("#setupQuizProgressFish");
     const answerButtons = Array.from(questionScreen.querySelectorAll(".answer-choice"));
     const nextButton = questionScreen.querySelector("#nextQuestion");
     const answerForm = questionScreen.querySelector("#quizAnswerForm");
@@ -1876,9 +1929,19 @@ if (questionScreen) {
         !questionSaveError ||
         quizQuestionIds.length !== questions.length ||
         quizQuestionIds.some(questionId => !Number.isSafeInteger(questionId) || questionId < 1) ||
+        (isSetupQuiz && (!setupQuizProgress || !setupQuizProgressFill || !setupQuizProgressFish)) ||
         (!isSetupQuiz && !quitControl) ||
         (isSetupQuiz && (!setupQuizForm || !setupQuizCompleted))) {
         throw new Error("The question screen requires its prompt, answers, and navigation controls.");
+    }
+
+    function updateSetupQuizProgress(completedCount) {
+        if (!isSetupQuiz || !setupQuizProgress || !setupQuizProgressFill || !setupQuizProgressFish) return;
+
+        const progress = Math.min(1, Math.max(0, completedCount / questions.length));
+        const percentage = `${progress * 100}%`;
+        setupQuizProgressFill.style.width = percentage;
+        setupQuizProgressFish.style.left = percentage;
     }
 
     if (isSetupQuiz) {
@@ -1946,7 +2009,11 @@ if (questionScreen) {
         if (currentQuestion === questions.length - 1) {
             if (isSetupQuiz && setupQuizForm && setupQuizCompleted) {
                 setupQuizCompleted.value = "true";
-                setupQuizForm.requestSubmit();
+                updateSetupQuizProgress(questions.length);
+                window.setTimeout(
+                    () => setupQuizForm.requestSubmit(),
+                    isReducedMotionEnabled() ? 0 : 1000
+                );
                 return;
             }
 
@@ -1956,6 +2023,7 @@ if (questionScreen) {
             window.setTimeout(() => window.location.assign(quizMenuUrl), 350);
             return;
         }
+        updateSetupQuizProgress(currentQuestion + 1);
         fadeThroughBlack(() => {
             currentQuestion += 1;
             renderQuestion(true);
@@ -2426,7 +2494,7 @@ if (
     }
 
     const startupVideoOverlay = document.querySelector("#startup-video");
-    const startupVideoPlayer = document.querySelector("#startup-video-player");
+    const startupVideoPlayer = registerVideoPlayer(document.querySelector("#startup-video-player"));
 
     // Keep the startup video non-interactive: hide native controls and immediately
     // resume playback if the browser or an input action pauses it.
@@ -2644,18 +2712,34 @@ if (
 }
 
 if (document.body.classList.contains("onboarding-page")) {
+    const welcomeMusic = document.querySelector("#welcome-music");
     const welcomeScreen = document.querySelector("#welcomeScreen");
     const setupChoiceScreen = document.querySelector("#setupChoiceScreen");
     const onboardingNext = document.querySelector("#onboardingNext");
     const setupQuizCard = setupChoiceScreen?.querySelector(".onboarding-quiz-card");
 
-    if (!welcomeScreen || !setupChoiceScreen || !onboardingNext || !setupQuizCard) {
+    if (!welcomeMusic || !welcomeScreen || !setupChoiceScreen || !onboardingNext || !setupQuizCard) {
         throw new Error("The first-time welcome flow requires both screens and their navigation controls.");
     }
 
     welcomeScreen.classList.add("is-active");
 
+    const startWelcomeMusic = () => {
+        welcomeMusic.play().then(() => {
+            document.removeEventListener("pointerdown", startWelcomeMusic);
+            document.removeEventListener("keydown", startWelcomeMusic);
+        }).catch(error => {
+            if (error.name !== "NotAllowedError") {
+                console.error("Unable to play welcome music.", error);
+            }
+        });
+    };
+    startWelcomeMusic();
+    document.addEventListener("pointerdown", startWelcomeMusic);
+    document.addEventListener("keydown", startWelcomeMusic);
+
     onboardingNext.addEventListener("click", () => {
+        playCoinChangeSound();
         onboardingNext.disabled = true;
         welcomeScreen.classList.add("is-leaving");
 

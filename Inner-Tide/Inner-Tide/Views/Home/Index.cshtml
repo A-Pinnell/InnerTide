@@ -75,10 +75,9 @@
                 <button class="tab active" type="button" data-period="daily"><span class="tab-label">Daily</span></button>
                 <button class="tab" type="button" data-period="weekly"><span class="tab-label">Weekly</span></button>
             </div>
-            <div class="task-scroll" id="task-scroll">
-                <div class="task-list" id="task-list" data-complete-url="@Url.Action("CompleteTask", "Home")">
-                    <img class="task-loading-indicator" src="img/loading.gif" alt="Loading tasks">
-                </div>
+            <div class="task-scroll is-loading" id="task-scroll">
+                <img class="task-loading-indicator" id="taskLoadingIndicator" src="/img/loading.gif" alt="Loading tasks">
+                <div class="task-list" id="task-list" data-complete-url="@Url.Action("CompleteTask", "Home")"></div>
             </div>
         </section>
 

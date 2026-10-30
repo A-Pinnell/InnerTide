@@ -119,7 +119,7 @@ namespace Inner_Tide.Controllers {
                     await _context.SaveChangesAsync();
                 }
 
-                return foundUser.FirstTimeLogin
+                return !foundUser.FirstTimeLogin
                     ? RedirectToAction(nameof(Welcome))
                     : RedirectToAction("Index", "Home");
             } else {

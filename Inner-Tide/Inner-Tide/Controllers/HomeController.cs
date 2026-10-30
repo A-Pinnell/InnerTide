@@ -122,18 +122,25 @@ namespace Inner_Tide.Controllers
             }
 
             var userTask = await _context.UserTasks
+                .Include(task => task.Task)
                 .SingleOrDefaultAsync(task => task.UserId == user.Id && task.UserTaskId == userTaskId);
             if (userTask == null) {
                 return NotFound();
             }
 
             if (userTask.Completed) {
-                return NoContent();
+                return Json(new { reward = 0, coins = user.CoinCount });
             }
 
+            if (userTask.Task == null) {
+                return StatusCode(500, "The task reward is unavailable.");
+            }
+
+            var reward = userTask.Task.CoinReward * userTask.Multiplier;
             userTask.Completed = true;
+            user.CoinCount += reward;
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Json(new { reward, coins = user.CoinCount });
         }
 
         [HttpPost]

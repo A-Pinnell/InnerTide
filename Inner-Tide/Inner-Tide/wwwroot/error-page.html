@@ -17,7 +17,10 @@
                 <h2 id="error-details-title">Error details</h2>
                 <pre id="error-message">An unexpected error occurred.</pre>
             </section>
-            <button class="error-page-refresh" id="error-page-refresh" type="button">Refresh</button>
+            <div class="error-page-actions">
+                <button class="error-page-refresh" id="error-page-refresh" type="button">Refresh</button>
+                <button class="error-page-refresh" id="error-page-reset" type="button">Reset</button>
+            </div>
         </section>
         <img class="error-page-art" src="/img/bereef.png" alt="Beneath the reef">
     </main>
@@ -44,6 +47,9 @@
             : "/";
         document.querySelector("#error-page-refresh").addEventListener("click", () => {
             window.location.assign(safeReturnUrl);
+        });
+        document.querySelector("#error-page-reset").addEventListener("click", () => {
+            window.location.assign("/Users/Index");
         });
     </script>
 </body>

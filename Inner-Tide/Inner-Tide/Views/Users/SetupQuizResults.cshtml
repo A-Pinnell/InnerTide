@@ -6,24 +6,23 @@
 
 <main class="setup-results-page">
     <section class="setup-results-card">
+        <a class="setup-results-close" asp-controller="Home" asp-action="Index" title="Return to tasks">
+            <img src="~/img/close_icon.png" alt="">
+        </a>
         <h1>Your Inner Tide</h1>
-        <p class="setup-results-summary">
-            You’re doing well in <strong>@Model.StrongestCategory</strong>.
-            <strong>@Model.FocusCategory</strong> could use a little more care.
-        </p>
-
-        <div class="setup-results-categories">
-            @foreach (var category in Model.Categories) {
-                <div class="setup-results-category">
-                    <div class="setup-results-category-heading">
-                        <label for="category-progress-@category.Name">@category.Name</label>
-                        <span class="setup-results-percent">@category.Percentage%</span>
+        <br>
+        <div class="setup-results-category-scroll">
+            <div class="setup-results-categories">
+                @foreach (var category in Model.Categories) {
+                    <div class="setup-results-category">
+                        <div class="setup-results-category-heading">
+                            <label for="category-progress-@category.Name">@category.Name</label>
+                            <span class="setup-results-percent">@category.Percentage%</span>
+                        </div>
+                        <progress class="setup-results-progress" id="category-progress-@category.Name" value="@category.Percentage" max="100">@category.Percentage%</progress>
                     </div>
-                    <progress class="setup-results-progress" id="category-progress-@category.Name" value="@category.Percentage" max="100">@category.Percentage%</progress>
-                </div>
-            }
+                }
+            </div>
         </div>
-
-        <a class="setup-results-continue" asp-controller="Home" asp-action="Index">Continue</a>
     </section>
 </main>

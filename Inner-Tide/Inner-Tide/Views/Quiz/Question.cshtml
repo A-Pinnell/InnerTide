@@ -15,7 +15,9 @@
         <section class="question-copy">
             <p class="question-number">
                 Question <span id="questionNumber">1</span>
-                <span> / @quizQuestions.Count</span>
+                @if (!setupQuiz) {
+                    <span> / @quizQuestions.Count</span>
+                }
             </p>
             <h1 id="questionPrompt">@(quizQuestions.FirstOrDefault()?.Question?.QuestionTitle ?? "No questions are available.")</h1>
         </section>
@@ -61,6 +63,12 @@
                 <span></span>
             </button>
         </section>
+        @if (setupQuiz) {
+            <div class="setup-quiz-progress" id="setupQuizProgress">
+                <span class="setup-quiz-progress-fill" id="setupQuizProgressFill"></span>
+                <img class="setup-quiz-progress-fish" id="setupQuizProgressFish" src="../img/quiz-fish.png" alt="">
+            </div>
+        }
         <p class="question-save-error" id="questionSaveError" role="alert" hidden>Could not save your answer. Please try again.</p>
 
         <nav class="question-actions">
