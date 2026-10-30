@@ -1,8 +1,12 @@
 ﻿using Inner_Tide.Controllers;
 using Inner_Tide.Data;
+using Inner_Tide.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +19,28 @@ namespace Inner_TideMVCTest {
     public class QuizControllerTests {
         private ApplicationDbContext _context;
         private QuizController controller;
+        private Mock<UserManager<User>> _userManagerMock;
+        private Mock<SignInManager<User>> _signInManagerMock;
+
+        private Mock<UserManager<User>> GetMockUserManager() {
+            var store = new Mock<IUserStore<User>>();
+
+            return new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+        }
+
+        private Mock<SignInManager<User>> GetMockSignInManager(UserManager<User> userManager) {
+            return new Mock<SignInManager<User>>(userManager, Mock.Of<IHttpContextAccessor>(), Mock.Of<IUserClaimsPrincipalFactory<User>>(), null, null, null, null);
+        }
 
         [TestInitialize]
         public void TestInitialize() {
-            controller = new QuizController();
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+
+            _context = new ApplicationDbContext(options);
+            _userManagerMock = GetMockUserManager();
+            _signInManagerMock = GetMockSignInManager(_userManagerMock.Object);
+
+            controller = new QuizController(_context, _userManagerMock.Object);
 
             controller.ControllerContext = new ControllerContext {
                 HttpContext = new DefaultHttpContext {
@@ -31,38 +53,41 @@ namespace Inner_TideMVCTest {
 
         #region "Index"
         [TestMethod]
-        public void QuizLoadsIndexView() {
+        public async System.Threading.Tasks.Task QuizLoadsIndexView() {
             // Act
-            var result = (ViewResult)controller.Index();
+            var result = (ViewResult) await controller.Index();
 
             // Assert
             Assert.AreEqual("Index", result.ViewName);
         }
 
         [TestMethod]
-        public void QuizRedirectsUnauthorizedUser() {
+        public async System.Threading.Tasks.Task QuizRedirectsUnauthorizedUser() {
             // Arrange
             controller.ControllerContext = new ControllerContext {
                 HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal( new ClaimsIdentity()) }
             };
 
             //Act
-            var result = controller.Index();
+            var result = (RedirectResult) await controller.Index();
 
             // Assert
-            Assert.AreEqual("/Users/Index", ((RedirectResult)result).Url);
+            Assert.AreEqual("/Users/Index", (result).Url);
         }
         #endregion
 
 
         #region "Question"
         [TestMethod]
-        public void QuizReturnsQuestion () {
+        public async System.Threading.Tasks.Task Question_ReturnsQuestionView() {
             // Act
-            var result = (ViewResult) controller.Question();
+            var result = await controller.Question(1);
 
             // Assert
-            Assert.AreEqual("Question", result.ViewName);
+            var viewResult = result as ViewResult;
+
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual("Question", viewResult.ViewName);
         }
         #endregion
     }
