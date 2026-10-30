@@ -133,6 +133,8 @@ revealPageAfterAssetsLoad();
 const bedIcon = '<svg viewBox="0 0 64 48"><path d="M5 8h8v17h46v17h-6v-6H11v6H5V8Zm9 17v-9h15a8 8 0 0 1 8 9H14Z"/></svg>';
 const taskList = document.querySelector("#task-list");
 const taskScroll = document.querySelector("#task-scroll");
+const taskCompletionUrl = taskList?.dataset.completeUrl;
+const taskRequestVerificationToken = document.querySelector('#regenerateTasksForm input[name="__RequestVerificationToken"]')?.value;
 const tabsContainer = document.querySelector(".tabs");
 const gameShell = document.querySelector(".game-shell");
 const settingsButton = document.querySelector("#settingsButton");
@@ -204,11 +206,10 @@ function setAudioVolume(type, volume) {
     });
 }
 
-const soundPathPrefix = document.body.classList.contains("aquarium-page") || document.body.classList.contains("question-page") || document.body.classList.contains("quiz-menu-page")
-    ? "../sfx/"
-    : "sfx/";
+const soundPathPrefix = new URL("/sfx/", document.baseURI).pathname;
+const musicPathPrefix = new URL("/music/", document.baseURI).pathname;
 const coinGainSound = registerAudioPlayer(new Audio(`${soundPathPrefix}coin_gain.mp3`), "sfx");
-const musicVolumeTestSound = new Audio(`${soundPathPrefix}../music/test_music.mp3`);
+const musicVolumeTestSound = new Audio(`${musicPathPrefix}test_music.mp3`);
 const sfxVolumeTestSound = new Audio(`${soundPathPrefix}Open.mp3`);
 registerAudioPlayer(musicVolumeTestSound, "music");
 registerAudioPlayer(sfxVolumeTestSound, "sfx");
@@ -278,20 +279,103 @@ registerAudioPlayer(document.querySelector("#aquarium-music"), "music");
 registerAudioPlayer(document.querySelector("#login-music"), "music");
 
 async function getTaskData() {
-    const response = await fetch('/Home/GetTasks');
-    taskData = await response.json();
+    setTaskListLoading(true);
+    try {
+        const response = await fetch('/Home/GetTasks');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
 
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        taskData = await response.json();
+        const activePeriod = document.querySelector(".tab.active")?.dataset.period ?? "daily";
+        renderTasks(activePeriod);
+    } catch (error) {
+        taskList.textContent = "Could not load tasks.";
+        throw error;
+    } finally {
+        setTaskListLoading(false);
     }
-
-    //console.log(taskData);
-    //console.log(JSON.stringify(taskData, null, 2));
-
-    renderTasks("daily");
 }
 
-getTaskData();
+function setTaskListLoading(isLoading) {
+    if (!taskList) return;
+
+    taskList.classList.toggle("is-loading", isLoading);
+    if (isLoading) {
+        const loadingImage = document.createElement("img");
+        loadingImage.className = "task-loading-indicator";
+        loadingImage.src = "/img/loading.gif";
+        loadingImage.alt = "Loading tasks";
+        taskList.replaceChildren(loadingImage);
+    }
+}
+
+if (taskList) {
+    getTaskData().catch(error => {
+        console.error("Could not load tasks.", error);
+        taskList.textContent = "Could not load tasks.";
+    });
+}
+
+const regenerateTasksButton = document.querySelector("#regenerateTasksButton");
+if (regenerateTasksButton) {
+    const regenerateTasksForm = document.querySelector("#regenerateTasksForm");
+    const regenerateTasksStatus = document.querySelector("#regenerateTasksStatus");
+    const regenerateUrl = regenerateTasksButton.dataset.regenerateUrl;
+    const regenerationCost = document.querySelector("#regenerateTasksCost");
+    let taskRegenerationCount = Number.parseInt(document.body.dataset.regenerationCount, 10) || 0;
+    const getTaskRegenerationCost = count => count <= 0 ? 0 : count >= 31 ? 2147483647 : 2 ** count;
+    if (regenerationCost) {
+        regenerationCost.textContent = getTaskRegenerationCost(taskRegenerationCount);
+    }
+
+    if (!regenerateTasksForm || !taskRequestVerificationToken || !regenerateUrl || !regenerateTasksStatus) {
+        throw new Error("Task regeneration requires its URL, verification token, and status message.");
+    }
+
+    regenerateTasksButton.addEventListener("click", async () => {
+        regenerateTasksButton.disabled = true;
+        regenerateTasksStatus.hidden = true;
+        setTaskListLoading(true);
+        try {
+            const response = await fetch(regenerateUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    "__RequestVerificationToken": taskRequestVerificationToken
+                })
+            });
+            if (!response.ok || response.redirected) {
+                const details = (await response.text()).trim();
+                throw new Error(details || `Regenerating tasks failed with status ${response.status}.`);
+            }
+            const result = await response.json();
+            taskRegenerationCount = result.regenerationCount;
+            document.body.dataset.regenerationCount = String(taskRegenerationCount);
+            if (regenerationCost) {
+                regenerationCost.textContent = getTaskRegenerationCost(taskRegenerationCount);
+            }
+            if (coinCount) {
+                coinBalance = result.coins;
+                coinCount.textContent = coinBalance;
+            }
+            await getTaskData();
+        } catch (error) {
+            console.error("Unable to regenerate tasks.", error);
+            regenerateTasksStatus.textContent = "Could not regenerate your tasks. Please try again.";
+            regenerateTasksStatus.hidden = false;
+            if (taskList?.classList.contains("is-loading")) {
+                const activePeriod = document.querySelector(".tab.active")?.dataset.period ?? "daily";
+                renderTasks(activePeriod);
+            }
+        } finally {
+            regenerateTasksButton.disabled = false;
+        }
+    });
+}
 
 async function loadCoinBalance() {
     try {
@@ -552,7 +636,7 @@ function setAquariumPercent(percent) {
         ? "Halfway there!"
         : value >= 25
         ? "Your aquarium is growing!"
-        : "A great start!";
+        : "Make your start!";
 }
 
 function animateCoinReward(taskRow, amount) {
@@ -611,6 +695,7 @@ function renderTasks(period) {
 
     const tasks = taskData[period];
     taskList.replaceChildren();
+    taskList.classList.remove("is-loading");
 
     tasks.forEach((task, index) => {
         const row = document.createElement("article");
@@ -669,13 +754,39 @@ function renderTasks(period) {
             chestWrap.append(check);
         }
 
-        const complete = () => {
-            if (task.completed) return;
-            console.log(task);
-            task.completed = true;
-            const coinAnimation = animateCoinReward(row, task.coinReward);
-            saveCoinBalance(task.coinReward, coinAnimation);
-            renderTasks(period);
+        const complete = async () => {
+            if (task.completed || task.completing) return;
+
+            task.completing = true;
+            try {
+                if (!taskCompletionUrl || !taskRequestVerificationToken) {
+                    throw new Error("Task completion requires its URL and verification token.");
+                }
+
+                const response = await fetch(taskCompletionUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: new URLSearchParams({
+                        "__RequestVerificationToken": taskRequestVerificationToken,
+                        "userTaskId": task.userTaskId
+                    })
+                });
+                if (!response.ok || response.redirected) {
+                    const details = (await response.text()).trim();
+                    throw new Error(details || `Completing the task failed with status ${response.status}.`);
+                }
+
+                task.completed = true;
+                const coinAnimation = animateCoinReward(row, task.coinReward);
+                await saveCoinBalance(task.coinReward, coinAnimation);
+                renderTasks(period);
+            } catch (error) {
+                task.completing = false;
+                console.error("Could not complete the task.", error);
+            }
         };
         row.addEventListener("click", complete);
 
@@ -946,7 +1057,7 @@ if (gameShell) {
                 preview.classList.toggle("is-current", offset === 0);
                 preview.classList.toggle("is-create-placeholder", isCreatePlaceholder);
                 preview.hidden = !isVisible;
-                preview.style.left = `calc(50% + ${offset * 100}vw)`;
+                preview.style.setProperty("--aquarium-preview-offset", `${offset * 100}vw`);
                 preview.style.backgroundImage = isCreatePlaceholder
                     ? "none"
                     : tintColor
@@ -962,8 +1073,9 @@ if (gameShell) {
                 ? `Create Aquarium ${selectedAquariumNumber}`
                 : `Aquarium ${selectedAquariumNumber}`;
             aquariumSelectorChoose.textContent = isCreatePlaceholder ? "Create Aquarium" : "Choose";
-            void aquariumSelectorStage.offsetWidth;
-            window.requestAnimationFrame(() => aquariumSelector.classList.remove("is-repositioning"));
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(() => aquariumSelector.classList.remove("is-repositioning"));
+            });
         }
 
         function showAquariumUnlockMessage(requiredAquariumNumber) {
@@ -1003,7 +1115,7 @@ if (gameShell) {
             playSideNavigationSound(direction < 0 ? "left" : "right");
             aquariumPreviews.forEach((preview, index) => {
                 const offset = index - 1 + (direction > 0 ? -1 : 1);
-                preview.style.left = `calc(50% + ${offset * 100}vw)`;
+                preview.style.setProperty("--aquarium-preview-offset", `${offset * 100}vw`);
             });
             aquariumSlideTimeout = window.setTimeout(() => {
                 selectedAquariumNumber += direction;
@@ -1738,25 +1850,45 @@ if (questionScreen) {
         console.error("Unable to load quiz question fonts.", error);
     });
 
-    const questions = [
-        "How often do you feel rested when you wake up?",
-        "How often have you made time to relax this week?",
-        "How often have you felt energized during the day?"
-    ];
+    const isSetupQuiz = questionScreen.dataset.setupQuiz === "true";
+    const setupQuestionList = questionScreen.querySelector("#setupQuizQuestions");
+    const questionItems = Array.from(setupQuestionList?.querySelectorAll("li") ?? []);
+    const questions = questionItems.map(item => item.textContent.trim());
+    const quizQuestionIds = questionItems.map(item => Number(item.dataset.quizQuestionId));
+    const saveAnswerUrl = questionScreen.dataset.saveAnswerUrl;
     const questionNumber = questionScreen.querySelector("#questionNumber");
     const questionPrompt = questionScreen.querySelector("#questionPrompt");
     const answerTrack = questionScreen.querySelector("#answerTrack");
     const answerFish = questionScreen.querySelector("#answerFish");
     const answerButtons = Array.from(questionScreen.querySelectorAll(".answer-choice"));
-    const previousButton = questionScreen.querySelector("#previousQuestion");
     const nextButton = questionScreen.querySelector("#nextQuestion");
-    const quitLink = questionScreen.querySelector(".question-action[href]");
+    const answerForm = questionScreen.querySelector("#quizAnswerForm");
+    const setupQuizForm = questionScreen.querySelector("#setupQuizForm");
+    const setupQuizCompleted = questionScreen.querySelector("#setupQuizCompleted");
+    const antiforgeryToken = answerForm?.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const questionSaveError = questionScreen.querySelector("#questionSaveError");
+    const quitControl = questionScreen.querySelector(".question-action[href], .question-action-form .question-action");
 
-    if (!questionNumber || !questionPrompt || !answerTrack || !answerFish || answerButtons.length === 0 || !previousButton || !nextButton || !quitLink) {
+    if (!questionNumber || !questionPrompt || !answerTrack || !answerFish || answerButtons.length === 0 || !nextButton || questions.length === 0 ||
+        questions.some(question => !question) ||
+        !saveAnswerUrl ||
+        !antiforgeryToken ||
+        !questionSaveError ||
+        quizQuestionIds.length !== questions.length ||
+        quizQuestionIds.some(questionId => !Number.isSafeInteger(questionId) || questionId < 1) ||
+        (!isSetupQuiz && !quitControl) ||
+        (isSetupQuiz && (!setupQuizForm || !setupQuizCompleted))) {
         throw new Error("The question screen requires its prompt, answers, and navigation controls.");
     }
 
-    quitLink.addEventListener("click", () => playElementsTransitionSound("out"));
+    if (isSetupQuiz) {
+        setupQuizForm.addEventListener("submit", () => {
+            playElementsTransitionSound("out");
+            questionScreen.classList.add("quiz-exiting");
+        });
+    } else {
+        quitControl.addEventListener("click", () => playElementsTransitionSound("out"));
+    }
 
     const answers = Array(questions.length).fill(null);
     let currentQuestion = 0;
@@ -1784,7 +1916,6 @@ if (questionScreen) {
     function renderQuestion(animate = false) {
         questionNumber.textContent = String(currentQuestion + 1);
         questionPrompt.textContent = questions[currentQuestion];
-        previousButton.disabled = currentQuestion === 0;
         nextButton.disabled = answers[currentQuestion] === null;
         questionAnimations.forEach(animation => animation.cancel());
         questionAnimations = [];
@@ -1813,6 +1944,12 @@ if (questionScreen) {
 
     function advanceQuestion() {
         if (currentQuestion === questions.length - 1) {
+            if (isSetupQuiz && setupQuizForm && setupQuizCompleted) {
+                setupQuizCompleted.value = "true";
+                setupQuizForm.requestSubmit();
+                return;
+            }
+
             const quizMenuUrl = new URL("/Quiz/Index", window.location.origin).href;
             sessionStorage.setItem("innerTide.quizExitTransition", "true");
             if (navigateWithReducedMotion(quizMenuUrl)) return;
@@ -1841,18 +1978,35 @@ if (questionScreen) {
         });
     });
 
-    previousButton.addEventListener("click", () => {
-        if (currentQuestion === 0) return;
-        playQuizArrowSound("left");
-        fadeThroughBlack(() => {
-            currentQuestion -= 1;
-            renderQuestion(true);
-        });
-    });
-
-    nextButton.addEventListener("click", () => {
+    nextButton.addEventListener("click", async () => {
         if (answers[currentQuestion] === null) return;
         playQuizArrowSound("right");
+
+        nextButton.disabled = true;
+        questionSaveError.hidden = true;
+        try {
+            const response = await fetch(saveAnswerUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    "__RequestVerificationToken": antiforgeryToken,
+                    "quizQuestionId": String(quizQuestionIds[currentQuestion]),
+                    "answerValue": String(Number(answers[currentQuestion]) + 1)
+                })
+            });
+            if (!response.ok || response.redirected) {
+                throw new Error(`Saving quiz answer failed with status ${response.status}.`);
+            }
+        } catch (error) {
+            console.error("Unable to save the quiz answer.", error);
+            questionSaveError.hidden = false;
+            nextButton.disabled = false;
+            return;
+        }
+
         advanceQuestion();
     });
     renderQuestion();
@@ -1953,7 +2107,7 @@ function playSideTabEntranceSound() {
     if (isReducedMotionEnabled()) return;
 
     const sound = registerAudioPlayer(
-        new Audio(document.body.classList.contains("aquarium-page") ? "../sfx/Slide.mp3" : "sfx/Slide.mp3"),
+        new Audio(`${soundPathPrefix}Slide.mp3`),
         "sfx"
     );
     sound.play().catch(error => {
@@ -1981,8 +2135,8 @@ if (document.body.classList.contains("aquarium-page")) {
     aquariumMusicPlayer = registerAudioPlayer(aquariumMusic, "music");
     const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
     const trackNumber = ((aquariumNumber - 1) % 5) + 1;
-    const aquariumTrack = `../music/Aquarium_${trackNumber}.mp3`;
-    const aquariumTracks = [aquariumTrack, "../music/Aquatic.mp3"];
+    const aquariumTrack = `${musicPathPrefix}Aquarium_${trackNumber}.mp3`;
+    const aquariumTracks = [aquariumTrack, `${musicPathPrefix}Aquatic.mp3`];
     let currentAquariumTrackIndex = 0;
     aquariumMusic.loop = false;
 
@@ -2360,7 +2514,18 @@ if (
         });
     }
 
-    playStartupVideo();
+    if (document.body.classList.contains("auth-error-page")) {
+        startupSequenceFinished = true;
+        document.removeEventListener("visibilitychange", resumeStartupVideo);
+        document.removeEventListener("pointerdown", enableStartupVideoAudio);
+        document.removeEventListener("keydown", enableStartupVideoAudio);
+        startupVideoPlayer.pause();
+        startupVideoPlayer.removeAttribute("src");
+        startupVideoOverlay.remove();
+        startLoginMusic();
+    } else {
+        playStartupVideo();
+    }
 
     const authPanel = document.querySelector(".auth-panel");
     const authViews = {
@@ -2395,6 +2560,23 @@ if (
         });
         Object.values(authViews).forEach(view => authResizeObserver.observe(view));
     }
+
+    const loginForm = document.querySelector("#loginContainer form");
+    const loginSubmitButton = loginForm?.querySelector(".auth-submit");
+    const loginProcessingOverlay = document.querySelector("#loginProcessingOverlay");
+    loginForm?.addEventListener("submit", event => {
+        if (loginSubmitButton?.disabled) {
+            event.preventDefault();
+            return;
+        }
+
+        if (!loginSubmitButton || !loginProcessingOverlay) {
+            throw new Error("The login form requires a submit button and processing overlay.");
+        }
+
+        loginSubmitButton.disabled = true;
+        loginProcessingOverlay.hidden = false;
+    });
 
     document.querySelectorAll("[data-auth-view]").forEach(link => {
         link.addEventListener("click", event => {
@@ -2458,6 +2640,44 @@ if (
                 currentView.classList.remove("is-leaving", "is-leaving-to-left", "is-leaving-to-right");
             }, 520);
         });
+    });
+}
+
+if (document.body.classList.contains("onboarding-page")) {
+    const welcomeScreen = document.querySelector("#welcomeScreen");
+    const setupChoiceScreen = document.querySelector("#setupChoiceScreen");
+    const onboardingNext = document.querySelector("#onboardingNext");
+    const setupQuizCard = setupChoiceScreen?.querySelector(".onboarding-quiz-card");
+
+    if (!welcomeScreen || !setupChoiceScreen || !onboardingNext || !setupQuizCard) {
+        throw new Error("The first-time welcome flow requires both screens and their navigation controls.");
+    }
+
+    welcomeScreen.classList.add("is-active");
+
+    onboardingNext.addEventListener("click", () => {
+        onboardingNext.disabled = true;
+        welcomeScreen.classList.add("is-leaving");
+
+        const transitionDuration = isReducedMotionEnabled() ? 0 : 320;
+        window.setTimeout(() => {
+            welcomeScreen.hidden = true;
+            welcomeScreen.classList.remove("is-active", "is-leaving");
+            setupChoiceScreen.hidden = false;
+
+            if (transitionDuration === 0) {
+                setupChoiceScreen.classList.add("is-active");
+                setupQuizCard.focus();
+                return;
+            }
+
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(() => {
+                    setupChoiceScreen.classList.add("is-active");
+                    window.setTimeout(() => setupQuizCard.focus(), transitionDuration);
+                });
+            });
+        }, transitionDuration);
     });
 }
 

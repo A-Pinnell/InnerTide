@@ -2,6 +2,8 @@
 
 namespace Inner_Tide.Models {
     public class Quiz {
+        public const string SetupQuizTitle = "Setup Quiz";
+
         [Required]
         public int QuizId { get; set; }
 

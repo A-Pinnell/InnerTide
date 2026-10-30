@@ -6,7 +6,7 @@ namespace Inner_Tide.Models {
         public int QuizQuestionId { get; set; }
 
         [Required]
-        [Range(1, 5)]
+        [Range(0, 5)]
         public int AnswerValue { get; set; }
 
         //Foreign Key

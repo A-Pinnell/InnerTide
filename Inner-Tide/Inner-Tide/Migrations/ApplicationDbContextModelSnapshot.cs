@@ -98,6 +98,9 @@ namespace Inner_Tide.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
                     b.Property<string>("QuestionTitle")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -326,7 +329,8 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("UserCategoryValuesId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("UserCategoryValues");
                 });

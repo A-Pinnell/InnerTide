@@ -1,23 +1,39 @@
 ﻿@using Inner_Tide.Models
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<User> UserManager
+@model List<QuizQuestion>?
 
 @{
-    ViewData["Title"] = "Quiz";
+    var setupQuiz = ViewData["SetupQuiz"] is true;
+    var quizQuestions = Model ?? new List<QuizQuestion>();
+    ViewData["Title"] = setupQuiz ? "Getting Started" : "Quiz";
 }
 
-<body class="question-page">
-    <main class="question-screen">
+<body class="question-page @(setupQuiz ? "setup-quiz-page" : "")">
+    <main class="question-screen" data-setup-quiz="@setupQuiz.ToString().ToLowerInvariant()" data-save-answer-url="@Url.Action("SaveAnswer", "Quiz")">
         <div class="question-background"></div>
         <section class="question-copy">
-            <p class="question-number">Question <span id="questionNumber">1</span></p>
-            <h1 id="questionPrompt">How often do you feel rested when you wake up?</h1>
+            <p class="question-number">
+                Question <span id="questionNumber">1</span>
+                <span> / @quizQuestions.Count</span>
+            </p>
+            <h1 id="questionPrompt">@(quizQuestions.FirstOrDefault()?.Question?.QuestionTitle ?? "No questions are available.")</h1>
         </section>
+        <ol id="setupQuizQuestions" hidden>
+            @foreach (var quizQuestion in quizQuestions) {
+                <li data-quiz-question-id="@quizQuestion.QuizQuestionId">@quizQuestion.Question?.QuestionTitle</li>
+            }
+        </ol>
+        <form asp-controller="Quiz" asp-action="SaveAnswer" method="post" id="quizAnswerForm" hidden>
+        </form>
+
+        @if (setupQuiz) {
+            <form asp-controller="Users" asp-action="FinishSetupQuiz" method="post" class="question-action-form" id="setupQuizForm">
+                <input type="hidden" name="completed" id="setupQuizCompleted" value="false">
+            </form>
+        }
 
         <section class="answer-panel">
-            <button class="question-arrow question-previous" id="previousQuestion" type="button" disabled>
-                <span></span>
-            </button>
             <div class="answer-track" id="answerTrack">
                 <button class="answer-choice" type="button" data-answer="0">
                     <span class="answer-circle"></span>
@@ -45,9 +61,12 @@
                 <span></span>
             </button>
         </section>
+        <p class="question-save-error" id="questionSaveError" role="alert" hidden>Could not save your answer. Please try again.</p>
 
         <nav class="question-actions">
-            <a class="question-action" asp-area="" asp-controller="Quiz" asp-action="Index">Quit</a>
+            @if (!setupQuiz) {
+                <a class="question-action" asp-area="" asp-controller="Quiz" asp-action="Index">Quit</a>
+            }
         </nav>
         <button class="help-button" type="button">
             <img src="../img/help_icon.png" alt="">

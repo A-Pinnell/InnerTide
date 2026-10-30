@@ -10,5 +10,7 @@ namespace Inner_Tide.Models {
 
         [Required]
         public string CategoryTag { get; set; }
+
+        public int DisplayOrder { get; set; }
     }
 }

@@ -1,9 +1,11 @@
 ﻿@using Inner_Tide.Models
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<User> UserManager
+@model List<Quiz>
 
 @{
     ViewData["Title"] = "Quiz Menu";
+    var cardColors = new[] { "quiz-card-orange", "quiz-card-green", "quiz-card-purple" };
 
     var coinCount = 0;
     var userName = "Chris Concept";
@@ -59,15 +61,18 @@
 
         <section class="quiz-carousel">
             <div class="quiz-track" id="quizTrack">
-                <a class="quiz-card quiz-card-orange" asp-area="" asp-controller="Quiz" asp-action="Question">
-                    <span class="card-watermark">01</span>
-                    <h1>Wellness Quiz</h1>
-                    <div class="quiz-meta">
-                        <span class="time-meta">⏳15<span class="time-unit">m</span></span>
-                        <span class="reward-meta"><img src="../img/coin.png" alt="">5</span>
-                    </div>
-                    <div class="quiz-progress" data-progress="0"><span></span><strong>0%</strong></div>
-                </a>
+                @for (var index = 0; index < Model.Count; index++) {
+                    var quiz = Model[index];
+                    <a class="quiz-card @cardColors[index % cardColors.Length]" asp-area="" asp-controller="Quiz" asp-action="Question" asp-route-id="@quiz.QuizId">
+                        <span class="card-watermark">@((index + 1).ToString("00"))</span>
+                        <h1>@quiz.QuizTitle</h1>
+                        <div class="quiz-meta">
+                            <span class="time-meta">⏳<span class="time-unit">m</span></span>
+                            <span class="reward-meta"><img src="../img/coin.png" alt="">@quiz.CoinRewards</span>
+                        </div>
+                        <div class="quiz-progress" data-progress="0"><span></span><strong>0%</strong></div>
+                    </a>
+                }
             </div>
         </section>
 

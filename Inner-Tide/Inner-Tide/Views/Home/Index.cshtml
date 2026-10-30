@@ -7,6 +7,7 @@
 
     var accountId = ViewData["AccountId"] as string ?? "";
     var coinCount = 0;
+    var taskRegenerationCount = 0;
     var userName = "Chris Concept";
     var email = "";
     var accountSettingsMessage = TempData["AccountSettingsMessage"] as string;
@@ -16,6 +17,7 @@
         var currentUser = await UserManager.GetUserAsync(User);
 
         coinCount = currentUser.CoinCount;
+        taskRegenerationCount = currentUser.TaskRegenerationCount;
         userName = currentUser.UserName;
         email = currentUser.Email;
     } else {
@@ -24,7 +26,7 @@
     }
 }
 
-<body class="task-menu-page" data-account-id="@accountId" data-account-settings-message="@(accountSettingsMessage != null ? "true" : "false")">
+<body class="task-menu-page" data-account-id="@accountId" data-regeneration-count="@taskRegenerationCount" data-account-settings-message="@(accountSettingsMessage != null ? "true" : "false")">
     <main class="game-shell">
         <header class="player-card profile-collapsed">
             <div class="profile-details" id="profile-details">
@@ -74,7 +76,9 @@
                 <button class="tab" type="button" data-period="weekly"><span class="tab-label">Weekly</span></button>
             </div>
             <div class="task-scroll" id="task-scroll">
-                <div class="task-list" id="task-list"></div>
+                <div class="task-list" id="task-list" data-complete-url="@Url.Action("CompleteTask", "Home")">
+                    <img class="task-loading-indicator" src="img/loading.gif" alt="Loading tasks">
+                </div>
             </div>
         </section>
 
@@ -167,22 +171,27 @@
         <div class="elements-backdrop" id="elements-backdrop"></div>
         <section class="elements-panel" id="elements-panel">
             <div class="elements-actions">
-                <button class="element-action" type="button" data-elements-action="regenerate">
+                <button class="element-action" type="button" id="regenerateTasksButton" data-regenerate-url="@Url.Action("RegenerateTasks", "Home")">
                     <span class="element-action-icon element-icon"><img src="img/refresh_tasks.png" alt=""></span>
                     <span>Regenerate Tasks</span>
+                    <span class="regeneration-cost"><span id="regenerateTasksCost">0</span><img src="img/coin.png" alt="coins"></span>
                 </button>
-                <a class="element-action" asp-area="" asp-controller="Quiz" asp-action="Index">
+                <form id="regenerateTasksForm" hidden>
+                    @Html.AntiForgeryToken()
+                </form>
+                <a class="element-action" asp-area="" asp-controller="Quiz" asp-action="Index" hidden>
                     <span class="element-action-icon element-icon"><img src="img/additional_quiz.png" alt=""></span>
                     <span>Additional Quizzes</span>
                 </a>
-                <button class="element-action" type="button" data-elements-action="stats" hidden>
+                <a class="element-action" asp-area="" asp-controller="Users" asp-action="MyInnerTide">
                     <span class="element-action-icon element-icon"><img src="img/task_stats.png" alt=""></span>
-                    <span>Task Generation Stats</span>
-                </button>
+                    <span>My Inner Tide</span>
+                </a>
                 <button class="element-action elements-list" type="button">
                     <span class="element-action-icon element-icon"><img src="img/aquarium_list.png" alt=""></span>
                     <span>Aquarium List</span>
                 </button>
+                <p id="regenerateTasksStatus" class="task-regeneration-status" role="status"></p>
             </div>
 
             <div class="elements-status" data-percent="0">

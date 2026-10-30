@@ -8,11 +8,12 @@
     <link rel="stylesheet" href="/css/site.css">
 </head>
 <body class="error-page">
+    <audio id="error-music" src="/music/error.mp3" autoplay loop></audio>
     <main class="error-page-layout">
-        <section class="error-page-copy" aria-labelledby="error-title">
+        <section class="error-page-copy">
             <h1 class="error-page-title" id="error-title">Uh Oh!</h1>
             <p class="error-page-description">Looks like Inner Tide isn't quite ready to be dived into. We're sorry about this issue, and hope to resolve it soon.</p>
-            <section class="error-page-details" aria-labelledby="error-details-title">
+            <section class="error-page-details">
                 <h2 id="error-details-title">Error details</h2>
                 <pre id="error-message">An unexpected error occurred.</pre>
             </section>
@@ -21,6 +22,18 @@
         <img class="error-page-art" src="/img/bereef.png" alt="Beneath the reef">
     </main>
     <script>
+        const errorMusic = document.querySelector("#error-music");
+        const startErrorMusic = () => {
+            errorMusic.play().catch(error => {
+                if (error.name !== "NotAllowedError") {
+                    console.error("Unable to play error page music.", error);
+                }
+            });
+        };
+        startErrorMusic();
+        document.addEventListener("pointerdown", startErrorMusic, { once: true });
+        document.addEventListener("keydown", startErrorMusic, { once: true });
+
         const errorMessage = new URLSearchParams(window.location.search).get("error");
         if (errorMessage) {
             document.querySelector("#error-message").textContent = errorMessage;

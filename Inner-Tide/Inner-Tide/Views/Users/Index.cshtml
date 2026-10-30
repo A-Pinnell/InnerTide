@@ -2,16 +2,18 @@
 
 @{
     ViewData["Title"] = "Login & Register Page";
+    var loginViewActive = ViewData["ActiveAuthView"] as string == "login";
+    var hasAuthErrors = !ViewData.ModelState.IsValid;
 }
 
-<body class="users-page">
+<body class="users-page @(hasAuthErrors ? "auth-error-page" : "")">
     <main class="users-shell">
         <section class="users-promo">
             <img src="../img/login_promo.png">
         </section>
 
         <section class="auth-panel">
-            <div id="registerContainer" class="auth-view">
+            <div id="registerContainer" class="auth-view" hidden="@(loginViewActive ? "hidden" : null)">
                 <form asp-controller="Users" asp-action="Register" method="post">
                     <fieldset>
                         <div class="auth-field">
@@ -32,8 +34,6 @@
                             <span asp-validation-for="Register.Password" class="auth-error"></span>
                         </div>
 
-
-
                         <div class="auth-field auth-field-compact">
                             <label asp-for="Register.ConfirmPassword">Confirm</label>
                             <input asp-for="Register.ConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm password">
@@ -49,7 +49,7 @@
                 </form>
             </div>
 
-            <div id="loginContainer" class="auth-view" hidden>
+            <div id="loginContainer" class="auth-view" hidden="@(!loginViewActive ? "hidden" : null)">
                 <form asp-controller="Users" asp-action="Login" method="post">
                     <fieldset>
                         <div class="auth-field">
@@ -74,7 +74,9 @@
 
                         <div asp-validation-summary="All" class="auth-error auth-summary"></div>
                         <div class="auth-actions">
-                            <button class="auth-submit" type="submit">Log In</button>
+                            <button class="auth-submit" type="submit">
+                                <span class="login-submit-label">Log In</span>
+                            </button>
                             <a class="auth-switch" href="#register" data-auth-view="register">or Register</a>
                         </div>
                     </fieldset>
@@ -94,6 +96,9 @@
 
     <div class="startup-video" id="startup-video">
         <video id="startup-video-player" autoplay muted playsinline preload="auto"></video>
+    </div>
+    <div class="login-processing-overlay" id="loginProcessingOverlay" hidden>
+        <img src="~/img/loading.gif" alt="Logging in">
     </div>
 </body>
 <audio id="login-music" src="../music/Login.mp3" loop preload="auto"></audio>

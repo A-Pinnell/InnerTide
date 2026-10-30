@@ -14,12 +14,11 @@ namespace Inner_Tide.Models {
         [Required]
         public int CoinCount { get; set; }
 
-        [Required]
-        public bool FirstTimeLogin { get; set; }
-
-        [Required]
         [Range(0, int.MaxValue)]
+        [Required]
         public int TaskRegenerationCount { get; set; }
 
+        [Required]
+        public bool FirstTimeLogin { get; set; }
     }
 }

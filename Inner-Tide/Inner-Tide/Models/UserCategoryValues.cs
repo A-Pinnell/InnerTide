@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Inner_Tide.Models {
+    [Index(nameof(UserId), IsUnique = true)]
     public class UserCategoryValues {
         [Required]
         public int UserCategoryValuesId { get; set; }

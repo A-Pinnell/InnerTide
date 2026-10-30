@@ -1,0 +1,48 @@
+@{
+    ViewData["Title"] = "Welcome to Inner Tide";
+    var userName = ViewData["UserName"] as string ?? "there";
+}
+
+<body class="users-page onboarding-page">
+    <main class="users-shell onboarding-shell">
+        <section class="onboarding-content">
+            <div class="onboarding-screen" id="welcomeScreen">
+                <h1>Welcome to Inner Tide, @userName!</h1>
+                <p class="onboarding-description">
+                    Inner Tide helps you build a calmer, more mindful routine with small daily tasks and reflection.
+                    As you make progress, earn coins, collect fish, and create an aquarium that feels like yours.
+                    Take it at your own pace.
+                </p>
+                <section class="onboarding-carousel">
+                    <div class="onboarding-carousel-track">
+                        <div class="onboarding-carousel-group">
+                            <img src="~/backgrounds/TaskMenu.png">
+                            <img src="~/backgrounds/Aquarium_1.png">
+                            <img src="~/backgrounds/QuizMenu.png">
+                            <img src="~/backgrounds/Aquarium_3.png">
+                            <img src="~/backgrounds/Aquarium_5.png">
+                        </div>
+                        <div class="onboarding-carousel-group">
+                            <img src="~/backgrounds/TaskMenu.png" alt="">
+                            <img src="~/backgrounds/Aquarium_1.png" alt="">
+                            <img src="~/backgrounds/QuizMenu.png" alt="">
+                            <img src="~/backgrounds/Aquarium_3.png" alt="">
+                            <img src="~/backgrounds/Aquarium_5.png" alt="">
+                        </div>
+                    </div>
+                </section>
+                <button class="onboarding-next" id="onboardingNext" type="button">Next</button>
+            </div>
+
+            <form asp-controller="Users" asp-action="ChooseSetup" method="post" class="onboarding-screen onboarding-setup" id="setupChoiceScreen" hidden>
+                <h1>Alright, so let's get started!</h1>
+                <button class="onboarding-quiz-card" type="submit" name="setupQuiz" value="true">
+                    <span class="onboarding-card-watermark">00</span>
+                    <span class="onboarding-card-title">Setup Quiz</span>
+                    <span class="onboarding-card-description">Answer a few questions about how you have been feeling. It only takes a moment.</span>
+                    <span class="onboarding-card-meta">3 QUESTIONS <span>•</span> ABOUT 2 MIN</span>
+                </button>
+            </form>
+        </section>
+    </main>
+</body>
