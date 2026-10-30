@@ -16,5 +16,10 @@ namespace Inner_Tide.Models {
 
         [Required]
         public bool FirstTimeLogin { get; set; }
+
+        [Required]
+        [Range(0, int.MaxValue)]
+        public int TaskRegenerationCount { get; set; }
+
     }
 }
