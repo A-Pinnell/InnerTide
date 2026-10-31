@@ -22,6 +22,10 @@ Music and Sound Effects are also included
 
 # Known Limitations
 - No journalling functionality yet
+- No additional quizzes for further task data curation
+- No editor/Grid based layout
+- No fish information/facts
+- No 'Objects' implementation
 
 # Technologies Used
 - Programming languages: C#, CSS, JavaScript
@@ -29,8 +33,12 @@ Music and Sound Effects are also included
 - Database: Microsoft SQL Server
 
 # Prerequisites
+- Computer
+- Internet Connection
+- Visual Studio (for project code viewing)
 
 # Installation
+Inner Tide can be downloaded either by downloading the entire Github project and opening/running it through Visual Studio, or downloaded the packaged .exe in the release tab
 
 # Running the Application
 
