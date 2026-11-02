@@ -1,14 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
 namespace Inner_Tide.Models {
     public class User : IdentityUser {
         [Range(0, 99)]
-        [Required] 
+        [Required]
         public int AccountLevel { get; set; }
 
         [Required]
-        public int XPForNextLevel { get; set; } 
+        public int XPForNextLevel { get; set; }
 
         [Range(0, 999)]
         [Required]
@@ -18,17 +19,17 @@ namespace Inner_Tide.Models {
         [Required]
         public int DailyTaskRegenerationCount { get; set; }
 
-        public DateTime? DailyLastFreeTaskRefreshAt { get; set; }
-
         [Range(0, int.MaxValue)]
         [Required]
         public int WeeklyTaskRegenerationCount { get; set; }
 
-        public DateTime? WeeklyLastFreeTaskRefreshAt { get; set; }
-
         [Range(0, int.MaxValue)]
         [Required]
         public int MonthlyTaskRegenerationCount { get; set; }
+
+        public DateTime? DailyLastFreeTaskRefreshAt { get; set; }
+
+        public DateTime? WeeklyLastFreeTaskRefreshAt { get; set; }
 
         public DateTime? MonthlyLastFreeTaskRefreshAt { get; set; }
 

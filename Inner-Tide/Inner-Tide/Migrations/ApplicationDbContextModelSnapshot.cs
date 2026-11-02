@@ -53,7 +53,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Aquariums");
+                    b.ToTable("Aquariums", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Journal", b =>
@@ -83,7 +83,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Journals");
+                    b.ToTable("Journals", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Question", b =>
@@ -107,7 +107,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("QuestionId");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Quiz", b =>
@@ -127,7 +127,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("QuizId");
 
-                    b.ToTable("Quizzes");
+                    b.ToTable("Quizzes", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.QuizQuestion", b =>
@@ -159,7 +159,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("QuizQuestions");
+                    b.ToTable("QuizQuestions", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Task", b =>
@@ -187,7 +187,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("TaskId");
 
-                    b.ToTable("Tasks");
+                    b.ToTable("Tasks", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.User", b =>
@@ -208,11 +208,11 @@ namespace Inner_Tide.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("DailyTaskRegenerationCount")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("DailyLastFreeTaskRefreshAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("DailyTaskRegenerationCount")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -230,11 +230,11 @@ namespace Inner_Tide.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("MonthlyTaskRegenerationCount")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("MonthlyLastFreeTaskRefreshAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("MonthlyTaskRegenerationCount")
+                        .HasColumnType("int");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -263,11 +263,11 @@ namespace Inner_Tide.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int>("WeeklyTaskRegenerationCount")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("WeeklyLastFreeTaskRefreshAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("WeeklyTaskRegenerationCount")
+                        .HasColumnType("int");
 
                     b.Property<int>("XPForNextLevel")
                         .HasColumnType("int");
@@ -347,7 +347,7 @@ namespace Inner_Tide.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserCategoryValues");
+                    b.ToTable("UserCategoryValues", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserFish", b =>
@@ -384,7 +384,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserFish");
+                    b.ToTable("UserFish", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserItem", b =>
@@ -410,7 +410,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserItems");
+                    b.ToTable("UserItems", (string)null);
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserTask", b =>
@@ -446,7 +446,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserTasks");
+                    b.ToTable("UserTasks", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
