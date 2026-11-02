@@ -208,6 +208,12 @@ namespace Inner_Tide.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("DailyTaskRegenerationCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DailyLastFreeTaskRefreshAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -223,6 +229,12 @@ namespace Inner_Tide.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("MonthlyTaskRegenerationCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("MonthlyLastFreeTaskRefreshAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -244,15 +256,18 @@ namespace Inner_Tide.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TaskRegenerationCount")
-                        .HasColumnType("int");
-
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("WeeklyTaskRegenerationCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("WeeklyLastFreeTaskRefreshAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("XPForNextLevel")
                         .HasColumnType("int");

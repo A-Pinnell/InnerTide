@@ -336,23 +336,79 @@ if (regenerateTasksButton) {
     const regenerateTasksForm = document.querySelector("#regenerateTasksForm");
     const regenerateTasksStatus = document.querySelector("#regenerateTasksStatus");
     const regenerateUrl = regenerateTasksButton.dataset.regenerateUrl;
-    const regenerationCost = document.querySelector("#regenerateTasksCost");
-    let taskRegenerationCount = Number.parseInt(document.body.dataset.regenerationCount, 10) || 0;
+    const regenerateTasksDialog = document.querySelector("#regenerateTasksDialog");
+    const regenerateTasksCancel = document.querySelector("#regenerateTasksCancel");
+    const regenerationChoices = Array.from(document.querySelectorAll(".task-regeneration-choice"));
+    const taskRegenerationCounts = {
+        daily: {
+            count: Number.parseInt(document.body.dataset.dailyRegenerationCount, 10) || 0,
+            lastFreeRefreshAt: document.body.dataset.dailyLastFreeRefreshAt
+        },
+        weekly: {
+            count: Number.parseInt(document.body.dataset.weeklyRegenerationCount, 10) || 0,
+            lastFreeRefreshAt: document.body.dataset.weeklyLastFreeRefreshAt
+        },
+        monthly: {
+            count: Number.parseInt(document.body.dataset.monthlyRegenerationCount, 10) || 0,
+            lastFreeRefreshAt: document.body.dataset.monthlyLastFreeRefreshAt
+        }
+    };
     const getTaskRegenerationCost = count => count <= 0 ? 0 : count >= 31 ? 2147483647 : 2 ** count;
-    if (regenerationCost) {
-        regenerationCost.textContent = getTaskRegenerationCost(taskRegenerationCount);
+
+    if (!regenerateTasksForm || !taskRequestVerificationToken || !regenerateUrl ||
+        !regenerateTasksStatus || !regenerateTasksDialog || !regenerateTasksCancel || regenerationChoices.length !== 3) {
+        throw new Error("Task regeneration requires its URL, verification token, dialog, and status message.");
     }
 
-    if (!regenerateTasksForm || !taskRequestVerificationToken || !regenerateUrl || !regenerateTasksStatus) {
-        throw new Error("Task regeneration requires its URL, verification token, and status message.");
+    function hasFreeRefreshElapsed(lastFreeRefreshAt, period) {
+        if (!lastFreeRefreshAt) {
+            return true;
+        }
+        const lastRefresh = new Date(lastFreeRefreshAt);
+        const now = new Date();
+        if (!Number.isFinite(lastRefresh.getTime())) {
+            return true;
+        }
+        if (period === "daily") {
+            return now.getTime() >= lastRefresh.getTime() + 24 * 60 * 60 * 1000;
+        }
+        if (period === "weekly") {
+            return now.getTime() >= lastRefresh.getTime() + 7 * 24 * 60 * 60 * 1000;
+        }
+
+        const nextRefresh = new Date(lastRefresh);
+        const dayOfMonth = nextRefresh.getUTCDate();
+        nextRefresh.setUTCDate(1);
+        nextRefresh.setUTCMonth(nextRefresh.getUTCMonth() + 1);
+        const lastDayOfNextMonth = new Date(Date.UTC(
+            nextRefresh.getUTCFullYear(),
+            nextRefresh.getUTCMonth() + 1,
+            0
+        )).getUTCDate();
+        nextRefresh.setUTCDate(Math.min(dayOfMonth, lastDayOfNextMonth));
+        return now >= nextRefresh;
     }
 
-    regenerateTasksButton.addEventListener("click", async () => {
+    function updateRegenerationCosts() {
+        regenerationChoices.forEach(choice => {
+            const period = choice.dataset.regenerationPeriod;
+            const counter = taskRegenerationCounts[period];
+            if (hasFreeRefreshElapsed(counter.lastFreeRefreshAt, period)) counter.count = 0;
+            choice.querySelector("[data-regeneration-cost]").textContent =
+                String(getTaskRegenerationCost(counter.count));
+        });
+    }
+
+    async function regenerateTasks(period) {
         if (gameShell.classList.contains("elements-open")) {
             setAquariumOpen(false);
         }
-        regenerateTasksButton.disabled = true;
+        regenerationChoices.forEach(choice => {
+            choice.disabled = true;
+        });
+        regenerateTasksCancel.disabled = true;
         regenerateTasksStatus.hidden = true;
+        regenerateTasksStatus.textContent = "";
         setTaskListLoading(true);
         try {
             const response = await fetch(regenerateUrl, {
@@ -362,31 +418,55 @@ if (regenerateTasksButton) {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
                 body: new URLSearchParams({
-                    "__RequestVerificationToken": taskRequestVerificationToken
+                    "__RequestVerificationToken": taskRequestVerificationToken,
+                    "period": period
                 })
             });
             if (!response.ok || response.redirected) {
                 const details = (await response.text()).trim();
-                throw new Error(details || `Regenerating tasks failed with status ${response.status}.`);
+                throw new Error(details || `Refreshing tasks failed with status ${response.status}.`);
             }
             const result = await response.json();
-            taskRegenerationCount = result.regenerationCount;
-            document.body.dataset.regenerationCount = String(taskRegenerationCount);
-            if (regenerationCost) {
-                regenerationCost.textContent = getTaskRegenerationCost(taskRegenerationCount);
+            taskRegenerationCounts[period].count = result.regenerationCount;
+            if (result.regenerationCost === 0) {
+                taskRegenerationCounts[period].lastFreeRefreshAt = new Date().toISOString();
             }
+            updateRegenerationCosts();
             if (coinCount) {
                 skipCoinChangeAnimation(result.coins);
             }
+            document.querySelector(`.tab[data-period="${period}"]`)?.click();
             await getTaskData();
+            regenerateTasksDialog.close();
         } catch (error) {
             console.error("Unable to regenerate tasks.", error);
-            regenerateTasksStatus.textContent = "Could not regenerate your tasks. Please try again.";
+            regenerateTasksStatus.textContent = error instanceof Error
+                ? error.message
+                : "Could not refresh your tasks. Please try again.";
             regenerateTasksStatus.hidden = false;
         } finally {
             setTaskListLoading(false);
-            regenerateTasksButton.disabled = false;
+            regenerationChoices.forEach(choice => {
+                choice.disabled = false;
+            });
+            regenerateTasksCancel.disabled = false;
         }
+    }
+
+    regenerateTasksButton.addEventListener("click", () => {
+        updateRegenerationCosts();
+        regenerateTasksStatus.hidden = true;
+        regenerateTasksStatus.textContent = "";
+        regenerateTasksDialog.showModal();
+        regenerationChoices[0].focus();
+    });
+    regenerationChoices.forEach(choice => {
+        choice.addEventListener("click", () => {
+            void regenerateTasks(choice.dataset.regenerationPeriod);
+        });
+    });
+    regenerateTasksCancel.addEventListener("click", () => {
+        regenerateTasksDialog.close();
     });
 }
 

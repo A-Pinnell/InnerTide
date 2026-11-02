@@ -9,7 +9,12 @@
 
     var accountId = ViewData["AccountId"] as string ?? "";
     var coinCount = 0;
-    var taskRegenerationCount = 0;
+    var dailyTaskRegenerationCount = ViewData["DailyTaskRegenerationCount"] as int? ?? 0;
+    var weeklyTaskRegenerationCount = ViewData["WeeklyTaskRegenerationCount"] as int? ?? 0;
+    var monthlyTaskRegenerationCount = ViewData["MonthlyTaskRegenerationCount"] as int? ?? 0;
+    var dailyLastFreeTaskRefreshAt = ViewData["DailyLastFreeTaskRefreshAt"] as string ?? "";
+    var weeklyLastFreeTaskRefreshAt = ViewData["WeeklyLastFreeTaskRefreshAt"] as string ?? "";
+    var monthlyLastFreeTaskRefreshAt = ViewData["MonthlyLastFreeTaskRefreshAt"] as string ?? "";
     var userName = "Chris Concept";
     var email = "";
     var accountSettingsMessage = TempData["AccountSettingsMessage"] as string;
@@ -19,7 +24,6 @@
         var currentUser = await UserManager.GetUserAsync(User);
 
         coinCount = currentUser.CoinCount;
-        taskRegenerationCount = currentUser.TaskRegenerationCount;
         userName = currentUser.UserName;
         email = currentUser.Email;
     } else {
@@ -28,7 +32,11 @@
     }
 }
 
-<body class="task-menu-page" data-account-id="@accountId" data-regeneration-count="@taskRegenerationCount" data-account-settings-message="@(accountSettingsMessage != null ? "true" : "false")">
+<body class="task-menu-page" data-account-id="@accountId"
+      data-daily-regeneration-count="@dailyTaskRegenerationCount" data-daily-last-free-refresh-at="@dailyLastFreeTaskRefreshAt"
+      data-weekly-regeneration-count="@weeklyTaskRegenerationCount" data-weekly-last-free-refresh-at="@weeklyLastFreeTaskRefreshAt"
+      data-monthly-regeneration-count="@monthlyTaskRegenerationCount" data-monthly-last-free-refresh-at="@monthlyLastFreeTaskRefreshAt"
+      data-account-settings-message="@(accountSettingsMessage != null ? "true" : "false")">
     <main class="game-shell">
         <header class="player-card profile-collapsed">
             <div class="profile-details" id="profile-details">
@@ -178,8 +186,7 @@
             <div class="elements-actions">
                 <button class="element-action" type="button" id="regenerateTasksButton" data-regenerate-url="@Url.Action("RegenerateTasks", "Home")">
                     <span class="element-action-icon element-icon"><img src="img/refresh_tasks.png" alt=""></span>
-                    <span>Regenerate Tasks</span>
-                    <span class="regeneration-cost"><span id="regenerateTasksCost">0</span><img src="img/coin.png" alt="coins"></span>
+                    <span>Refresh Tasks</span>
                 </button>
                 <form id="regenerateTasksForm" hidden>
                     @Html.AntiForgeryToken()
@@ -196,7 +203,6 @@
                     <span class="element-action-icon element-icon"><img src="img/aquarium_list.png" alt=""></span>
                     <span>Aquarium List</span>
                 </button>
-                <p id="regenerateTasksStatus" class="task-regeneration-status" role="status"></p>
             </div>
 
             <div class="elements-status" data-percent="0">
@@ -244,4 +250,24 @@
             </div>
         </div>
     </section>
+    <dialog class="task-regeneration-dialog" id="regenerateTasksDialog" aria-labelledby="regenerateTasksHeading">
+        <h2 id="regenerateTasksHeading">Refresh tasks</h2>
+        <p>Choose which task list to refresh. Free refreshes reset after one day, seven days, or one month.</p>
+        <div class="task-regeneration-options">
+            <button type="button" class="task-regeneration-choice" data-regeneration-period="daily">
+                <span>Daily</span>
+                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span> coins</span>
+            </button>
+            <button type="button" class="task-regeneration-choice" data-regeneration-period="weekly">
+                <span>Weekly</span>
+                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span> coins</span>
+            </button>
+            <button type="button" class="task-regeneration-choice" data-regeneration-period="monthly">
+                <span>Monthly</span>
+                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span> coins</span>
+            </button>
+        </div>
+        <p id="regenerateTasksStatus" class="task-regeneration-status" role="status" hidden></p>
+        <button type="button" class="task-regeneration-cancel" id="regenerateTasksCancel">Cancel</button>
+    </dialog>
 </body>

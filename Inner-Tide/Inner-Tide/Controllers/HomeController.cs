@@ -32,7 +32,17 @@ namespace Inner_Tide.Controllers
                 return Unauthorized();
             }
 
-            ViewData["AccountId"] = user?.Id;
+            ViewData["AccountId"] = user.Id;
+            var now = DateTime.UtcNow;
+            ViewData["DailyTaskRegenerationCount"] =
+                IsFreeTaskRefreshDue(user.DailyLastFreeTaskRefreshAt, now, "Daily") ? 0 : user.DailyTaskRegenerationCount;
+            ViewData["WeeklyTaskRegenerationCount"] =
+                IsFreeTaskRefreshDue(user.WeeklyLastFreeTaskRefreshAt, now, "Weekly") ? 0 : user.WeeklyTaskRegenerationCount;
+            ViewData["MonthlyTaskRegenerationCount"] =
+                IsFreeTaskRefreshDue(user.MonthlyLastFreeTaskRefreshAt, now, "Monthly") ? 0 : user.MonthlyTaskRegenerationCount;
+            ViewData["DailyLastFreeTaskRefreshAt"] = FormatUtcDateTime(user.DailyLastFreeTaskRefreshAt);
+            ViewData["WeeklyLastFreeTaskRefreshAt"] = FormatUtcDateTime(user.WeeklyLastFreeTaskRefreshAt);
+            ViewData["MonthlyLastFreeTaskRefreshAt"] = FormatUtcDateTime(user.MonthlyLastFreeTaskRefreshAt);
             if (!await _context.Aquariums.AnyAsync(aquarium => aquarium.UserId == user.Id)) {
                 _context.Aquariums.Add(new Aquarium {
                     MaxFish = 10,
@@ -145,9 +155,19 @@ namespace Inner_Tide.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegenerateTasks() {
+        public async Task<IActionResult> RegenerateTasks([FromForm] string? period) {
             if (User.Identity?.IsAuthenticated != true) {
                 return Unauthorized();
+            }
+
+            var timeFrame = period?.Trim().ToLowerInvariant() switch {
+                "daily" => "Daily",
+                "weekly" => "Weekly",
+                "monthly" => "Monthly",
+                _ => null
+            };
+            if (timeFrame == null) {
+                return BadRequest("Choose a valid task period to refresh.");
             }
 
             var user = await userManager.GetUserAsync(User);
@@ -167,39 +187,81 @@ namespace Inner_Tide.Controllers
                 return Unauthorized();
             }
 
-            var regenerationCost = GetTaskRegenerationCost(account.TaskRegenerationCount);
+            var now = DateTime.UtcNow;
+            var (periodStart, lastFreeRefreshAt) = timeFrame switch {
+                "Daily" => (now.Date, account.DailyLastFreeTaskRefreshAt),
+                "Weekly" => (StartOfWeek(now.Date), account.WeeklyLastFreeTaskRefreshAt),
+                "Monthly" => (new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc), account.MonthlyLastFreeTaskRefreshAt),
+                _ => throw new InvalidOperationException("The selected task period is not supported.")
+            };
+            var storedRegenerationCount = timeFrame switch {
+                "Daily" => account.DailyTaskRegenerationCount,
+                "Weekly" => account.WeeklyTaskRegenerationCount,
+                "Monthly" => account.MonthlyTaskRegenerationCount,
+                _ => 0
+            };
+            var freeRefreshIsDue = IsFreeTaskRefreshDue(lastFreeRefreshAt, now, timeFrame);
+            var regenerationCount = freeRefreshIsDue ? 0 : storedRegenerationCount;
+            var regenerationCost = GetTaskRegenerationCost(regenerationCount);
             if (account.CoinCount < regenerationCost) {
-                return Conflict($"You need {regenerationCost} coins to regenerate tasks.");
+                return Conflict($"You need {regenerationCost} coins to refresh {timeFrame.ToLowerInvariant()} tasks.");
             }
 
-            var now = DateTime.UtcNow;
             var categoryScores = GetCategoryScores(categoryValues);
             await using var transaction = await _context.Database.BeginTransactionAsync();
-            await _context.UserTasks
+            var incompleteTasks = await _context.UserTasks
                 .Where(userTask => userTask.UserId == user.Id &&
                                    !userTask.Completed &&
-                                   (userTask.Task!.TimeFrame == "Daily" ||
-                                    userTask.Task.TimeFrame == "Weekly" ||
-                                    userTask.Task.TimeFrame == "Monthly"))
-                .ExecuteDeleteAsync();
+                                   userTask.Task!.TimeFrame == timeFrame)
+                .ToListAsync();
+            _context.UserTasks.RemoveRange(incompleteTasks);
+            await _context.SaveChangesAsync();
 
-            await EnsureTasksForPeriodAsync(user.Id, categoryScores, "Daily", 3, now.Date, now, true);
-            await EnsureTasksForPeriodAsync(user.Id, categoryScores, "Weekly", 5, StartOfWeek(now.Date), now, true);
+            var requiredCount = timeFrame switch {
+                "Daily" => 3,
+                "Weekly" => 5,
+                "Monthly" => 7,
+                _ => throw new InvalidOperationException("The selected task period is not supported.")
+            };
             await EnsureTasksForPeriodAsync(
                 user.Id,
                 categoryScores,
-                "Monthly",
-                7,
-                new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc),
+                timeFrame,
+                requiredCount,
+                periodStart,
                 now,
                 true);
             account.CoinCount -= regenerationCost;
-            account.TaskRegenerationCount++;
+            var nextRegenerationCount = regenerationCount == int.MaxValue
+                ? int.MaxValue
+                : regenerationCount + 1;
+            switch (timeFrame) {
+                case "Daily":
+                    account.DailyTaskRegenerationCount = nextRegenerationCount;
+                    if (freeRefreshIsDue) {
+                        account.DailyLastFreeTaskRefreshAt = now;
+                    }
+                    break;
+                case "Weekly":
+                    account.WeeklyTaskRegenerationCount = nextRegenerationCount;
+                    if (freeRefreshIsDue) {
+                        account.WeeklyLastFreeTaskRefreshAt = now;
+                    }
+                    break;
+                case "Monthly":
+                    account.MonthlyTaskRegenerationCount = nextRegenerationCount;
+                    if (freeRefreshIsDue) {
+                        account.MonthlyLastFreeTaskRefreshAt = now;
+                    }
+                    break;
+            }
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
             return Ok(new {
                 coins = account.CoinCount,
-                regenerationCount = account.TaskRegenerationCount
+                period = timeFrame.ToLowerInvariant(),
+                regenerationCount = nextRegenerationCount,
+                regenerationCost
             });
         }
 
@@ -317,6 +379,26 @@ namespace Inner_Tide.Controllers
             }
 
             return regenerationCount >= 31 ? int.MaxValue : 1 << regenerationCount;
+        }
+
+        private static bool IsFreeTaskRefreshDue(DateTime? lastFreeRefreshAt, DateTime now, string timeFrame) {
+            if (lastFreeRefreshAt == null) {
+                return true;
+            }
+
+            var lastRefresh = DateTime.SpecifyKind(lastFreeRefreshAt.Value, DateTimeKind.Utc);
+            return timeFrame switch {
+                "Daily" => now >= lastRefresh.AddDays(1),
+                "Weekly" => now >= lastRefresh.AddDays(7),
+                "Monthly" => now >= lastRefresh.AddMonths(1),
+                _ => throw new InvalidOperationException("The selected task period is not supported.")
+            };
+        }
+
+        private static string? FormatUtcDateTime(DateTime? dateTime) {
+            return dateTime.HasValue
+                ? DateTime.SpecifyKind(dateTime.Value, DateTimeKind.Utc).ToString("O")
+                : null;
         }
 
         private static DateTime StartOfWeek(DateTime date) {

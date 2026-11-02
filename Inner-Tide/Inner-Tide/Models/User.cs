@@ -16,7 +16,21 @@ namespace Inner_Tide.Models {
 
         [Range(0, int.MaxValue)]
         [Required]
-        public int TaskRegenerationCount { get; set; }
+        public int DailyTaskRegenerationCount { get; set; }
+
+        public DateTime? DailyLastFreeTaskRefreshAt { get; set; }
+
+        [Range(0, int.MaxValue)]
+        [Required]
+        public int WeeklyTaskRegenerationCount { get; set; }
+
+        public DateTime? WeeklyLastFreeTaskRefreshAt { get; set; }
+
+        [Range(0, int.MaxValue)]
+        [Required]
+        public int MonthlyTaskRegenerationCount { get; set; }
+
+        public DateTime? MonthlyLastFreeTaskRefreshAt { get; set; }
 
         [Required]
         public bool FirstTimeLogin { get; set; }

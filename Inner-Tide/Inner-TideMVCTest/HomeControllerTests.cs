@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Inner_TideMVCTest {
@@ -37,6 +39,7 @@ namespace Inner_TideMVCTest {
         public void TestInitialize() {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
 
             _context = new ApplicationDbContext(options);
@@ -121,6 +124,102 @@ namespace Inner_TideMVCTest {
 
             // Assert
             Assert.IsNotNull(await _context.Aquariums.CountAsync(a => a.UserId == "1"));
+        }
+
+        #endregion
+
+        #region Task regeneration
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task RegenerateTasksTracksAndChargesEachPeriodSeparately() {
+            var account = new User {
+                Id = "1",
+                CoinCount = 100,
+                DailyTaskRegenerationCount = 9,
+                WeeklyTaskRegenerationCount = 4,
+                MonthlyTaskRegenerationCount = 5,
+                DailyLastFreeTaskRefreshAt = DateTime.UtcNow.AddDays(-2),
+                WeeklyLastFreeTaskRefreshAt = DateTime.UtcNow.AddDays(-8),
+                MonthlyLastFreeTaskRefreshAt = DateTime.UtcNow.AddMonths(-1).AddDays(-1)
+            };
+            await SeedTaskRefreshDataAsync(account);
+
+            var dailyResult = (OkObjectResult)await controller.RegenerateTasks("daily");
+            var weeklyResult = (OkObjectResult)await controller.RegenerateTasks("weekly");
+            var monthlyResult = (OkObjectResult)await controller.RegenerateTasks("monthly");
+            var secondDailyResult = (OkObjectResult)await controller.RegenerateTasks("daily");
+
+            Assert.AreEqual(0, GetJsonInt(dailyResult.Value!, "regenerationCost"));
+            Assert.AreEqual(0, GetJsonInt(weeklyResult.Value!, "regenerationCost"));
+            Assert.AreEqual(0, GetJsonInt(monthlyResult.Value!, "regenerationCost"));
+            Assert.AreEqual(2, GetJsonInt(secondDailyResult.Value!, "regenerationCost"));
+            Assert.AreEqual(2, account.DailyTaskRegenerationCount);
+            Assert.AreEqual(1, account.WeeklyTaskRegenerationCount);
+            Assert.AreEqual(1, account.MonthlyTaskRegenerationCount);
+            Assert.AreEqual(98, account.CoinCount);
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task RegenerateTasksKeepsEachRefreshCountUntilItsOwnIntervalPasses() {
+            var now = DateTime.UtcNow;
+            var account = new User {
+                Id = "1",
+                CoinCount = 100,
+                DailyTaskRegenerationCount = 1,
+                WeeklyTaskRegenerationCount = 2,
+                MonthlyTaskRegenerationCount = 3,
+                DailyLastFreeTaskRefreshAt = now.AddHours(-12),
+                WeeklyLastFreeTaskRefreshAt = now.AddDays(-6),
+                MonthlyLastFreeTaskRefreshAt = now.AddMonths(-1).AddDays(1)
+            };
+            await SeedTaskRefreshDataAsync(account);
+
+            var dailyResult = (OkObjectResult)await controller.RegenerateTasks("daily");
+            var weeklyResult = (OkObjectResult)await controller.RegenerateTasks("weekly");
+            var monthlyResult = (OkObjectResult)await controller.RegenerateTasks("monthly");
+
+            Assert.AreEqual(2, GetJsonInt(dailyResult.Value!, "regenerationCost"));
+            Assert.AreEqual(4, GetJsonInt(weeklyResult.Value!, "regenerationCost"));
+            Assert.AreEqual(8, GetJsonInt(monthlyResult.Value!, "regenerationCost"));
+            Assert.AreEqual(2, account.DailyTaskRegenerationCount);
+            Assert.AreEqual(3, account.WeeklyTaskRegenerationCount);
+            Assert.AreEqual(4, account.MonthlyTaskRegenerationCount);
+            Assert.AreEqual(86, account.CoinCount);
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task RegenerateTasksRejectsUnknownPeriod() {
+            var result = await controller.RegenerateTasks("yearly");
+
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        private static int GetJsonInt(object result, string propertyName) {
+            using var json = JsonDocument.Parse(JsonSerializer.Serialize(result));
+            return json.RootElement.GetProperty(propertyName).GetInt32();
+        }
+
+        private async System.Threading.Tasks.Task SeedTaskRefreshDataAsync(User account) {
+            _context.Users.Add(account);
+            _context.UserCategoryValues.Add(new UserCategoryValues { UserId = account.Id });
+
+            var tasks = new List<Inner_Tide.Models.Task>();
+            foreach (var (timeFrame, count) in new[] {
+                ("Daily", 6),
+                ("Weekly", 10),
+                ("Monthly", 14)
+            }) {
+                for (var index = 0; index < count; index++) {
+                    tasks.Add(new Inner_Tide.Models.Task {
+                        Title = $"{timeFrame} task {index}",
+                        TimeFrame = timeFrame,
+                        CoinReward = 1,
+                        CategoryTag = "Sleep"
+                    });
+                }
+            }
+            _context.Tasks.AddRange(tasks);
+            await _context.SaveChangesAsync();
         }
 
         #endregion
