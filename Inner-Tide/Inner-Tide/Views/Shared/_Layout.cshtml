@@ -9,10 +9,20 @@
             if (sessionStorage.getItem("innerTide.quizExitTransition") === "true") {
                 document.documentElement.classList.add("quiz-return-pending");
             }
+            if (new URLSearchParams(window.location.search).get("from") === "aquarium") {
+                document.documentElement.classList.add("aquarium-transition-return");
+            }
         </script>
         <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
+        @foreach (var stylesheet in ViewData["PageStylesheets"] as string[] ?? Array.Empty<string>()) {
+            <link rel="stylesheet" href="~/css/@stylesheet" asp-append-version="true">
+        }
+        <link rel="stylesheet" href="~/css/site-common.css" asp-append-version="true">
         <script src="../js/color.js" defer></script>
         <script src="../js/site.js" defer></script>
+        @foreach (var pageScript in ViewData["PageScripts"] as string[] ?? Array.Empty<string>()) {
+            <script src="~/js/@pageScript" asp-append-version="true" defer></script>
+        }
     </head>
     <body>
         @RenderBody()

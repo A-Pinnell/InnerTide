@@ -4,6 +4,8 @@
 
 @{
     ViewData["Title"] = "Task Menu";
+    ViewData["PageStylesheets"] = new[] { "task-menu.css" };
+    ViewData["PageScripts"] = new[] { "task-menu.js" };
 
     var accountId = ViewData["AccountId"] as string ?? "";
     var coinCount = 0;
@@ -32,9 +34,9 @@
             <div class="profile-details" id="profile-details">
                 <div class="player-copy">
                     <strong> @userName </strong>
-                    <!-- <small>30 More Pearls needed to level up!</small> -->
+                    <small>30 More Pearls needed to level up!</small>
                 </div>
-                <!-- <div class="xp-track"><span></span></div> -->
+                <div class="xp-track"><span></span></div>
             </div>
             <button class="avatar" type="button">
                 <img src="img/placeholder.webp" alt="">
@@ -82,6 +84,9 @@
         </section>
 
         <section class="options-panel" id="optionsPanel" inert hidden>
+            <button class="options-panel-close" id="optionsCloseButton" type="button">
+                <img src="img/close_icon.png" alt="Close">
+            </button>
             <h2 id="optionsHeading">Options</h2>
             @if (accountSettingsMessage != null) {
                 <p class="account-settings-message @accountSettingsMessageType" role="status">@accountSettingsMessage</p>
@@ -150,17 +155,18 @@
                     <button class="options-back" type="submit">Save Account Changes</button>
                 </form>
             </details>
-            <button class="options-back" id="optionsBackButton" type="button">Back to Tasks</button>
         </section>
 
         <section class="options-panel credits-panel" id="creditsPanel" inert hidden>
+            <button class="options-panel-close" id="creditsCloseButton" type="button">
+                <img src="img/close_icon.png" alt="Close">
+            </button>
             <img class="credits-logo" src="img/Team_1.png" alt="Serene Stallions">
             <ul class="credits-list">
                 <li>Alyssa Pinnell</li>
                 <li>Emma Sauve</li>
                 <li>Matthew Johnston</li>
             </ul>
-            <button class="options-back" id="creditsBackButton" type="button">Back to Tasks</button>
         </section>
 
         <button class="help-button" type="button">
@@ -178,7 +184,7 @@
                 <form id="regenerateTasksForm" hidden>
                     @Html.AntiForgeryToken()
                 </form>
-                <a class="element-action" asp-area="" asp-controller="Quiz" asp-action="Index" hidden>
+                <a class="element-action" asp-area="" asp-controller="Quiz" asp-action="Index">
                     <span class="element-action-icon element-icon"><img src="img/additional_quiz.png" alt=""></span>
                     <span>Additional Quizzes</span>
                 </a>

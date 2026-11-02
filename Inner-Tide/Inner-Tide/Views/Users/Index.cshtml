@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Login & Register Page";
+    ViewData["PageStylesheets"] = new[] { "users-menu.css" };
+    ViewData["PageScripts"] = new[] { "users-menu.js" };
     var loginViewActive = ViewData["ActiveAuthView"] as string == "login";
     var hasAuthErrors = !ViewData.ModelState.IsValid;
 }
@@ -40,7 +42,6 @@
                             <span asp-validation-for="Register.ConfirmPassword" class="auth-error"></span>
                         </div>
 
-                        <div asp-validation-summary="All" class="auth-error auth-summary"></div>
                         <div class="auth-actions">
                             <button class="auth-submit" type="submit">Register</button>
                             <a class="auth-switch" href="#login" data-auth-view="login">or Log In</a>
@@ -72,7 +73,6 @@
                             <a asp-controller="Users" asp-action="VerifyEmail">Forgot Password?</a>
                         </div>
 
-                        <div asp-validation-summary="All" class="auth-error auth-summary"></div>
                         <div class="auth-actions">
                             <button class="auth-submit" type="submit">
                                 <span class="login-submit-label">Log In</span>

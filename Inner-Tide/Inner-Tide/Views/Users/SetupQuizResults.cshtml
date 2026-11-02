@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Your Setup Results";
+    ViewData["PageStylesheets"] = new[] { "quiz-question.css" };
+    ViewData["PageScripts"] = new[] { "setup-results.js" };
 }
 
 <main class="setup-results-page">
@@ -19,7 +21,7 @@
                             <label for="category-progress-@category.Name">@category.Name</label>
                             <span class="setup-results-percent">@category.Percentage%</span>
                         </div>
-                        <progress class="setup-results-progress" id="category-progress-@category.Name" value="@category.Percentage" max="100">@category.Percentage%</progress>
+                        <progress class="setup-results-progress" id="category-progress-@category.Name" value="0" max="100" data-target-value="@category.Percentage">@category.Percentage%</progress>
                     </div>
                 }
             </div>

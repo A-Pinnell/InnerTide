@@ -1,0 +1,194 @@
+body.setup-quiz-page {
+    background: #071b36 url("../backgrounds/Login.png") center / cover no-repeat fixed;
+}
+
+body.setup-quiz-page .question-background {
+    background: url("../backgrounds/Login.png") center / cover no-repeat;
+}
+
+body.setup-quiz-page .question-action-form {
+    margin: 0;
+}
+
+.startup-video {
+    position: fixed;
+    z-index: 10000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #000;
+    opacity: 1;
+    transition: opacity .45s ease;
+    pointer-events: none;
+}
+
+    .startup-video.is-finished {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .startup-video video {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+    }
+
+html::after {
+    position: fixed;
+    z-index: 2147483647;
+    inset: 0;
+    background: #000;
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s linear;
+}
+
+html.page-assets-loading::before,
+html.page-assets-ready::before {
+    position: fixed;
+    z-index: 2147483646;
+    inset: 0;
+    background: #000;
+    content: "";
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity .35s ease;
+}
+
+html.page-assets-loading:has(body.aquarium-page)::before,
+html.page-assets-ready:has(body.aquarium-page)::before {
+    background: #0086B6;
+}
+
+html.page-assets-loading.aquarium-transition-return::before,
+html.page-assets-ready.aquarium-transition-return::before {
+    background: linear-gradient(110deg, #ebb9e1, #dca5d7);
+}
+
+html.page-assets-ready::before {
+    opacity: 0;
+    pointer-events: none;
+}
+
+html.page-assets-loading::after {
+    z-index: 2147483647;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    color: #fff;
+    content: "Loading...";
+    font: 24px "Neuropolx", sans-serif;
+    opacity: 0;
+    animation: page-loading-label 1s linear forwards;
+    pointer-events: none;
+}
+
+html.page-assets-loading:has(body.quiz-menu-page)::before,
+html.page-assets-loading:has(body.question-page)::before {
+    background: transparent;
+    opacity: 0;
+    pointer-events: none;
+}
+
+html.page-assets-loading:has(body.quiz-menu-page)::after,
+html.page-assets-loading:has(body.question-page)::after {
+    display: none;
+}
+
+@keyframes page-loading-label {
+    0%, 80% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+html.reduced-motion-transitioning::after,
+html.reduced-motion-entering::after {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
+html.reduced-motion body.quiz-menu-page .quiz-card:hover,
+html.reduced-motion body.quiz-menu-page .nav-link:hover,
+html.reduced-motion body.quiz-menu-page .nav-link:focus-visible,
+html.reduced-motion body.users-page .auth-submit:hover {
+    transform: none;
+}
+
+.fishGrabbable {
+    position: relative;
+}
+
+#fishContainer {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.fish-loading-indicator {
+    position: absolute;
+    z-index: 6;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    width: 72px;
+    height: 72px;
+    place-items: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.fish-loading-indicator[hidden] {
+    display: none;
+}
+
+.fish-loading-indicator img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.aquariumFish {
+    opacity: 0;
+    z-index: auto;
+    transition: opacity .6s ease;
+}
+
+.aquariumFish.is-loaded {
+    opacity: 1;
+}
+
+.aquariumFish.is-dragging {
+    opacity: 0;
+    transition: none;
+}
+
+.aquariumFish img {
+    width: 125px;
+    height: auto;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+[hidden] {
+    display: none !important;
+}

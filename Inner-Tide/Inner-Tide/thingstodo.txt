@@ -1,7 +1,2 @@
-- password does not match 4 times on screen
-- clear modelstate when going between register and login
-- add loading.gif to center of screen when quizzes are loading
-- Make back to tasks button the same as close button (i know what this means)
-- mix aquarium 4 track slightly higher
 - (if time) enhance rotations to be smoother/smaller
 - (if time) stylize account settings better

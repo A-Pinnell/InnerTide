@@ -5,6 +5,8 @@
 
 @{
     ViewData["Title"] = "Quiz Menu";
+    ViewData["PageStylesheets"] = new[] { "task-menu.css", "quiz-menu.css" };
+    ViewData["PageScripts"] = new[] { "quiz-menu.js" };
     var cardColors = new[] { "quiz-card-orange", "quiz-card-green", "quiz-card-purple" };
 
     var coinCount = 0;
@@ -42,9 +44,9 @@
             <div class="profile-details" id="profile-details">
                 <div class="player-copy">
                     <strong> @userName </strong>
-                    <!-- <small>30 More Pearls needed to level up!</small> -->
+                    <small>30 More Pearls needed to level up!</small>
                 </div>
-                <!-- <div class="xp-track"><span></span></div> -->
+                <div class="xp-track"><span></span></div>
             </div>
             <button class="avatar" type="button">
                 <img src="../img/placeholder.webp" alt="">

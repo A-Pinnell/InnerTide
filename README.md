@@ -43,6 +43,7 @@ Inner Tide can be downloaded either by downloading the entire Github project and
 # Running the Application
 
 # Running the Tests
+In the Project Solution, right click the 
 
 # Project Structure
 

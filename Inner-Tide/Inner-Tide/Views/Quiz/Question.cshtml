@@ -7,6 +7,8 @@
     var setupQuiz = ViewData["SetupQuiz"] is true;
     var quizQuestions = Model ?? new List<QuizQuestion>();
     ViewData["Title"] = setupQuiz ? "Getting Started" : "Quiz";
+    ViewData["PageStylesheets"] = new[] { "task-menu.css", "quiz-question.css" };
+    ViewData["PageScripts"] = new[] { "quiz-question.js" };
 }
 
 <body class="question-page @(setupQuiz ? "setup-quiz-page" : "")">

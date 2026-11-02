@@ -1,0 +1,522 @@
+body.users-page {
+    min-width: 320px;
+    min-height: 100vh;
+    overflow: hidden;
+    background: #071b36 url("../backgrounds/Login.png") center / cover no-repeat fixed;
+}
+
+    body.users-page .users-shell {
+        position: relative;
+        display: grid;
+        width: 100%;
+        min-height: 100vh;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        isolation: isolate;
+    }
+
+    body.users-page .users-promo {
+        position: absolute;
+        inset: 0 auto 7% 0;
+        display: flex;
+        width: 49%;
+        align-items: flex-start;
+        justify-content: flex-start;
+        pointer-events: none;
+    }
+
+        body.users-page .users-promo img {
+            position: fixed;
+            top: 2vh;
+            left: 0;
+            display: block;
+            width: 70vw;
+            height: auto;
+            margin: 0;
+            object-fit: contain;
+        }
+
+    body.users-page .auth-panel {
+        z-index: 1;
+        grid-column: 2;
+        align-self: center;
+        width: min(88%, 650px);
+        min-height: 0;
+        margin: 0 auto;
+        transition: height .52s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    body.users-page .auth-view[hidden] {
+        display: none;
+    }
+
+    body.users-page.auth-transition-ready .auth-panel {
+        position: relative;
+        overflow-x: clip;
+        overflow-y: visible;
+    }
+
+    body.users-page.auth-transition-ready .auth-view {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        transition: opacity .32s ease, transform .48s cubic-bezier(.22, 1, .36, 1);
+        will-change: opacity, transform;
+    }
+
+        body.users-page.auth-transition-ready .auth-view.is-active {
+            z-index: 1;
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-entering {
+            opacity: 0;
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-leaving {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-entering-from-right {
+            transform: translate3d(100%, 0, 0);
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-entering-from-left {
+            transform: translate3d(-100%, 0, 0);
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-leaving-to-left {
+            transform: translate3d(-100%, 0, 0);
+        }
+
+        body.users-page.auth-transition-ready .auth-view.is-leaving-to-right {
+            transform: translate3d(100%, 0, 0);
+        }
+
+    body.users-page .auth-panel fieldset {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    body.users-page .auth-field {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin: 0 0 clamp(18px, 3.1vh, 31px);
+    }
+
+        body.users-page .auth-field label {
+            margin: 0 2px 2px 0;
+            color: #fff;
+            font-size: clamp(25px, 3.5vw, 47px);
+            line-height: 1.12;
+            text-align: right;
+        }
+
+        body.users-page .auth-field input {
+            width: 100%;
+            height: clamp(58px, 11.8vh, 91px);
+            padding: 0 clamp(16px, 1.8vw, 25px);
+            border: 3px solid #050505;
+            border-radius: 25px;
+            outline: none;
+            background: #fff;
+            color: #080808;
+            font: clamp(15px, 1.55vw, 21px) "Neuropolx", sans-serif;
+            letter-spacing: .035em;
+        }
+
+            body.users-page .auth-field input::placeholder {
+                color: #171717;
+                opacity: 1;
+            }
+
+            body.users-page .auth-field input:focus-visible {
+                box-shadow: 0 0 0 4px rgba(47, 183, 255, .55);
+            }
+
+    body.users-page .auth-field-compact {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 14px;
+        margin: 0 0 clamp(14px, 2.6vh, 21px);
+    }
+
+        body.users-page .auth-field-compact label {
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        body.users-page .auth-field-compact input {
+            height: clamp(52px, 8.2vh, 64px);
+            border-radius: 17px;
+            font-size: clamp(12px, 1.1vw, 16px);
+        }
+
+    body.users-page .auth-error {
+        display: block;
+        min-height: 0;
+        color: #ffd1e8;
+        font-size: 14px;
+        text-align: right;
+    }
+
+    body.users-page .auth-field .auth-error:empty {
+        display: none;
+    }
+
+    body.users-page .auth-options {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: -8px 3px 20px;
+        color: #fff;
+        font-size: clamp(12px, 1vw, 15px);
+    }
+
+        body.users-page .auth-options a,
+        body.users-page .auth-switch {
+            color: #fff;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+    body.users-page .remember-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        body.users-page .remember-option input {
+            width: 17px;
+            height: 17px;
+            accent-color: #168ed6;
+        }
+
+    body.users-page .auth-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(15px, 2vw, 28px);
+    }
+
+    body.users-page .auth-submit {
+        min-width: 65%;
+        min-height: clamp(68px, 12.6vh, 96px);
+        padding: 6px 20px;
+        border: 4px solid rgba(15, 146, 218, .8);
+        border-radius: 25px;
+        background: linear-gradient(115deg, rgba(49, 106, 171, .82), rgba(6, 54, 101, .8));
+        box-shadow: inset 0 0 14px rgba(157, 218, 255, .55), 0 0 9px #08aeff, 0 0 19px rgba(22, 160, 242, .8);
+        color: #fff;
+        cursor: pointer;
+        font: clamp(30px, 4vw, 50px) "Neuropolx", sans-serif;
+        text-shadow: 0 0 8px rgba(255, 255, 255, .7);
+        transition: filter .18s ease, transform .18s ease;
+    }
+
+        body.users-page .auth-submit[disabled] {
+            cursor: wait;
+            filter: none;
+            transform: none;
+        }
+
+    body.users-page .login-submit-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+    }
+
+    body.users-page .login-processing-overlay {
+        position: fixed;
+        z-index: 10001;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(0, 0, 0, .48);
+    }
+
+    body.users-page .login-processing-overlay[hidden] {
+        display: none;
+    }
+
+    body.users-page .login-processing-overlay img {
+        display: block;
+        width: clamp(72px, 12vw, 128px);
+        height: auto;
+    }
+
+        body.users-page .auth-submit:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+        }
+
+    body.users-page .auth-switch {
+        flex: 0 0 auto;
+        font-size: clamp(14px, 2vw, 26px);
+        font-style: italic;
+        white-space: nowrap;
+    }
+
+    body.users-page .users-footer {
+        position: absolute;
+        right: 0;
+        bottom: 3.5%;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(14px, 2.5vw, 34px);
+        color: #fff;
+        font-size: clamp(20px, 2.5vw, 34px);
+    }
+
+        body.users-page .users-footer img {
+            display: block;
+            width: clamp(165px, 19vw, 260px);
+            height: auto;
+        }
+
+    body.users-page .users-help {
+        position: absolute;
+        right: 8px;
+        bottom: 0;
+        width: clamp(58px, 6vw, 78px);
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+
+        body.users-page .users-help img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+body.users-page.onboarding-page {
+    overflow: auto;
+}
+
+body.users-page.onboarding-page .users-shell {
+    display: flex;
+    min-height: 100vh;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+}
+
+.onboarding-content {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(32px, 6vh, 68px) 0;
+    color: #fff;
+    text-align: center;
+}
+
+.onboarding-screen {
+    display: flex;
+    width: min(1120px, 100%);
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(16px, 2.5vh, 28px);
+    padding: 0 clamp(20px, 5vw, 72px);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity .32s ease, transform .32s ease;
+}
+
+.onboarding-screen[hidden] {
+    display: none;
+}
+
+.onboarding-screen.is-active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.onboarding-screen.is-leaving {
+    opacity: 0;
+    transform: translateY(-14px);
+    pointer-events: none;
+}
+
+.onboarding-screen h1 {
+    margin: 0;
+    font-family: "Ipanema", "Neuropolx", sans-serif;
+    font-size: clamp(30px, 5vw, 54px);
+    line-height: 1.15;
+    text-shadow: 0 2px 6px rgba(0,0,0,.8);
+}
+
+.onboarding-description {
+    max-width: 900px;
+    margin: 0;
+    font-size: clamp(17px, 2vw, 23px);
+    line-height: 1.65;
+    text-shadow: 0 2px 5px rgba(0,0,0,.9);
+}
+
+.onboarding-carousel {
+    width: 100vw;
+    max-width: 100vw;
+    overflow: hidden;
+    padding: 6px 0 14px;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.onboarding-carousel-track,
+.onboarding-carousel-group {
+    display: flex;
+    width: max-content;
+    align-items: center;
+}
+
+.onboarding-carousel-track {
+    animation: onboarding-carousel-scroll 36s linear infinite;
+}
+
+.onboarding-carousel:hover .onboarding-carousel-track {
+    animation-play-state: paused;
+}
+
+.onboarding-carousel-group {
+    gap: clamp(14px, 2vw, 26px);
+    padding-right: clamp(14px, 2vw, 26px);
+}
+
+.onboarding-carousel-group img {
+    display: block;
+    width: clamp(230px, 28vw, 390px);
+    height: clamp(130px, 17vw, 220px);
+    border: 3px solid rgba(255,255,255,.8);
+    border-radius: 18px;
+    background: rgba(0,0,0,.3);
+    box-shadow: 0 5px 16px rgba(0,0,0,.5);
+    object-fit: cover;
+}
+
+@keyframes onboarding-carousel-scroll {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.onboarding-next {
+    min-width: 190px;
+    min-height: 54px;
+    padding: 10px 24px;
+    border: 2px solid rgba(255,255,255,.9);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #40c6f3, #0879bd 60%, #06457f);
+    box-shadow: 0 0 18px rgba(52, 190, 255, .35), inset 0 2px 5px rgba(255,255,255,.48);
+    color: #fff;
+    font: 700 clamp(20px, 2.4vw, 28px) "Hydration", sans-serif;
+    cursor: pointer;
+    transition: filter .2s ease, transform .2s ease;
+}
+
+.onboarding-next:hover {
+    filter: brightness(1.12);
+    transform: translateY(-2px);
+}
+
+.onboarding-setup {
+    gap: clamp(12px, 2vh, 20px);
+}
+
+.onboarding-setup h1 {
+    margin-bottom: 8px;
+    font-family: "Neuropolx", sans-serif;
+}
+
+.onboarding-setup-description {
+    max-width: 456px;
+    margin: 0;
+    color: #fff;
+    font-size: clamp(17px, 2vw, 22px);
+    line-height: 1.4;
+    text-align: center;
+    text-shadow: 0 2px 5px rgba(0,0,0,.9);
+}
+
+.onboarding-quiz-card {
+    --card-border: #bd76c7;
+    --bezel-highlight: rgba(219, 130, 235, .62);
+    --bezel-shadow: rgba(68, 20, 88, .48);
+    --glass-edge: rgba(230, 159, 241, .52);
+    position: relative;
+    display: flex;
+    width: min(456px, 100%);
+    min-height: clamp(330px, 48vh, 450px);
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(12px, 2vh, 20px);
+    padding: clamp(26px, 4vw, 42px);
+    overflow: hidden;
+    border: 5px solid var(--card-border);
+    border-radius: clamp(38px, 4.4vw, 60px);
+    background: linear-gradient(180deg, rgba(157, 111, 218, .9), rgba(91, 48, 151, .94) 55%, rgba(38, 19, 76, .97));
+    box-shadow: inset 0 0 0 2px var(--bezel-highlight), inset 0 0 0 8px var(--bezel-shadow), inset 0 9px 16px rgba(255,255,255,.34), 0 12px 30px rgba(0,0,0,.4);
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .2s ease, filter .2s ease;
+}
+
+.onboarding-quiz-card::before {
+    position: absolute;
+    inset: 8px;
+    border: 1px solid var(--glass-edge);
+    border-radius: inherit;
+    background: linear-gradient(132deg, rgba(255,255,255,.28), rgba(255,255,255,.06) 20%, transparent 42%, transparent 74%, rgba(105,65,161,.3));
+    content: "";
+    pointer-events: none;
+}
+
+.onboarding-quiz-card:hover {
+    filter: brightness(1.08);
+    transform: translateY(-5px);
+}
+
+.onboarding-quiz-card > span {
+    position: relative;
+    z-index: 1;
+}
+
+.onboarding-card-watermark {
+    position: absolute !important;
+    top: -32px;
+    right: 12px;
+    color: rgba(255,255,255,.16);
+    font: clamp(150px, 20vw, 230px)/1 "Hydration", sans-serif;
+    pointer-events: none;
+}
+
+.onboarding-card-meta {
+    font: 700 clamp(16px, 1.8vw, 22px) "Hydration", sans-serif;
+    letter-spacing: .06em;
+}
+
+.onboarding-card-title {
+    font: 700 clamp(34px, 5vw, 54px)/1.1 "Neuropolx", sans-serif;
+}
+
+.onboarding-card-description {
+    max-width: 330px;
+    font-size: clamp(17px, 2vw, 22px);
+    line-height: 1.4;
+}
+
+.onboarding-card-meta {
+    margin-top: 6px;
+    color: #e8d9ff;
+}
