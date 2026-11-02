@@ -39,10 +39,16 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("CurrentObjects")
                         .HasColumnType("int");
 
+                    b.Property<int?>("FirstPlacedUserFishId")
+                        .HasColumnType("int");
+
                     b.Property<int>("MaxFish")
                         .HasColumnType("int");
 
                     b.Property<int>("MaxObjects")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserFishId")
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
@@ -51,9 +57,13 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("AquariumId");
 
+                    b.HasIndex("FirstPlacedUserFishId");
+
+                    b.HasIndex("UserFishId");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("Aquariums", (string)null);
+                    b.ToTable("Aquariums");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Journal", b =>
@@ -83,7 +93,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Journals", (string)null);
+                    b.ToTable("Journals");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Question", b =>
@@ -107,7 +117,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("QuestionId");
 
-                    b.ToTable("Questions", (string)null);
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Quiz", b =>
@@ -127,7 +137,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("QuizId");
 
-                    b.ToTable("Quizzes", (string)null);
+                    b.ToTable("Quizzes");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.QuizQuestion", b =>
@@ -159,7 +169,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("QuizQuestions", (string)null);
+                    b.ToTable("QuizQuestions");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.Task", b =>
@@ -187,7 +197,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("TaskId");
 
-                    b.ToTable("Tasks", (string)null);
+                    b.ToTable("Tasks");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.User", b =>
@@ -347,7 +357,7 @@ namespace Inner_Tide.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserCategoryValues", (string)null);
+                    b.ToTable("UserCategoryValues");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserFish", b =>
@@ -357,6 +367,9 @@ namespace Inner_Tide.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserFishId"));
+
+                    b.Property<DateTime?>("AcquiredAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("AquariumId")
                         .HasColumnType("int");
@@ -384,7 +397,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserFish", (string)null);
+                    b.ToTable("UserFish");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserItem", b =>
@@ -410,7 +423,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserItems", (string)null);
+                    b.ToTable("UserItems");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserTask", b =>
@@ -446,7 +459,7 @@ namespace Inner_Tide.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserTasks", (string)null);
+                    b.ToTable("UserTasks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -584,11 +597,22 @@ namespace Inner_Tide.Migrations
 
             modelBuilder.Entity("Inner_Tide.Models.Aquarium", b =>
                 {
+                    b.HasOne("Inner_Tide.Models.UserFish", "FirstPlacedUserFish")
+                        .WithMany()
+                        .HasForeignKey("FirstPlacedUserFishId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Inner_Tide.Models.UserFish", null)
+                        .WithMany("FirstPlacedInAquariums")
+                        .HasForeignKey("UserFishId");
+
                     b.HasOne("Inner_Tide.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("FirstPlacedUserFish");
 
                     b.Navigation("User");
                 });
@@ -738,6 +762,11 @@ namespace Inner_Tide.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Inner_Tide.Models.UserFish", b =>
+                {
+                    b.Navigation("FirstPlacedInAquariums");
                 });
 #pragma warning restore 612, 618
         }

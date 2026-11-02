@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Inner_Tide.Models {
     public class Aquarium {
@@ -24,11 +25,14 @@ namespace Inner_Tide.Models {
         [Required]
         public int CompletionPercentage { get; set; }
 
-        //Foreign Key
         [Required]
         public string UserId { get; set; }
 
         public User? User { get; set; }
-        
+
+        public int? FirstPlacedUserFishId { get; set; }
+
+        [ForeignKey(nameof(FirstPlacedUserFishId))]
+        public UserFish? FirstPlacedUserFish { get; set; }
     }
 }

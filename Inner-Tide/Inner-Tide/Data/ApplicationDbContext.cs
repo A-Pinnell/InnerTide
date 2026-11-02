@@ -5,6 +5,16 @@ using System.Collections.Generic;
 
 namespace Inner_Tide.Data {
     public class ApplicationDbContext : IdentityDbContext<User> {
+        protected override void OnModelCreating(ModelBuilder modelBuilder) {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Aquarium>()
+                .HasOne(a => a.FirstPlacedUserFish)
+                .WithMany()
+                .HasForeignKey(a => a.FirstPlacedUserFishId)
+                .OnDelete(DeleteBehavior.NoAction);
+        }
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) {
         }
