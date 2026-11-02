@@ -137,7 +137,8 @@ namespace Inner_Tide.Controllers {
                 var userFish = await _context.UserFish.Where(uf => uf.UserId == user.Id && uf.IsInAquarium == false)
                                         .Select(uf => new {
                                             uf.UserFishId,
-                                            uf.FishId
+                                            uf.FishId,
+                                            uf.AcquiredAt
                                         }).ToListAsync();
 
                 var fishList = new List<object>();
@@ -149,6 +150,7 @@ namespace Inner_Tide.Controllers {
                         fishList.Add(new {
                             userFishId = fish.UserFishId,
                             fishId = res.FishId,
+                            acquiredAt = fish.AcquiredAt,
                             res.Sprite,
                             res.Species,
                             res.Description,
@@ -198,19 +200,29 @@ namespace Inner_Tide.Controllers {
                     return NotFound();
                 }
 
-                var userItems = await _context.UserItems.Where(ui => ui.UserId == user.Id && ui.IsInAquarium == false)
-                                        .Select(ui => new {
-                                            ui.UserItemId,
-                                            ui.ItemId
-                                        }).ToListAsync();
+                var userItems = await _context.UserItems
+                    .Where(ui => ui.UserId == user.Id && !ui.IsInAquarium)
+                    .Select(ui => new {
+                        ui.UserItemId,
+                        ui.ItemId
+                    })
+                    .ToListAsync();
 
-                List<Item> itemList = new List<Item>();
+                var itemList = new List<object>();
 
                 foreach (var item in userItems) {
                     var res = await _httpClient.GetFromJsonAsync<Item>("https://innertideapi.vercel.app/api/v1/item/" + item.ItemId);
 
                     if (res != null) {
-                        itemList.Add(res);
+                        itemList.Add(new {
+                            userItemId = item.UserItemId,
+                            itemId = res.ItemId,
+                            res.Sprite,
+                            res.Name,
+                            res.Description,
+                            res.Price,
+                            res.GridSpace
+                        });
                     }
                 }//end foreach
 
@@ -273,6 +285,7 @@ namespace Inner_Tide.Controllers {
                 UserId = user.Id,
                 FishId = fish.FishId,
                 IsInAquarium = false,
+                AcquiredAt = DateTime.UtcNow,
                 xCord = xCord,
                 yCord = yCord
             };
@@ -415,6 +428,12 @@ namespace Inner_Tide.Controllers {
                     return NotFound();
                 }
 
+                var aquarium = await _context.Aquariums
+                    .FirstOrDefaultAsync(a => a.UserId == user.Id && a.AquariumId == aquariumId);
+                if (aquarium == null) {
+                    return NotFound("Aquarium was not found.");
+                }
+
                 var userFishInAquarium = await _context.UserFish
                     .Where(uf => uf.UserId == user.Id
                         && uf.IsInAquarium
@@ -432,8 +451,14 @@ namespace Inner_Tide.Controllers {
                         uf.FishId,
                         uf.xCord,
                         uf.yCord,
+                        uf.AcquiredAt,
+                        isFirstPlaced = aquarium.FirstPlacedUserFishId == uf.UserFishId,
                         fish.Sprite,
-                        fish.Species
+                        fish.Species,
+                        fish.Description,
+                        fish.Height,
+                        fish.Width,
+                        fish.FunFacts
                     });
                 }
 
@@ -472,9 +497,14 @@ namespace Inner_Tide.Controllers {
                     return BadRequest("Aquarium was not Found");
                 }
 
+                if (userFish == null) {
+                    return BadRequest("User Fish was not Found");
+                }
+
                 if (aquarium.CurrentFish + 1 <= aquarium.MaxFish) {
                     aquarium.CurrentFish += 1;
                     aquarium.CompletionPercentage = (int)Math.Round( ((double)aquarium.CurrentFish / aquarium.MaxFish) * 100 );
+                    aquarium.FirstPlacedUserFishId ??= userFish.UserFishId;
 
                     userFish.IsInAquarium = true;
                     userFish.AquariumId = aquarium.AquariumId;
@@ -483,7 +513,10 @@ namespace Inner_Tide.Controllers {
 
                     await _context.SaveChangesAsync();
 
-                    return Ok();
+                    return Ok(new {
+                        acquiredAt = userFish.AcquiredAt,
+                        isFirstPlaced = aquarium.FirstPlacedUserFishId == userFish.UserFishId
+                    });
                     
                 } else {
                     return BadRequest("All Aquariums are Full.");

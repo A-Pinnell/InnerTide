@@ -1,2 +1,7 @@
+- Aquarium Editor
+- Fish Information + Fun Facts Popup
+- Additional Quizzes
+- Polish
+
 - (if time) enhance rotations to be smoother/smaller
 - (if time) stylize account settings better

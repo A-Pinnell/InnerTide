@@ -325,6 +325,11 @@ if (gameShell) {
     optionsPanel.querySelector("form")?.addEventListener("submit", () => {
         playElementsTransitionSound("out");
     });
+    document.querySelector("#deleteUserDataForm")?.addEventListener("submit", event => {
+        if (!window.confirm("This permanently deletes your account and all its saved data. This cannot be undone. Continue?")) {
+            event.preventDefault();
+        }
+    });
     if (document.body.dataset.accountSettingsMessage === "true") {
         setInfoPanel("options");
     }

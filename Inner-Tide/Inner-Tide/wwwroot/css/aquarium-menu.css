@@ -30,15 +30,8 @@
     opacity: 0;
 }
 
-#storeBtn.is-open .aquarium-menu-label,
-#inventoryBtn.is-open .aquarium-menu-label {
+#storeBtn.is-open .aquarium-menu-label {
     opacity: 0;
-}
-
-#inventoryBtn.is-open .aquarium-icon-frame {
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .25s ease, visibility 0s linear .25s;
 }
 
 .aquarium-icon-frame > img {
@@ -57,28 +50,6 @@
 .aquariumMenuBtn:hover {
     filter: brightness(1.12);
     transform: translateY(-2px);
-}
-
-#removeFishBtn:hover:not(:active) {
-    animation: remove-fish-wiggle .4s ease-in-out infinite;
-}
-
-#removeFishBtn:active {
-    animation: none;
-}
-
-@keyframes remove-fish-wiggle {
-    0%, 100% {
-        transform: rotate(0);
-    }
-
-    25% {
-        transform: rotate(-5deg);
-    }
-
-    75% {
-        transform: rotate(5deg);
-    }
 }
 
 #sand {
@@ -134,20 +105,181 @@
         position: absolute;
         z-index: 0;
         inset: 0;
-        background-image:
-            linear-gradient(
-                color-mix(in srgb, var(--aquarium-background-tint-color, transparent) 55%, transparent),
-                color-mix(in srgb, var(--aquarium-background-tint-color, transparent) 55%, transparent)
-            ),
-            var(--aquarium-background-image, url("../backgrounds/Aquarium_1.png"));
-        background-position: center, center;
-        background-size: cover, cover;
-        background-repeat: no-repeat, no-repeat;
+        background-image: var(--aquarium-background-image, url("../backgrounds/Aquarium_1.png"));
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
         content: "";
         opacity: 0.5;
         filter: var(--aquarium-background-tint, none);
         transition: opacity .5s ease;
     }
+
+.aquarium-scene::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: color-mix(in srgb, var(--aquarium-background-tint-color, transparent) 55%, transparent);
+    content: "";
+}
+
+.aquarium-fish-info-backdrop {
+    position: fixed;
+    z-index: 50;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 20, 36, .48);
+    opacity: 0;
+    transition: opacity .35s ease;
+    cursor: default;
+}
+
+.aquarium-fish-info-backdrop.is-visible {
+    opacity: 1;
+}
+
+.aquarium-fish-info {
+    position: fixed;
+    z-index: 62;
+    top: 50%;
+    right: clamp(16px, 3vw, 48px);
+    display: flex;
+    width: min(420px, 36vw);
+    max-height: min(78vh, 700px);
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    padding: 34px 30px;
+    border: 4px solid rgba(198, 250, 255, .95);
+    border-radius: 30px;
+    background: linear-gradient(145deg, rgba(10, 112, 147, .96), rgba(4, 56, 93, .97));
+    box-shadow: inset 0 0 20px rgba(255,255,255,.16), 0 12px 40px rgba(0, 15, 33, .55);
+    color: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(110%, -50%);
+    transition: opacity .3s ease, transform .55s cubic-bezier(.22, 1, .36, 1);
+}
+
+.aquarium-fish-info.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(0, -50%);
+}
+
+.aquarium-fish-info-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.aquarium-fish-info-close img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.aquarium-fish-info-close:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+}
+
+.aquarium-fish-info-eyebrow {
+    margin: 0;
+    color: #a8f4ff;
+    font-family: "Neuropolx", sans-serif;
+    font-size: 12px;
+    letter-spacing: .12em;
+}
+
+.aquarium-fish-info h2 {
+    margin: 0;
+    padding-right: 30px;
+    font-family: "Aquino", "Neuropolx", sans-serif;
+    font-size: clamp(26px, 2.4vw, 38px);
+    line-height: 1.05;
+    text-shadow: 0 2px 6px rgba(0, 23, 45, .55);
+}
+
+.aquarium-fish-info-description {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+.aquarium-fish-info-facts[hidden] {
+    display: none;
+}
+
+.aquarium-fish-info-facts h3 {
+    margin: 0 0 8px;
+    color: #a8f4ff;
+    font-family: "Neuropolx", sans-serif;
+    font-size: 16px;
+}
+
+.aquarium-fish-info-facts ul {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding-left: 20px;
+    line-height: 1.45;
+}
+
+.aquarium-page #fishContainer {
+    transform-origin: 0 0;
+    transition: transform .35s cubic-bezier(.22, 1, .36, 1);
+}
+
+.aquarium-page .aquarium-scene,
+.aquarium-page #sand,
+.aquarium-page #sand-layer,
+.aquarium-page #sand2 {
+    transform-origin: 0 0;
+    transition: transform .35s cubic-bezier(.22, 1, .36, 1);
+}
+
+.aquarium-page.is-fish-focused #fishContainer {
+    transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1));
+    transition: none;
+    will-change: transform;
+}
+
+.aquarium-page.is-fish-focused .aquarium-scene,
+.aquarium-page.is-fish-focused #sand,
+.aquarium-page.is-fish-focused #sand-layer,
+.aquarium-page.is-fish-focused #sand2 {
+    transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1));
+    transition: none;
+    will-change: transform;
+}
+
+.aquarium-page.is-fish-focused #fishContainer {
+    z-index: 60;
+    pointer-events: none;
+}
+
+.aquarium-page.is-fish-focused .aquariumFish:not(.is-focused-fish) {
+    opacity: .4;
+}
+
+.aquarium-page:not(.editor-mode) .aquariumGrabbable {
+    cursor: zoom-in;
+}
+
+html.reduced-motion .aquarium-fish-info,
+html.reduced-motion .aquarium-fish-info-backdrop {
+    transition: none;
+}
 
 .aquarium-bubbles {
     position: absolute;
@@ -409,11 +541,12 @@ html.reduced-motion .glass-tap-ripple {
 
 .tank-store-backdrop {
     position: absolute;
-    z-index: 10;
+    z-index: 12;
     inset: 0;
     background: rgba(0, 34, 67, .12);
     opacity: 0;
     transition: opacity .28s ease;
+    cursor: default;
 }
 
 .tank-store-backdrop.is-open {
@@ -422,7 +555,7 @@ html.reduced-motion .glass-tap-ripple {
 
 .tank-store-panel {
     position: absolute;
-    z-index: 12;
+    z-index: 13;
     top: 15%;
     right: 3.5%;
     display: flex;
@@ -441,16 +574,6 @@ html.reduced-motion .glass-tap-ripple {
     transform: scale(.76);
     transform-origin: 82% 16%;
     transition: opacity .28s ease, transform .38s cubic-bezier(.2,.8,.2,1);
-}
-
-#tankInventoryPanel {
-    top: 16%;
-    right: auto;
-    left: calc(13.5% + 14px);
-    transform-origin: 11% 10%;
-    border-color: rgba(221, 255, 202, .96);
-    background: linear-gradient(145deg, rgba(202, 255, 184, .74), rgba(75, 183, 100, .62));
-    box-shadow: inset 0 0 0 3px rgba(71, 157, 75, .72), inset 0 0 20px rgba(255,255,255,.68), 0 0 18px rgba(180, 255, 153, .65), 0 8px 24px rgba(0, 55, 30, .4);
 }
 
 .inventory-fish-limit-message {
@@ -527,22 +650,19 @@ html.reduced-motion .fish-startle-message {
     position: absolute;
     z-index: 32;
     top: 50%;
+    right: auto;
     left: 50%;
     display: flex;
-    width: min(900px, 88%);
-    height: min(82vh, 860px);
-    min-height: 300px;
+    width: min(1040px, 92vw);
+    height: min(820px, 88vh);
+    min-height: min(480px, 78vh);
     flex-direction: column;
-    overflow: hidden;
-    padding: clamp(24px, 4vh, 48px) clamp(20px, 3vw, 38px) clamp(18px, 2.5vh, 30px);
-    border: 8px solid rgba(220, 255, 205, .92);
-    border-radius: 38px;
-    background: linear-gradient(120deg, rgba(127, 216, 63, .88), rgba(28, 153, 65, .84));
-    box-shadow: inset 0 0 0 4px rgba(35, 117, 44, .42), inset 0 0 28px rgba(255,255,255,.22), 0 0 25px rgba(180, 255, 153, .5), 0 12px 36px rgba(0, 55, 30, .5);
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-50%, -50%) scale(.78);
-    transition: opacity .28s ease, transform .38s cubic-bezier(.2,.8,.2,1);
+    transform: translate(-50%, -50%) scale(.76);
+    transform-origin: center;
+}
+
+.tank-store-panel.editor-inventory-panel.is-open {
+    transform: translate(-50%, -50%) scale(1);
 }
 
 .editor-inventory-panel[hidden],
@@ -553,7 +673,7 @@ html.reduced-motion .fish-startle-message {
 .editor-inventory-panel.is-open {
     opacity: 1;
     pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
 }
 
 .editor-inventory-tabs {
@@ -565,31 +685,7 @@ html.reduced-motion .fish-startle-message {
 }
 
 .editor-inventory-tabs .store-tab.active {
-    left: 25%;
-    width: 50%;
-    display: grid;
-    place-items: center;
-    font-size: clamp(26px, 3.5vw, 44px);
-    text-align: center;
-    cursor: default;
-}
-
-.editor-inventory-items {
-    min-height: 0;
-    flex: 1;
-    overflow: auto;
-    padding: clamp(14px, 2vw, 24px);
-    scrollbar-color: rgba(77, 161, 55, .8) rgba(216, 255, 205, .35);
-    scrollbar-width: thin;
-}
-
-.editor-inventory-items .store-items {
-    gap: clamp(12px, 1.8vw, 24px);
-    padding: 0 2px 12px;
-}
-
-.editor-inventory-items .store-item {
-    border-radius: 22px;
+    font-size: clamp(20px, 2.5vw, 32px);
 }
 
 .tank-store-panel[hidden],
@@ -747,7 +843,8 @@ html.reduced-motion .fish-startle-message {
     will-change: transform;
 }
 
-.fish-drag-preview img {
+.fish-drag-preview img,
+.fish-drag-preview canvas {
     display: block;
     width: 100%;
     height: auto;
@@ -876,7 +973,7 @@ object-fit: cover;
     object-fit: contain;
 }
 
-#tankInventoryPanel .store-item-details {
+#editorInventoryPanel .store-item-details {
     justify-content: center;
 }
 
@@ -906,6 +1003,37 @@ object-fit: cover;
 .editor-toolbar.is-visible {
     opacity: 1;
     transform: translateX(0);
+}
+
+.editor-toolbar.is-fish-drop-target {
+    filter: brightness(1.12);
+    box-shadow: 0 8px 28px rgba(160, 120, 15, .26), inset 0 6px 0 rgba(255, 239, 128, .7), inset 0 -7px 0 rgba(204, 146, 0, .3), inset -6px 0 0 rgba(204, 146, 0, .24), inset 0 0 30px rgba(255,255,255,.15), 0 0 24px rgba(255, 245, 139, .9);
+}
+
+.editor-toolbar.is-fish-drop-target .editor-layer-heading,
+.editor-toolbar.is-fish-drop-target .editor-layer-list,
+.editor-toolbar.is-fish-drop-target .editor-close-button {
+    display: none;
+}
+
+.editor-return-prompt {
+    display: none;
+}
+
+.editor-toolbar.is-fish-drop-target .editor-return-prompt {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: "Ipanema", "Neuropolx", sans-serif;
+    font-size: clamp(30px, 4vw, 56px);
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 1px 3px 2px rgba(76, 62, 16, .6);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
 }
 
 .editor-layer-heading {
@@ -1079,7 +1207,7 @@ object-fit: cover;
 }
 
 .aquarium-page.editor-mode .aquarium-scene::before {
-    opacity: 1;
+    opacity: 0.5;
 }
 
 .aquarium-page.editor-mode .aquarium-bubbles {
@@ -1092,10 +1220,10 @@ object-fit: cover;
 }
 
 .aquarium-page.editor-mode #fishContainer {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .4s ease, visibility 0s linear .4s;
-    visibility: hidden;
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity .4s ease;
+    visibility: visible;
 }
 
 .aquarium-page.editor-mode .task-tab {
@@ -1114,13 +1242,16 @@ object-fit: cover;
 }
 
 .aquarium-page.editor-mode #storeCoinDiv {
-    opacity: 0;
     pointer-events: none;
+    transform: translateX(calc(100% + 4vw));
 }
 
-.aquarium-page #storeCoinDiv,
 .aquarium-page .help-button {
     transition: opacity .4s ease;
+}
+
+.aquarium-page #storeCoinDiv {
+    transition: transform .65s cubic-bezier(.22, 1, .36, 1);
 }
 
 .aquarium-page .menu-buttons {
@@ -1142,6 +1273,18 @@ object-fit: cover;
     z-index: 4;
     right: 2%;
     bottom: 310px;
+    transition: transform .65s cubic-bezier(.22, 1, .36, 1), filter .25s ease, visibility 0s;
+}
+
+.aquarium-page.editor-mode .aquarium-hide-button {
+    pointer-events: none;
+    transform: translateX(calc(100% + 4vw));
+    transition: transform .65s cubic-bezier(.22, 1, .36, 1), filter .25s ease, visibility 0s linear .65s;
+    visibility: hidden;
+}
+
+html.reduced-motion .aquarium-page .aquarium-hide-button {
+    transition: none;
 }
 
 .hide-mode-clock {
@@ -1186,7 +1329,12 @@ object-fit: cover;
 .aquarium-page.aquarium-hide-mode #storeCoinDiv,
 .aquarium-page.aquarium-hide-mode .menu-buttons,
 .aquarium-page.aquarium-hide-mode .aquarium-hide-button,
-.aquarium-page.aquarium-hide-mode #journalButton {
+.aquarium-page.aquarium-hide-mode #journalButton,
+.aquarium-page.is-fish-focused .task-tab,
+.aquarium-page.is-fish-focused #storeCoinDiv,
+.aquarium-page.is-fish-focused .menu-buttons,
+.aquarium-page.is-fish-focused .aquarium-hide-button,
+.aquarium-page.is-fish-focused #journalButton {
     opacity: 0;
     pointer-events: none;
     visibility: hidden;

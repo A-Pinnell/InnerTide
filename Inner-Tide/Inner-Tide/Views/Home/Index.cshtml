@@ -163,6 +163,21 @@
                     <button class="options-back" type="submit">Save Account Changes</button>
                 </form>
             </details>
+            <details class="options-dropdown data-settings">
+                <summary>Data Settings</summary>
+                <div class="options-dropdown-content">
+                    <p>Download a copy of the information currently stored for your account, or permanently delete your account and its data.</p>
+                    <a class="options-back data-export-button" asp-controller="Users" asp-action="ExportUserData">Download My Data</a>
+                    <form id="deleteUserDataForm" asp-controller="Users" asp-action="DeleteUserData" method="post">
+                        @Html.AntiForgeryToken()
+                        <label>
+                            <span>Current Password (required to delete)</span>
+                            <input type="password" name="currentPassword" autocomplete="current-password" required>
+                        </label>
+                        <button class="options-back data-delete-button" type="submit">Permanently Delete My Account and Data</button>
+                    </form>
+                </div>
+            </details>
         </section>
 
         <section class="options-panel credits-panel" id="creditsPanel" inert hidden>

@@ -18,12 +18,12 @@
     pointer-events: none;
 }
 
-html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-scene::before,
-html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-bubbles {
+html.graphical-advanced body.aquarium-page .aquarium-scene::before,
+html.graphical-advanced body.aquarium-page .aquarium-bubbles {
     filter: url("#background-water-ripple");
 }
 
-html.graphical-advanced body.aquarium-page:not(.editor-mode) .aquarium-scene::before {
+html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     filter: var(--aquarium-background-tint, saturate(1)) url("#background-water-ripple");
 }
 
@@ -452,6 +452,52 @@ html.graphical-advanced body.question-page .question-background {
 .options-dropdown-content {
     display: grid;
     gap: 16px;
+}
+
+.data-settings .options-dropdown-content > p {
+    margin: 0;
+    font-size: clamp(14px, 1.5vw, 18px);
+    text-align: center;
+}
+
+.data-export-button,
+.data-delete-button {
+    display: block;
+    justify-self: center;
+    max-width: 100%;
+    text-align: center;
+    text-decoration: none;
+}
+
+.data-delete-button {
+    border-color: rgba(255,255,255,.9);
+    background: linear-gradient(180deg, #c94468, #9d244e);
+    white-space: normal;
+}
+
+.data-delete-button:hover {
+    filter: brightness(1.12);
+}
+
+.data-settings form {
+    display: grid;
+    gap: 12px;
+}
+
+.data-settings form label {
+    display: grid;
+    gap: 5px;
+    font-size: clamp(14px, 1.5vw, 18px);
+}
+
+.data-settings form input {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255,255,255,.8);
+    border-radius: 10px;
+    color: #38244f;
+    background: rgba(255,255,255,.94);
 }
 
 .account-settings summary {

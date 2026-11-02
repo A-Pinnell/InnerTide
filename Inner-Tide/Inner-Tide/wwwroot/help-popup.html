@@ -229,7 +229,7 @@
             });
 
             closeButton.addEventListener("click", closeHelp);
-            doneButton.addEventListener("click", closeHelp);
+            doneButton?.addEventListener("click", closeHelp);
             popup.addEventListener("click", event => {
                 if (event.target === popup) closeHelp();
             });

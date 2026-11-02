@@ -13,9 +13,9 @@ namespace Inner_Tide.Models {
         [Required]
         public int yCord { get; set; }
 
-        public DateTime? AcquiredAt { get; set; }
+        public DateTime? AcquiredAt { get; set; } = DateTime.UtcNow;
 
-        // Foreign Key
+        //Foreign Key
         [Required]
         public string UserId { get; set; }
 

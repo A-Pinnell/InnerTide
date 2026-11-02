@@ -48,9 +48,6 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("MaxObjects")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserFishId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -58,8 +55,6 @@ namespace Inner_Tide.Migrations
                     b.HasKey("AquariumId");
 
                     b.HasIndex("FirstPlacedUserFishId");
-
-                    b.HasIndex("UserFishId");
 
                     b.HasIndex("UserId");
 
@@ -598,13 +593,9 @@ namespace Inner_Tide.Migrations
             modelBuilder.Entity("Inner_Tide.Models.Aquarium", b =>
                 {
                     b.HasOne("Inner_Tide.Models.UserFish", "FirstPlacedUserFish")
-                        .WithMany()
+                        .WithMany("FirstPlacedInAquariums")
                         .HasForeignKey("FirstPlacedUserFishId")
                         .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Inner_Tide.Models.UserFish", null)
-                        .WithMany("FirstPlacedInAquariums")
-                        .HasForeignKey("UserFishId");
 
                     b.HasOne("Inner_Tide.Models.User", "User")
                         .WithMany()
@@ -679,6 +670,8 @@ namespace Inner_Tide.Migrations
                         .IsRequired();
 
                     b.Navigation("Aquarium");
+
+                    b.Navigation("FirstPlacedInAquariums");
 
                     b.Navigation("User");
                 });

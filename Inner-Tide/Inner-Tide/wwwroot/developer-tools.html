@@ -25,6 +25,13 @@
             </form>
         </section>
 
+        <section class="developer-tool-section" id="developerSetupQuizTools" hidden>
+            <h3>Setup Quiz</h3>
+            <form id="developerSkipSetupQuizForm" method="post" action="/Users/SkipSetupQuiz">
+                <button class="developer-tool-action" type="submit">Skip with Random Answers</button>
+            </form>
+        </section>
+
         <section class="developer-tool-section">
             <h3>Aquarium Progress</h3>
             <label class="developer-progress-limit-toggle">
@@ -254,6 +261,28 @@
         const progressLimitToggle = document.querySelector("#developerDisableProgressLimit");
         const inventoryTabs = [...panel.querySelectorAll("[data-inventory-category]")];
         const csrfToken = document.querySelector('#developerToolsHost input[name="__RequestVerificationToken"]')?.value;
+        const setupQuizTools = document.querySelector("#developerSetupQuizTools");
+        const skipSetupQuizForm = document.querySelector("#developerSkipSetupQuizForm");
+        if (document.body.classList.contains("setup-quiz-page")) {
+            setupQuizTools.hidden = false;
+            if (!csrfToken) {
+                skipSetupQuizForm.querySelector("button").disabled = true;
+                throw new Error("The setup quiz skip action is missing its security token.");
+            }
+
+            const tokenInput = document.createElement("input");
+            tokenInput.type = "hidden";
+            tokenInput.name = "__RequestVerificationToken";
+            tokenInput.value = csrfToken;
+            skipSetupQuizForm.append(tokenInput);
+            skipSetupQuizForm.addEventListener("submit", event => {
+                if (!window.confirm("Skip the setup quiz using random answers and view your Inner Tide results?")) {
+                    event.preventDefault();
+                }
+            });
+        } else {
+            setupQuizTools.remove();
+        }
         const inventoryData = {
             fish: { catalog: [], owned: [], endpoint: "/DeveloperTools/SetFish" },
             items: { catalog: [], owned: [], endpoint: "/DeveloperTools/SetItems" }

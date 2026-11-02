@@ -94,16 +94,22 @@ function showStoreImageLoading(item) {
             imageFrame.classList.remove("is-loading");
         }).catch(error => {
             console.error(`Could not decode store image "${image.alt}".`, error);
+            imageFrame.classList.remove("is-loading");
         });
     };
 
     image.addEventListener("load", revealLoadedImage, { once: true });
     image.addEventListener("error", () => {
         console.error(`Could not load store image "${image.alt}".`);
+        imageFrame.classList.remove("is-loading");
     }, { once: true });
 
-    if (image.complete && image.naturalWidth > 0) {
-        revealLoadedImage();
+    if (image.complete) {
+        if (image.naturalWidth > 0) {
+            revealLoadedImage();
+        } else {
+            image.dispatchEvent(new Event("error"));
+        }
     }
 }
 
@@ -218,7 +224,7 @@ async function renderInventoryItems() {
         const items = await res.json();
 
         const inventoryContainer =
-            document.querySelector("#inventoryObjects .store-items");
+            document.querySelector("#editorInventoryPanel #inventoryObjects .store-items");
 
         if (!inventoryContainer) return;
 
@@ -228,7 +234,9 @@ async function renderInventoryItems() {
 
             const item = document.createElement("div");
             item.className = "store-item";
-            item.setAttribute("value", i.UserItemId)
+            item.setAttribute("value", i.userItemId);
+            item.dataset.itemId = i.itemId;
+            item.dataset.sprite = i.sprite;
 
             item.innerHTML = `
             <div class="store-item-image">
@@ -265,7 +273,7 @@ async function renderInventoryFish() {
         const fish = await res.json();
 
         const inventoryContainer =
-            document.querySelector("#inventoryFish .store-items");
+            document.querySelector("#editorInventoryPanel #inventoryFish .store-items");
 
         if (!inventoryContainer) return;
 
@@ -279,6 +287,11 @@ async function renderInventoryFish() {
             item.setAttribute("value2", f.fishId);
             item.dataset.sprite = f.sprite;
             item.dataset.species = f.species;
+            item.dataset.description = f.description ?? "";
+            item.dataset.acquiredAt = f.acquiredAt ?? "";
+            item.dataset.funFacts = JSON.stringify(f.funFacts ?? []);
+            item.dataset.height = String(f.height ?? "");
+            item.dataset.width = String(f.width ?? "");
 
             item.innerHTML = `
             <div class="store-item-image">
@@ -391,10 +404,6 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
         button.classList.toggle("is-open", open);
         if (open || restoreFocus) playAquariumMenuSound(open);
 
-        if (!open && panel === inventoryPanel) {
-            hideInventoryFishLimitMessage();
-        }
-
         if (open) {
             if (!contentLoaded && loadContent) {
                 contentLoaded = true;
@@ -429,7 +438,19 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
     button.addEventListener("click", () => {
         setOpen(!button.classList.contains("is-open"));
     });
-    backdrop.addEventListener("click", () => setOpen(false));
+    backdrop.addEventListener("pointerdown", () => {
+        if (panel.classList.contains("is-open")) setOpen(false);
+    });
+    document.addEventListener("pointerdown", event => {
+        const path = event.composedPath();
+        if (
+            panel.classList.contains("is-open") &&
+            !path.includes(panel) &&
+            !path.includes(button)
+        ) {
+            setOpen(false);
+        }
+    }, true);
     tabs.addEventListener("click", event => {
         const tab = event.target instanceof Element
             ? event.target.closest(".store-tab")
@@ -453,17 +474,56 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
 }
 
 initializeAquariumMenu(storeBtn, storePanel, storeBackdrop, "store");
-initializeAquariumMenu(inventoryBtn, inventoryPanel, inventoryBackdrop, "inventory");
 
 if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && editorMoreItems && editorLayerNumber && editorForegroundLabel && editorForegroundNumber && editorInventoryPanel && editorInventoryBackdrop) {
     let editorOpen = false;
     let editorInventoryOpen = false;
-    let selectedEditorLayer = 1;
+    let selectedEditorLayer = 0;
+    const editorLayerNames = ["Water Level", "Back Sand", "Center Sand", "Top Sand"];
+    const editorLayerName = document.querySelector("#editorLayerName");
+    const editorForegroundName = document.querySelector("#editorForegroundName");
+    const editorInventoryTabs = editorInventoryPanel.querySelector(".editor-inventory-tabs");
+    const closeEditorInventoryMenu = () => setEditorInventoryOpen(false, false);
 
     function setEditorLayer(layer) {
         selectedEditorLayer = layer;
-        editorLayerNumber.textContent = String(layer);
-        editorForegroundNumber.textContent = String(layer);
+        const layerNumber = layer + 1;
+        editorLayerNumber.textContent = String(layerNumber);
+        editorForegroundNumber.textContent = String(layerNumber);
+        editorLayerName.textContent = editorLayerNames[layer];
+        editorForegroundName.textContent = editorLayerNames[layer];
+        document.body.dataset.editorLayer = editorLayerNames[layer];
+    }
+
+    function setAquariumFishFrozen(frozen) {
+        fishList.forEach(fish => {
+            if (!fish.element.isConnected) return;
+
+            if (frozen) {
+                fish.moving = false;
+                fish.element.style.left = `${fish.x}px`;
+                fish.element.style.top = `${fish.y}px`;
+                freezeAquariumFishVisual(fish);
+                return;
+            }
+
+            restoreAquariumFishVisual(fish);
+            fish.targetX = randomRange(0, Math.max(0, fish.element.parentElement.clientWidth - fish.element.offsetWidth));
+            fish.targetY = randomRange(0, Math.max(0, fish.element.parentElement.clientHeight - fish.element.offsetHeight));
+            fish.moving = true;
+        });
+        if (!frozen) startAquariumAnimation();
+    }
+
+    function setEditorInventoryCategory(category) {
+        editorInventoryTabs.querySelectorAll(".store-tab").forEach(tab => {
+            const selected = tab.dataset.category === category;
+            tab.classList.toggle("active", selected);
+            tab.dataset.position = selected ? "center" : category === "fish" ? "right" : "left";
+        });
+        editorInventoryPanel.querySelectorAll(".store-catalog").forEach(catalog => {
+            catalog.hidden = catalog.id !== `inventory${category[0].toUpperCase()}${category.slice(1)}`;
+        });
     }
 
     function setEditorInventoryOpen(open, restoreFocus = true) {
@@ -473,15 +533,20 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
 
         if (open) {
             if (closeActiveAquariumMenu) closeActiveAquariumMenu();
+            void Promise.all([renderInventoryFish(), renderInventoryItems()]);
             editorInventoryPanel.hidden = false;
             editorInventoryBackdrop.hidden = false;
             void editorInventoryPanel.offsetWidth;
             editorInventoryPanel.classList.add("is-open");
             editorInventoryBackdrop.classList.add("is-open");
+            closeActiveAquariumMenu = closeEditorInventoryMenu;
             editorInventoryPanel.querySelector(".store-tab.active")?.focus();
             return;
         }
 
+        if (closeActiveAquariumMenu === closeEditorInventoryMenu) {
+            closeActiveAquariumMenu = null;
+        }
         editorInventoryPanel.classList.remove("is-open");
         editorInventoryBackdrop.classList.remove("is-open");
         window.setTimeout(() => {
@@ -505,6 +570,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
 
         if (open) {
             if (closeActiveAquariumMenu) closeActiveAquariumMenu();
+            setAquariumFishFrozen(true);
             editorToolbar.hidden = false;
             editorToolbar.removeAttribute("inert");
             void editorToolbar.offsetWidth;
@@ -518,6 +584,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
         editorToolbar.classList.remove("is-visible");
         editorToolbar.setAttribute("inert", "");
         document.body.classList.remove("editor-mode");
+        setAquariumFishFrozen(false);
         window.setTimeout(() => {
             if (!editorOpen) editorToolbar.hidden = true;
         }, isReducedMotionEnabled() ? 180 : 380);
@@ -527,10 +594,20 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
     editorBtn.addEventListener("click", () => setEditorOpen(!editorOpen));
     editorCloseButton.addEventListener("click", () => setEditorOpen(false));
     editorSwitchLayer.addEventListener("click", () => {
-        setEditorLayer(selectedEditorLayer % 3 + 1);
+        setEditorLayer((selectedEditorLayer + 1) % editorLayerNames.length);
     });
     editorMoreItems.addEventListener("click", () => setEditorInventoryOpen(!editorInventoryOpen));
     editorInventoryBackdrop.addEventListener("click", () => setEditorInventoryOpen(false));
+    editorInventoryTabs.addEventListener("click", event => {
+        const tab = event.target instanceof Element ? event.target.closest(".store-tab") : null;
+        if (!tab || !editorInventoryTabs.contains(tab)) return;
+
+        if (!tab.classList.contains("active")) {
+            playSideNavigationSound(tab.dataset.position);
+        }
+        setEditorInventoryCategory(tab.dataset.category);
+    });
+    setEditorInventoryCategory("fish");
     window.addEventListener("keydown", event => {
         if (event.key !== "Escape") return;
         if (editorInventoryOpen) {
@@ -590,7 +667,7 @@ function randomRange(min, max) {
 }
 
 function startAquariumAnimation() {
-    if (aquariumAnimationRunning || fishList.length === 0) return;
+    if (aquariumAnimationRunning || !fishList.some(fish => fish.moving)) return;
 
     aquariumAnimationRunning = true;
     requestAnimationFrame(animate);
@@ -604,6 +681,9 @@ function appendAquariumFish(f, x, y, startMoving = false) {
 
     const item = document.createElement("div");
     item.classList.add("aquariumFish", "aquariumGrabbable");
+    item.tabIndex = 0;
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-label", `View ${f.species} details`);
     item.setAttribute("value", f.userFishId);
     item.setAttribute("value2", f.fishId);
 
@@ -611,12 +691,14 @@ function appendAquariumFish(f, x, y, startMoving = false) {
     img.draggable = false;
     img.alt = f.species;
 
+    let fish;
     let revealFish;
     const imageLoaded = new Promise(resolve => {
         let revealed = false;
         revealFish = () => {
             if (revealed) return;
             revealed = true;
+            if (fish?.freezeVisualWhenLoaded) freezeAquariumFishVisual(fish);
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     item.classList.add("is-loaded");
@@ -658,8 +740,20 @@ function appendAquariumFish(f, x, y, startMoving = false) {
         }
     }
 
-    const fish = {
+    fish = {
         element: item,
+        sprite: f.sprite,
+        species: f.species,
+        description: f.description ?? "",
+        height: f.height ?? 0,
+        width: f.width ?? 0,
+        funFacts: f.funFacts ?? [],
+        acquiredAt: f.acquiredAt ?? null,
+        isFirstPlaced: f.isFirstPlaced ?? false,
+        visual: img,
+        frozenVisual: null,
+        imageStyle: img.getAttribute("style") ?? "",
+        freezeVisualWhenLoaded: false,
         x,
         y,
         targetX: randomRange(0, Math.max(0, fishContainer.clientWidth - 125)),
@@ -676,6 +770,46 @@ function appendAquariumFish(f, x, y, startMoving = false) {
     }
 
     return { fish, imageLoaded };
+}
+
+function freezeAquariumFishVisual(fish) {
+    const image = fish.visual;
+    if (!image?.isConnected) return;
+    if (!image.complete || image.naturalWidth === 0) {
+        fish.freezeVisualWhenLoaded = true;
+        return;
+    }
+
+    const frozenFrame = document.createElement("canvas");
+    frozenFrame.width = image.naturalWidth;
+    frozenFrame.height = image.naturalHeight;
+    frozenFrame.style.width = image.style.width || "125px";
+    frozenFrame.style.height = "auto";
+    frozenFrame.setAttribute("aria-label", fish.species);
+    const context = frozenFrame.getContext("2d");
+    if (!context) {
+        throw new Error("Cannot freeze an aquarium fish because canvas rendering is unavailable.");
+    }
+    context.drawImage(image, 0, 0);
+    image.replaceWith(frozenFrame);
+    fish.frozenVisual = frozenFrame;
+    fish.freezeVisualWhenLoaded = false;
+}
+
+function restoreAquariumFishVisual(fish) {
+    if (!fish.frozenVisual?.isConnected) return;
+
+    const image = document.createElement("img");
+    image.draggable = false;
+    image.alt = fish.visual.alt;
+    image.setAttribute("style", fish.imageStyle);
+    image.addEventListener("error", () => {
+        console.error(`Could not reload fish image: ${fish.sprite}`);
+    }, { once: true });
+    image.src = fish.sprite;
+    fish.frozenVisual.replaceWith(image);
+    fish.visual = image;
+    fish.frozenVisual = null;
 }
 
 async function renderAquariumFish() {
@@ -712,7 +846,8 @@ async function renderAquariumFish() {
         renderedFish.forEach(({ fish: rendered }) => {
             rendered.targetX = randomRange(0, Math.max(0, fishContainer.clientWidth - rendered.element.offsetWidth));
             rendered.targetY = randomRange(0, Math.max(0, fishContainer.clientHeight - rendered.element.offsetHeight));
-            rendered.moving = true;
+            rendered.moving = !document.body.classList.contains("editor-mode");
+            if (!rendered.moving) freezeAquariumFishVisual(rendered);
         });
 
         startAquariumAnimation();
@@ -807,7 +942,7 @@ function animate(now) {
         }
 
     });
-    if (fishList.length > 0) {
+    if (fishList.some(fish => fish.moving)) {
         requestAnimationFrame(animate);
     } else {
         aquariumAnimationRunning = false;
@@ -841,6 +976,8 @@ function playAquariumGlassTapSound() {
 }
 
 function moveFishFromGlassTap(event, startled) {
+    if (document.body.classList.contains("editor-mode")) return;
+
     const fishContainer = document.querySelector("#fishContainer");
     if (!fishContainer) {
         throw new Error("Cannot react to an aquarium tap because the fish container is missing.");
@@ -911,16 +1048,242 @@ function showFishStartleMessage() {
 }
 
 const aquariumFishContainer = document.querySelector("#fishContainer");
-if (aquariumFishContainer) {
-    aquariumFishContainer.addEventListener("click", event => {
-        if (
-            event.defaultPrevented ||
-            event.button !== 0 ||
-            event.detail === 0 ||
-            event.target !== aquariumFishContainer
-        ) {
+const aquariumMenuScene = document.querySelector(".aquarium-scene");
+const aquariumCameraLayers = [
+    aquariumFishContainer,
+    aquariumMenuScene,
+    document.querySelector("#sand"),
+    document.querySelector("#sand-layer"),
+    document.querySelector("#sand2")
+].filter(element => element instanceof HTMLElement);
+const aquariumFishInfo = document.querySelector("#aquariumFishInfo");
+const aquariumFishInfoBackdrop = document.querySelector("#aquariumFishInfoBackdrop");
+const aquariumFishInfoClose = document.querySelector("#aquariumFishInfoClose");
+const aquariumFishInfoTitle = document.querySelector("#aquariumFishInfoTitle");
+const aquariumFishInfoAcquiredAt = document.querySelector("#aquariumFishInfoAcquiredAt");
+const aquariumFishInfoDescription = document.querySelector("#aquariumFishInfoDescription");
+const aquariumFishInfoFactsSection = document.querySelector("#aquariumFishInfoFactsSection");
+const aquariumFishInfoFacts = document.querySelector("#aquariumFishInfoFacts");
+let fishInfoSelection = null;
+let fishInfoTransition = 0;
+let fishInfoCameraFrame = 0;
+
+function closeAquariumFishInfo(restoreFocus = false) {
+    if (!fishInfoSelection) return;
+
+    const selection = fishInfoSelection;
+    playElementsTransitionSound("out");
+    const transition = ++fishInfoTransition;
+    window.cancelAnimationFrame(fishInfoCameraFrame);
+    fishInfoCameraFrame = 0;
+    fishInfoSelection = null;
+    selection.fish.element.classList.remove("is-focused-fish");
+    aquariumFishInfo?.classList.remove("is-visible");
+    if (aquariumFishInfoBackdrop) aquariumFishInfoBackdrop.classList.remove("is-visible");
+
+    const clearCamera = () => {
+        if (transition !== fishInfoTransition) return;
+        document.body.classList.remove("is-fish-focused");
+        document.body.style.removeProperty("--fish-camera-scale");
+        aquariumCameraLayers.forEach(layer => {
+            layer.style.removeProperty("--fish-camera-layer-x");
+            layer.style.removeProperty("--fish-camera-layer-y");
+        });
+        fishInfoCameraFrame = 0;
+    };
+
+    if (isReducedMotionEnabled()) {
+        clearCamera();
+    } else {
+        const startScale = Number.parseFloat(
+            document.body.style.getPropertyValue("--fish-camera-scale")
+        ) || 1;
+        const startLayers = aquariumCameraLayers.map(layer => ({
+            layer,
+            x: Number.parseFloat(layer.style.getPropertyValue("--fish-camera-layer-x")) || 0,
+            y: Number.parseFloat(layer.style.getPropertyValue("--fish-camera-layer-y")) || 0
+        }));
+        const startedAt = performance.now();
+        const zoomOut = now => {
+            if (transition !== fishInfoTransition) return;
+            const progress = Math.min(1, (now - startedAt) / 350);
+            const easedProgress = 1 - (1 - progress) ** 3;
+            const currentScale = startScale + (1 - startScale) * easedProgress;
+            document.body.style.setProperty("--fish-camera-scale", String(currentScale));
+            startLayers.forEach(({ layer, x, y }) => {
+                layer.style.setProperty("--fish-camera-layer-x", `${x * (1 - easedProgress)}px`);
+                layer.style.setProperty("--fish-camera-layer-y", `${y * (1 - easedProgress)}px`);
+            });
+
+            if (progress === 1) {
+                clearCamera();
+                return;
+            }
+            fishInfoCameraFrame = window.requestAnimationFrame(zoomOut);
+        };
+        fishInfoCameraFrame = window.requestAnimationFrame(zoomOut);
+    }
+
+    if (aquariumFishInfo) {
+        window.setTimeout(() => {
+            if (transition === fishInfoTransition) aquariumFishInfo.hidden = true;
+        }, isReducedMotionEnabled() ? 0 : 350);
+    }
+    if (aquariumFishInfoBackdrop) {
+        window.setTimeout(() => {
+            if (transition === fishInfoTransition) aquariumFishInfoBackdrop.hidden = true;
+        }, isReducedMotionEnabled() ? 0 : 350);
+    }
+
+    if (restoreFocus && selection.fish.element.isConnected) {
+        selection.fish.element.focus({ preventScroll: true });
+    }
+}
+
+async function showAquariumFishInfo(fish) {
+    if (
+        !aquariumFishInfo ||
+        !aquariumFishInfoBackdrop ||
+        !aquariumFishInfoClose ||
+        document.body.classList.contains("editor-mode")
+    ) {
+        return;
+    }
+    if (fishInfoSelection?.fish === fish) return;
+
+    if (
+        !aquariumFishInfoTitle ||
+        !aquariumFishInfoAcquiredAt ||
+        !aquariumFishInfoDescription ||
+        !aquariumFishInfoFactsSection ||
+        !aquariumFishInfoFacts
+    ) {
+        throw new Error("Cannot show fish details because the information panel is incomplete.");
+    }
+
+    const infoPanelWidth = Math.min(420, window.innerWidth * 0.36) + 68;
+    const infoPanelRight = Math.max(16, Math.min(window.innerWidth * 0.03, 48));
+    const focusWidth = Math.max(
+        fish.element.offsetWidth,
+        window.innerWidth - infoPanelWidth - infoPanelRight - 32
+    );
+
+    fishInfoSelection = {
+        fish,
+        focusWidth,
+        startedAt: performance.now()
+    };
+    playElementsTransitionSound("in");
+    fish.element.classList.add("is-focused-fish");
+    document.body.classList.add("is-fish-focused");
+
+    aquariumFishInfoBackdrop.hidden = false;
+    void aquariumFishInfoBackdrop.offsetWidth;
+    aquariumFishInfoBackdrop.classList.add("is-visible");
+    aquariumFishInfo.hidden = true;
+
+    aquariumFishInfoTitle.textContent = fish.species;
+    const acquiredDate = fish.acquiredAt ? new Date(fish.acquiredAt) : null;
+    const acquiredDateLabel = acquiredDate && Number.isFinite(acquiredDate.getTime())
+        ? acquiredDate.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+        : "Acquisition date unavailable";
+    aquariumFishInfoAcquiredAt.textContent = fish.isFirstPlaced
+        ? `First fish · ${acquiredDateLabel}`
+        : acquiredDateLabel;
+    aquariumFishInfoDescription.textContent = fish.description || "No description is available for this fish.";
+
+    aquariumFishInfoFacts.replaceChildren();
+    const facts = Array.isArray(fish.funFacts)
+        ? fish.funFacts.map(fact => typeof fact === "string" ? fact : fact?.fact).filter(Boolean)
+        : [];
+    const availableFacts = facts.slice(0, 3);
+    aquariumFishInfoFactsSection.hidden = availableFacts.length === 0;
+    if (availableFacts.length > 0) {
+        const fact = availableFacts[Math.floor(Math.random() * availableFacts.length)];
+        const listItem = document.createElement("li");
+        listItem.textContent = fact;
+        aquariumFishInfoFacts.appendChild(listItem);
+    }
+
+    const transition = ++fishInfoTransition;
+    const updateCamera = now => {
+        if (transition !== fishInfoTransition || fishInfoSelection?.fish !== fish) return;
+        if (!fish.element.isConnected) {
+            closeAquariumFishInfo();
             return;
         }
+
+        const viewportWidth = aquariumFishContainer?.clientWidth ?? window.innerWidth;
+        const viewportHeight = aquariumFishContainer?.clientHeight ?? window.innerHeight;
+        const fishWidth = fish.element.offsetWidth;
+        const fishHeight = fish.element.offsetHeight;
+        const scale = Math.min(3.2, focusWidth / fishWidth, viewportHeight * 0.62 / fishHeight);
+        const zoomProgress = isReducedMotionEnabled()
+            ? 1
+            : Math.min(1, (now - fishInfoSelection.startedAt) / 500);
+        const easedProgress = 1 - (1 - zoomProgress) ** 3;
+        const currentScale = 1 + (scale - 1) * easedProgress;
+        const fishCenterX = fish.x + fishWidth / 2;
+        const fishCenterY = fish.y + fishHeight / 2;
+        const translateX = focusWidth / 2 - fishCenterX * currentScale;
+        const translateY = viewportHeight / 2 - fishCenterY * currentScale;
+        const sceneOffsetX = aquariumMenuScene?.offsetLeft ?? 0;
+        const sceneOffsetY = aquariumMenuScene?.offsetTop ?? 0;
+        const sceneWidth = aquariumMenuScene?.offsetWidth ?? viewportWidth;
+        const sceneHeight = aquariumMenuScene?.offsetHeight ?? viewportHeight;
+        const minTranslateX = viewportWidth - currentScale * sceneWidth
+            - (currentScale - 1) * sceneOffsetX;
+        const minTranslateY = viewportHeight - currentScale * sceneHeight
+            - (currentScale - 1) * sceneOffsetY;
+        const maxTranslateX = -(currentScale - 1) * sceneOffsetX;
+        const maxTranslateY = -(currentScale - 1) * sceneOffsetY;
+        const currentTranslateX = Math.max(
+            minTranslateX,
+            Math.min(maxTranslateX, translateX * easedProgress)
+        );
+        const currentTranslateY = Math.max(
+            minTranslateY,
+            Math.min(maxTranslateY, translateY * easedProgress)
+        );
+
+        document.body.style.setProperty("--fish-camera-scale", String(currentScale));
+        aquariumCameraLayers.forEach(layer => {
+            const layerTranslateX = currentTranslateX + (currentScale - 1) * layer.offsetLeft;
+            const layerTranslateY = currentTranslateY + (currentScale - 1) * layer.offsetTop;
+            layer.style.setProperty("--fish-camera-layer-x", `${layerTranslateX}px`);
+            layer.style.setProperty("--fish-camera-layer-y", `${layerTranslateY}px`);
+        });
+
+        if (zoomProgress === 1 && aquariumFishInfo.hidden) {
+            aquariumFishInfo.hidden = false;
+            void aquariumFishInfo.offsetWidth;
+            aquariumFishInfo.classList.add("is-visible");
+            aquariumFishInfoClose.focus();
+        }
+
+        fishInfoCameraFrame = window.requestAnimationFrame(updateCamera);
+    };
+    fishInfoCameraFrame = window.requestAnimationFrame(updateCamera);
+}
+
+if (aquariumFishContainer) {
+    aquariumFishContainer.addEventListener("click", event => {
+        if (event.defaultPrevented || event.button !== 0) {
+            return;
+        }
+
+        const target = event.target instanceof Element ? event.target : null;
+        const clickedFish = target?.closest(".aquariumGrabbable");
+        if (clickedFish && aquariumFishContainer.contains(clickedFish)) {
+            const fish = fishList.find(item => item.element === clickedFish);
+            if (fish) {
+                void showAquariumFishInfo(fish).catch(error => {
+                    console.error("Could not show fish details.", error);
+                });
+            }
+            return;
+        }
+        if (event.detail === 0 || target !== aquariumFishContainer) return;
 
         showGlassTapRipple(event, aquariumFishContainer);
         playAquariumGlassTapSound();
@@ -947,7 +1310,25 @@ if (aquariumFishContainer) {
             moveFishFromGlassTap(event, false);
         }
     });
+    aquariumFishContainer.addEventListener("keydown", event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const target = event.target instanceof Element ? event.target.closest(".aquariumGrabbable") : null;
+        const fish = target && fishList.find(item => item.element === target);
+        if (!fish || document.body.classList.contains("editor-mode")) return;
+        event.preventDefault();
+        void showAquariumFishInfo(fish).catch(error => {
+            console.error("Could not show fish details.", error);
+        });
+    });
 }
+
+aquariumFishInfoClose?.addEventListener("click", () => closeAquariumFishInfo(true));
+aquariumFishInfoBackdrop?.addEventListener("click", () => closeAquariumFishInfo(true));
+window.addEventListener("keydown", event => {
+    if (event.key === "Escape" && fishInfoSelection) {
+        closeAquariumFishInfo(true);
+    }
+});
 
 // ----- Drag and Drop Logic
 let offSetX = 0;
@@ -957,24 +1338,49 @@ let offSetY = 0;
 let selectedFish = null; // Dragged Ghost
 let dragSource = null;   // Original Fish
 let fishPlacementInProgress = false;
-let aquariumFishDropInProgress = false;
 let inventorySelectionPending = false;
 let inventoryFishLimitTimeout;
 let inventoryFishLimitHideTimeout;
+
+async function persistFishReturnToInventory(fish, aquariumId) {
+    try {
+        const res = await fetch(`/Aquarium/RemoveFishFromAquarium`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                userFishId: Number(fish.element.getAttribute("value")),
+                fishId: fish.element.getAttribute("value2"),
+                aquariumId: Number(aquariumId),
+                x: Math.round(fish.x),
+                y: Math.round(fish.y)
+            })
+        });
+        if (!res.ok) {
+            throw new Error(`Failed to return fish to inventory: ${res.status}`);
+        }
+
+        await renderInventoryFish();
+    } catch (error) {
+        fish.element.parentElement?.appendChild(fish.element);
+        fishList.push(fish);
+        fish.moving = false;
+        console.error("Could not return fish to inventory.", error);
+    }
+}
 
 function finishAquariumFishDrag() {
     if (dragSource?.classList.contains("aquariumGrabbable")) {
         dragSource.classList.remove("is-dragging");
         const fish = fishList.find(item => item.element === dragSource);
-        if (fish) fish.moving = true;
+        if (fish && !document.body.classList.contains("editor-mode")) fish.moving = true;
     }
 
     selectedFish?.remove();
     selectedFish = null;
     dragSource = null;
-    removeFishBtn.hidden = true;
-    removeFishBtn.classList.remove("is-open");
-    inventoryBtn.hidden = false;
+    editorToolbar?.classList.remove("is-fish-drop-target");
 }
 
 function hideInventoryFishLimitMessage() {
@@ -992,7 +1398,7 @@ function hideInventoryFishLimitMessage() {
 function showInventoryFishLimitMessage() {
     const aquarium = document.querySelector("#aquarium");
     const message = document.querySelector("#inventoryFishLimitMessage");
-    const panel = document.querySelector("#tankInventoryPanel");
+    const panel = document.querySelector("#editorInventoryPanel");
     if (!aquarium || !message || !panel) {
         throw new Error("Cannot show the fish limit message because aquarium inventory elements are missing.");
     }
@@ -1079,13 +1485,20 @@ async function placeSelectedInventoryFish(event) {
         if (!res.ok) {
             throw new Error(`Failed to place fish: ${res.status}`);
         }
+        const placement = await res.json();
 
         const placedFish = appendAquariumFish({
             userFishId: Number(userFishId),
             fishId,
             sprite,
-            species
-        }, x, y, true);
+            species,
+            description: source.dataset.description,
+            height: Number(source.dataset.height) || 0,
+            width: Number(source.dataset.width) || 0,
+            funFacts: JSON.parse(source.dataset.funFacts || "[]"),
+            acquiredAt: placement.acquiredAt ?? source.dataset.acquiredAt ?? null,
+            isFirstPlaced: placement.isFirstPlaced ?? false
+        }, x, y, !document.body.classList.contains("editor-mode"));
         void placedFish.imageLoaded.then(() => {
             const maxX = Math.max(0, fishContainer.clientWidth - placedFish.fish.element.offsetWidth);
             const maxY = Math.max(0, fishContainer.clientHeight - placedFish.fish.element.offsetHeight);
@@ -1095,6 +1508,11 @@ async function placeSelectedInventoryFish(event) {
             placedFish.fish.element.style.top = `${placedFish.fish.y}px`;
             placedFish.fish.targetX = randomRange(0, maxX);
             placedFish.fish.targetY = randomRange(0, maxY);
+            if (document.body.classList.contains("editor-mode")) {
+                placedFish.fish.moving = false;
+            } else {
+                startAquariumAnimation();
+            }
         });
         playElementsTransitionSound("out");
         preview.remove();
@@ -1111,7 +1529,7 @@ async function placeSelectedInventoryFish(event) {
 document.addEventListener("pointerdown", async event => {
     if (event.button !== 0) return;
 
-    const inventoryPanel = document.querySelector("#tankInventoryPanel");
+    const inventoryPanel = document.querySelector("#editorInventoryPanel");
     const target = event.target instanceof Element ? event.target : null;
     const inventoryFish = target?.closest(".inventoryGrabbable");
 
@@ -1150,13 +1568,17 @@ document.addEventListener("pointerdown", async event => {
         }
         selectedFish?.remove();
         dragSource = inventoryFish;
-        inventoryPanel?.classList.remove("is-open");
+        if (inventoryPanel?.classList.contains("is-open")) {
+            closeActiveAquariumMenu?.();
+        }
 
-    } else if (target?.closest(".aquariumGrabbable")) {
+    } else if (
+        document.body.classList.contains("editor-mode") &&
+        document.body.dataset.editorLayer === "Water Level" &&
+        target?.closest(".aquariumGrabbable")
+    ) {
         dragSource = target.closest(".aquariumGrabbable");
-        inventoryBtn.hidden = true;
-        removeFishBtn.hidden = false;
-        removeFishBtn.classList.add("is-open");
+        editorToolbar.classList.add("is-fish-drop-target");
 
     } else {
         return;
@@ -1172,7 +1594,7 @@ document.addEventListener("pointerdown", async event => {
         }
     }
 
-    const fishImage = dragSource.querySelector("img");
+    const fishImage = dragSource.querySelector("img, canvas");
     if (!fishImage) {
         dragSource = null;
         throw new Error("Cannot drag a fish because its image is missing.");
@@ -1182,17 +1604,33 @@ document.addEventListener("pointerdown", async event => {
     const fishTransform = dragSource.style.transform.match(/rotate\(([-\d.]+)deg\)(?:\s+scaleX\(([-\d.]+)\))?/);
     const pickupRotation = fishTransform ? Number(fishTransform[1]) : 0;
     const pickupFlip = fishTransform ? Number(fishTransform[2] ?? 1) : 1;
+    const aquariumFish = fishList.find(fish => fish.element === dragSource);
+    const fishSpecies = aquariumFish?.species ?? fishImage.alt;
 
     selectedFish = document.createElement("div");
     selectedFish.className = "fish-drag-preview";
-    if (fishImage.alt === "Paddlefish") {
+    if (fishSpecies === "Paddlefish") {
         selectedFish.style.width = "300px";
-    } else if (fishImage.alt === "Butterfly Ray") {
+    } else if (fishSpecies === "Butterfly Ray") {
         selectedFish.style.width = "400px";
     }
 
-    const previewImage = fishImage.cloneNode(true);
-    previewImage.style.removeProperty("width");
+    let previewImage;
+    if (fishImage instanceof HTMLCanvasElement) {
+        previewImage = document.createElement("canvas");
+        previewImage.width = fishImage.width;
+        previewImage.height = fishImage.height;
+        const context = previewImage.getContext("2d");
+        if (!context) {
+            throw new Error("Cannot drag a fish because canvas rendering is unavailable.");
+        }
+        context.drawImage(fishImage, 0, 0);
+        previewImage.style.width = "100%";
+        previewImage.style.height = "auto";
+    } else {
+        previewImage = fishImage.cloneNode(true);
+        previewImage.style.removeProperty("width");
+    }
     selectedFish.appendChild(previewImage);
     selectedFish.style.transform = `rotate(${pickupRotation}deg) scaleX(${pickupFlip})`;
 
@@ -1200,7 +1638,7 @@ document.addEventListener("pointerdown", async event => {
 
     selectedFish.style.position = "fixed";
     selectedFish.style.pointerEvents = "none";
-    selectedFish.style.zIndex = "4";
+    selectedFish.style.zIndex = "40";
     const pickupScale = fishWidthBeforePickup / selectedFish.offsetWidth;
     selectedFish.style.transform = `rotate(${pickupRotation}deg) scaleX(${pickupFlip}) scale(${pickupScale})`;
     selectedFish.style.left = `${event.clientX - selectedFish.offsetWidth / 2}px`;
@@ -1238,8 +1676,7 @@ document.addEventListener("pointerup", async event => {
         event.button !== 0 ||
         !selectedFish ||
         !dragSource ||
-        fishPlacementInProgress ||
-        aquariumFishDropInProgress
+        fishPlacementInProgress
     ) {
         return;
     }
@@ -1248,105 +1685,61 @@ document.addEventListener("pointerup", async event => {
         return;
     }
 
-    const fishContainer = document.querySelector("#fishContainer");
-    const aquarium = document.querySelector("#aquarium");
-
-    if (!aquarium) {
-        throw new Error("An active fish drag requires an aquarium.");
-    }
-
-    const aquariumRect = aquarium.getBoundingClientRect();
-    if (!fishContainer) {
-        throw new Error("An active fish placement requires an aquarium fish container.");
-    }
-
-    const userFishId = dragSource.getAttribute("value");
-    const fishId = dragSource.getAttribute("value2");
     const aquariumFish = fishList.find(fish => fish.element === dragSource);
-    let aquariumFishRemoved = false;
 
-    aquariumFishDropInProgress = true;
-    try {
-        if (aquariumFish) {
-            const removeRect = removeFishBtn.getBoundingClientRect();
+    const editorToolbarRect = editorToolbar.getBoundingClientRect();
+    const droppedOnEditorTab = aquariumFish &&
+        document.body.classList.contains("editor-mode") &&
+        document.body.dataset.editorLayer === "Water Level" &&
+        event.clientX >= editorToolbarRect.left &&
+        event.clientX <= editorToolbarRect.right &&
+        event.clientY >= editorToolbarRect.top &&
+        event.clientY <= editorToolbarRect.bottom;
 
-            const aquariumId = aquariumBody?.getAttribute("data-aquarium-id");
-            if (!aquariumId) {
-                throw new Error("Cannot remove a fish because the aquarium ID is missing.");
-            }
-
-            const droppedInRemove =
-                event.clientX >= removeRect.left &&
-                event.clientX <= removeRect.right &&
-                event.clientY >= removeRect.top &&
-                event.clientY <= removeRect.bottom;
-
-            const x = event.clientX - aquariumRect.left;
-            const y = event.clientY - aquariumRect.top;
-
-            if (droppedInRemove) {
-                const res = await fetch(`/Aquarium/RemoveFishFromAquarium`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        userFishId: Number(userFishId),
-                        fishId,
-                        aquariumId: Number(aquariumId),
-                        x: Math.round(x),
-                        y: Math.round(y)
-                    })
-                });
-
-                if (res.ok) {
-                    await renderInventoryFish();
-                    aquariumFishRemoved = true;
-
-                }
-            }
-        }
-
-        if (aquariumFish) {
-            if (aquariumFishRemoved) {
-                aquariumFish.element.remove();
-                fishList = fishList.filter(fish => fish !== aquariumFish);
-            } else {
-                const maxX = Math.max(0, fishContainer.clientWidth - aquariumFish.element.offsetWidth);
-                const maxY = Math.max(0, fishContainer.clientHeight - aquariumFish.element.offsetHeight);
-                aquariumFish.x = Math.min(maxX, Math.max(0, event.clientX - aquariumRect.left - aquariumFish.element.offsetWidth / 2));
-                aquariumFish.y = Math.min(maxY, Math.max(0, event.clientY - aquariumRect.top - aquariumFish.element.offsetHeight / 2));
-                aquariumFish.element.style.left = `${aquariumFish.x}px`;
-                aquariumFish.element.style.top = `${aquariumFish.y}px`;
-                aquariumFish.targetX = randomRange(0, maxX);
-                aquariumFish.targetY = randomRange(0, maxY);
-                aquariumFish.moving = true;
-            }
-        }
-
-        if (aquariumFishRemoved) {
-            dragSource.remove();
-        }
-        playElementsTransitionSound("out");
+    playElementsTransitionSound("out");
+    if (!droppedOnEditorTab) {
         finishAquariumFishDrag();
         return;
-
-    } catch (error) {
-        console.error("Drop failed:", error);
-        finishAquariumFishDrag();
-    } finally {
-        aquariumFishDropInProgress = false;
     }
+
+    const aquariumId = aquariumBody?.getAttribute("data-aquarium-id");
+    if (!aquariumId) {
+        finishAquariumFishDrag();
+        throw new Error("Cannot return a fish because the aquarium ID is missing.");
+    }
+
+    const preview = selectedFish;
+    const fishTransform = preview.style.transform;
+    const returnScale = isReducedMotionEnabled() ? 0 : 350;
+
+    aquariumFish.element.classList.remove("is-dragging");
+    aquariumFish.element.remove();
+    fishList = fishList.filter(fish => fish !== aquariumFish);
+    selectedFish = null;
+    dragSource = null;
+    editorToolbar.classList.remove("is-fish-drop-target");
+
+    const returnAnimation = preview.animate([
+        { transform: fishTransform, opacity: 1 },
+        { transform: fishTransform.replace(/scale\(([-\d.]+)\)/, "scale(0)"), opacity: 0 }
+    ], {
+        duration: returnScale,
+        easing: "ease-in",
+        fill: "forwards"
+    });
+    await returnAnimation.finished;
+    preview.remove();
+    void persistFishReturnToInventory(aquariumFish, aquariumId);
 });
 
 document.addEventListener("pointercancel", () => {
-    if (!aquariumFishDropInProgress && dragSource?.classList.contains("aquariumGrabbable")) {
+    if (dragSource?.classList.contains("aquariumGrabbable")) {
         finishAquariumFishDrag();
     }
 });
 
 window.addEventListener("blur", () => {
-    if (!aquariumFishDropInProgress && dragSource?.classList.contains("aquariumGrabbable")) {
+    if (dragSource?.classList.contains("aquariumGrabbable")) {
         finishAquariumFishDrag();
     }
 });

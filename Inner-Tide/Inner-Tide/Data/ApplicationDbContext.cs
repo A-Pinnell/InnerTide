@@ -10,7 +10,7 @@ namespace Inner_Tide.Data {
 
             modelBuilder.Entity<Aquarium>()
                 .HasOne(a => a.FirstPlacedUserFish)
-                .WithMany()
+                .WithMany(fish => fish.FirstPlacedInAquariums)
                 .HasForeignKey(a => a.FirstPlacedUserFishId)
                 .OnDelete(DeleteBehavior.NoAction);
         }

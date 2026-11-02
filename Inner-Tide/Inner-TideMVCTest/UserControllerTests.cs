@@ -6,10 +6,14 @@ using Inner_Tide.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 namespace Inner_TideMVCTest {
     [TestClass]
@@ -32,7 +36,10 @@ namespace Inner_TideMVCTest {
 
         [TestInitialize]
         public void TestInitialize() {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
 
             _context = new ApplicationDbContext(options);
 
@@ -52,6 +59,7 @@ namespace Inner_TideMVCTest {
                             }, "TestAuthentication"))
                 }
             };
+            controller.TempData = new TempDataDictionary(controller.ControllerContext.HttpContext, Mock.Of<ITempDataProvider>());
         }
 
         #region Index
@@ -63,6 +71,115 @@ namespace Inner_TideMVCTest {
 
             //Assert
             Assert.AreEqual(typeof(AccountViewModel), result.Model.GetType());
+        }
+
+        #endregion
+
+        #region Data settings
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task ExportUserDataIncludesOnlyTheSignedInUsersRecords() {
+            _context.Journals.AddRange(
+                new Journal {
+                    UserId = "1",
+                    JournalTitle = "My journal",
+                    JournalContent = "Private entry",
+                    JournalCreation = DateTime.UtcNow
+                },
+                new Journal {
+                    UserId = "another-user",
+                    JournalTitle = "Other journal",
+                    JournalContent = "Do not export",
+                    JournalCreation = DateTime.UtcNow
+                });
+            await _context.SaveChangesAsync();
+
+            var result = (FileContentResult)await controller.ExportUserData();
+            using var json = JsonDocument.Parse(result.FileContents);
+            var journals = json.RootElement.GetProperty("journals");
+
+            Assert.AreEqual("application/json", result.ContentType);
+            Assert.AreEqual(1, journals.GetArrayLength());
+            Assert.AreEqual("My journal", journals[0].GetProperty("journalTitle").GetString());
+            Assert.IsFalse(Encoding.UTF8.GetString(result.FileContents).Contains("Do not export"));
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task DeleteUserDataRequiresTheCurrentPassword() {
+            _userManagerMock
+                .Setup(manager => manager.CheckPasswordAsync(It.IsAny<User>(), It.IsAny<string>()))
+                .ReturnsAsync(false);
+
+            var result = await controller.DeleteUserData("wrong-password");
+
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            _userManagerMock.Verify(manager => manager.DeleteAsync(It.IsAny<User>()), Times.Never);
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task DeleteUserDataRemovesOnlyTheSignedInUsersRecords() {
+            _context.Journals.AddRange(
+                new Journal {
+                    UserId = "1",
+                    JournalTitle = "My journal",
+                    JournalContent = "Delete this",
+                    JournalCreation = DateTime.UtcNow
+                },
+                new Journal {
+                    UserId = "another-user",
+                    JournalTitle = "Other journal",
+                    JournalContent = "Keep this",
+                    JournalCreation = DateTime.UtcNow
+                });
+            _context.Aquariums.AddRange(
+                new Aquarium { UserId = "1", MaxFish = 10, MaxObjects = 5, CurrentFish = 0, CurrentObjects = 0, CompletionPercentage = 0 },
+                new Aquarium { UserId = "another-user", MaxFish = 10, MaxObjects = 5, CurrentFish = 0, CurrentObjects = 0, CompletionPercentage = 0 });
+            await _context.SaveChangesAsync();
+
+            _userManagerMock
+                .Setup(manager => manager.CheckPasswordAsync(It.IsAny<User>(), It.IsAny<string>()))
+                .ReturnsAsync(true);
+            _userManagerMock
+                .Setup(manager => manager.DeleteAsync(It.IsAny<User>()))
+                .ReturnsAsync(IdentityResult.Success);
+
+            var result = await controller.DeleteUserData("correct-password");
+
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            Assert.AreEqual(0, await _context.Journals.CountAsync(journal => journal.UserId == "1"));
+            Assert.AreEqual(1, await _context.Journals.CountAsync(journal => journal.UserId == "another-user"));
+            Assert.AreEqual(0, await _context.Aquariums.CountAsync(aquarium => aquarium.UserId == "1"));
+            Assert.AreEqual(1, await _context.Aquariums.CountAsync(aquarium => aquarium.UserId == "another-user"));
+            _userManagerMock.Verify(manager => manager.DeleteAsync(It.IsAny<User>()), Times.Once);
+        }
+
+        #endregion
+
+        #region Skip setup quiz
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task SkipSetupQuizGeneratesRandomAnswersAndReturnsResults() {
+            _userManagerMock
+                .Setup(manager => manager.UpdateAsync(It.IsAny<User>()))
+                .ReturnsAsync(IdentityResult.Success);
+            _context.Questions.AddRange(
+                new Question { QuestionId = 1, QuestionTitle = "How is your sleep?", CategoryTag = "Sleep", DisplayOrder = 1 },
+                new Question { QuestionId = 2, QuestionTitle = "How is your hydration?", CategoryTag = "Hydration", DisplayOrder = 2 });
+            await _context.SaveChangesAsync();
+
+            var result = await controller.SkipSetupQuiz();
+
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            Assert.AreEqual("SetupQuizResults", ((ViewResult)result).ViewName);
+            var answers = await _context.QuizQuestions
+                .Where(answer => answer.UserId == "1")
+                .ToListAsync();
+            Assert.AreEqual(2, answers.Count);
+            Assert.IsTrue(answers.All(answer => answer.AnswerValue is >= 1 and <= 5));
+            Assert.AreEqual(1, await _context.UserCategoryValues.CountAsync(values => values.UserId == "1"));
+            _userManagerMock.Verify(
+                manager => manager.UpdateAsync(It.Is<User>(user => user.FirstTimeLogin)),
+                Times.Once);
         }
 
         #endregion

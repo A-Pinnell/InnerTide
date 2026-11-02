@@ -180,7 +180,8 @@ html.reduced-motion body.users-page .auth-submit:hover {
     transition: none;
 }
 
-.aquariumFish img {
+.aquariumFish img,
+.aquariumFish canvas {
     width: 125px;
     height: auto;
 

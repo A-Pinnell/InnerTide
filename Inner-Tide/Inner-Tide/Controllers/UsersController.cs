@@ -5,6 +5,7 @@ using Inner_Tide.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Inner_Tide.Controllers {
@@ -243,6 +244,62 @@ namespace Inner_Tide.Controllers {
 
             ViewData["SetupQuiz"] = true;
             return View("~/Views/Quiz/Question.cshtml", userQuizQuestions);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SkipSetupQuiz() {
+            if (User.Identity?.IsAuthenticated != true) {
+                return Unauthorized();
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            if (user.FirstTimeLogin) {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var questions = await _context.Questions
+                .AsNoTracking()
+                .OrderBy(question => question.DisplayOrder)
+                .ThenBy(question => question.QuestionId)
+                .Take(30)
+                .ToListAsync();
+            if (questions.Count == 0) {
+                return StatusCode(StatusCodes.Status500InternalServerError, "The setup quiz has no questions configured.");
+            }
+
+            var setupQuiz = await _context.Quizzes
+                .FirstOrDefaultAsync(quiz => quiz.QuizTitle == Quiz.SetupQuizTitle);
+            if (setupQuiz == null) {
+                setupQuiz = new Quiz {
+                    QuizTitle = Quiz.SetupQuizTitle,
+                    CoinRewards = 5
+                };
+                _context.Quizzes.Add(setupQuiz);
+                await _context.SaveChangesAsync();
+            }
+
+            await using (var transaction = await _context.Database.BeginTransactionAsync()) {
+                var previousAnswers = await _context.QuizQuestions
+                    .Where(answer => answer.UserId == user.Id && answer.QuizId == setupQuiz.QuizId)
+                    .ToListAsync();
+                _context.QuizQuestions.RemoveRange(previousAnswers);
+
+                _context.QuizQuestions.AddRange(questions.Select(question => new QuizQuestion {
+                    QuizId = setupQuiz.QuizId,
+                    UserId = user.Id,
+                    QuestionId = question.QuestionId,
+                    AnswerValue = Random.Shared.Next(1, 6)
+                }));
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+
+            return await FinishSetupQuiz(completed: true);
         }
 
         [HttpPost]
@@ -509,6 +566,174 @@ namespace Inner_Tide.Controllers {
             TempData["AccountSettingsMessage"] = "Your account settings were updated.";
             TempData["AccountSettingsMessageType"] = "success";
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportUserData() {
+            if (User.Identity?.IsAuthenticated != true) {
+                return Unauthorized();
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var userId = user.Id;
+            var export = new {
+                exportedAtUtc = DateTime.UtcNow,
+                account = new {
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.PhoneNumber,
+                    user.AccountLevel,
+                    user.XPForNextLevel,
+                    user.CoinCount,
+                    user.FirstTimeLogin,
+                    user.DailyTaskRegenerationCount,
+                    user.DailyLastFreeTaskRefreshAt,
+                    user.WeeklyTaskRegenerationCount,
+                    user.WeeklyLastFreeTaskRefreshAt,
+                    user.MonthlyTaskRegenerationCount,
+                    user.MonthlyLastFreeTaskRefreshAt
+                },
+                journals = await _context.Journals
+                    .AsNoTracking()
+                    .Where(journal => journal.UserId == userId)
+                    .Select(journal => new {
+                        journal.JournalId,
+                        journal.JournalTitle,
+                        journal.JournalContent,
+                        journal.JournalCreation
+                    })
+                    .ToListAsync(),
+                aquariums = await _context.Aquariums
+                    .AsNoTracking()
+                    .Where(aquarium => aquarium.UserId == userId)
+                    .Select(aquarium => new {
+                        aquarium.AquariumId,
+                        aquarium.MaxFish,
+                        aquarium.MaxObjects,
+                        aquarium.CurrentFish,
+                        aquarium.CurrentObjects,
+                        aquarium.CompletionPercentage
+                    })
+                    .ToListAsync(),
+                fish = await _context.UserFish
+                    .AsNoTracking()
+                    .Where(fish => fish.UserId == userId)
+                    .Select(fish => new {
+                        fish.UserFishId,
+                        fish.FishId,
+                        fish.AquariumId,
+                        fish.IsInAquarium,
+                        fish.xCord,
+                        fish.yCord
+                    })
+                    .ToListAsync(),
+                items = await _context.UserItems
+                    .AsNoTracking()
+                    .Where(item => item.UserId == userId)
+                    .Select(item => new {
+                        item.UserItemId,
+                        item.ItemId,
+                        item.IsInAquarium
+                    })
+                    .ToListAsync(),
+                tasks = await _context.UserTasks
+                    .AsNoTracking()
+                    .Where(task => task.UserId == userId)
+                    .Select(task => new {
+                        task.UserTaskId,
+                        task.AssignedAt,
+                        task.Completed,
+                        task.Priority,
+                        task.Multiplier,
+                        task.Task!.Title,
+                        task.Task.TimeFrame,
+                        task.Task.CategoryTag,
+                        task.Task.CoinReward
+                    })
+                    .ToListAsync(),
+                quizAnswers = await _context.QuizQuestions
+                    .AsNoTracking()
+                    .Where(answer => answer.UserId == userId)
+                    .Select(answer => new {
+                        answer.QuizQuestionId,
+                        quizTitle = answer.Quiz!.QuizTitle,
+                        question = answer.Question!.QuestionTitle,
+                        category = answer.Question.CategoryTag,
+                        answer.AnswerValue
+                    })
+                    .ToListAsync(),
+                categoryValues = await _context.UserCategoryValues
+                    .AsNoTracking()
+                    .Where(values => values.UserId == userId)
+                    .Select(values => new {
+                        values.Sleep,
+                        values.Hydration,
+                        values.Fitness,
+                        values.Learning,
+                        values.Organization,
+                        values.Mood,
+                        values.Nutrition,
+                        values.Social,
+                        values.Productivity,
+                        values.Finance,
+                        values.Exploration,
+                        values.Habit,
+                        values.Hobby,
+                        values.Wellness,
+                        values.Creativity
+                    })
+                    .SingleOrDefaultAsync()
+            };
+
+            Response.Headers.CacheControl = "no-store";
+            var json = JsonSerializer.SerializeToUtf8Bytes(export, new JsonSerializerOptions(JsonSerializerDefaults.Web) {
+                WriteIndented = true
+            });
+            return File(json, "application/json", $"InnerTide-user-data-{DateTime.UtcNow:yyyyMMdd}.json");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUserData([FromForm] string currentPassword) {
+            if (User.Identity?.IsAuthenticated != true) {
+                return Unauthorized();
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrWhiteSpace(currentPassword) ||
+                !await userManager.CheckPasswordAsync(user, currentPassword)) {
+                return AccountSettingsFailure("Your current password is required to delete your account data.");
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var userId = user.Id;
+            _context.UserTasks.RemoveRange(await _context.UserTasks.Where(task => task.UserId == userId).ToListAsync());
+            _context.QuizQuestions.RemoveRange(await _context.QuizQuestions.Where(answer => answer.UserId == userId).ToListAsync());
+            _context.Journals.RemoveRange(await _context.Journals.Where(journal => journal.UserId == userId).ToListAsync());
+            _context.UserItems.RemoveRange(await _context.UserItems.Where(item => item.UserId == userId).ToListAsync());
+            _context.UserFish.RemoveRange(await _context.UserFish.Where(fish => fish.UserId == userId).ToListAsync());
+            _context.UserCategoryValues.RemoveRange(
+                await _context.UserCategoryValues.Where(values => values.UserId == userId).ToListAsync());
+            _context.Aquariums.RemoveRange(await _context.Aquariums.Where(aquarium => aquarium.UserId == userId).ToListAsync());
+            await _context.SaveChangesAsync();
+
+            var deleteResult = await userManager.DeleteAsync(user);
+            if (!deleteResult.Succeeded) {
+                return Conflict(string.Join(" ", deleteResult.Errors.Select(error => error.Description)));
+            }
+
+            await transaction.CommitAsync();
+            await signInManager.SignOutAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         private IActionResult AccountSettingsFailure(string message) {

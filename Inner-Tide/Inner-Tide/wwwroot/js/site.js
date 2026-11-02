@@ -702,10 +702,6 @@ async function updateDisplayedCoinBalance(nextBalance, coinAnimation, coinChange
 const storeBtn = document.querySelector("#storeBtn");
 const storePanel = document.querySelector("#tankStorePanel");
 const storeBackdrop = document.querySelector("#tankStoreBackdrop");
-const inventoryBtn = document.querySelector("#inventoryBtn");
-const inventoryPanel = document.querySelector("#tankInventoryPanel");
-const inventoryBackdrop = document.querySelector("#tankInventoryBackdrop");
-const inventoryFish = document.querySelector("inventoryFish");
 const editorBtn = document.querySelector("#editorBtn");
 const editorToolbar = document.querySelector("#editorToolbar");
 const editorCloseButton = document.querySelector("#editorCloseButton");
@@ -716,7 +712,6 @@ const editorForegroundLabel = document.querySelector("#editorForegroundLabel");
 const editorForegroundNumber = document.querySelector("#editorForegroundNumber");
 const editorInventoryPanel = document.querySelector("#editorInventoryPanel");
 const editorInventoryBackdrop = document.querySelector("#editorInventoryBackdrop");
-const removeFishBtn = document.querySelector("#removeFishBtn");
 
 //console.log("storePanel:", getComputedStyle(storePanel).zIndex);
 //console.log("storeBackdrop:", getComputedStyle(storeBackdrop).zIndex);
@@ -729,7 +724,6 @@ const removeFishBtn = document.querySelector("#removeFishBtn");
 //console.log("editorInventoryBackdrop:", getComputedStyle(editorInventoryBackdrop).zIndex);
 
 //console.log("storeBtn:", getComputedStyle(storeBtn).zIndex);
-//console.log("inventoryBtn:", getComputedStyle(inventoryBtn).zIndex);
 //console.log("editorBtn:", getComputedStyle(editorBtn).zIndex);
 //console.log("aquarium:", getComputedStyle(aquarium).zIndex);
 

@@ -35,6 +35,19 @@
             <div id="fishContainer"> 
 
             </div>
+            <button class="aquarium-fish-info-backdrop" id="aquariumFishInfoBackdrop" type="button" hidden></button>
+            <aside class="aquarium-fish-info" id="aquariumFishInfo" role="dialog" hidden>
+                <button class="aquarium-fish-info-close" id="aquariumFishInfoClose" type="button">
+                    <img src="../img/close_icon.png" alt="">
+                </button>
+                <p class="aquarium-fish-info-eyebrow" id="aquariumFishInfoAcquiredAt"></p>
+                <h2 id="aquariumFishInfoTitle"></h2>
+                <p class="aquarium-fish-info-description" id="aquariumFishInfoDescription"></p>
+                <section class="aquarium-fish-info-facts" id="aquariumFishInfoFactsSection" hidden>
+                    <h3>Fish Fact !</h3>
+                    <ul id="aquariumFishInfoFacts"></ul>
+                </section>
+            </aside>
 
             <aside class="side-tab task-tab">
                 <a asp-area="" asp-controller="Home" asp-action="Index"> <span> Task Menu </span> <b> ‹ </b> </a>
@@ -89,19 +102,6 @@
                     <span class="aquarium-menu-label">Editor</span>
                 </button>
 
-                <button class="aquariumMenuBtn" id="inventoryBtn" type="button">
-                    <span class="aquarium-icon-frame">
-                        <img src="../img/aquarium_inventory.png" alt="">
-                    </span>
-                    <span class="aquarium-menu-label">Inventory</span>
-                </button>
-
-                <button class="aquariumMenuBtn" id="removeFishBtn" hidden>
-                    <span class="aquarium-icon-frame">
-                        <img src="../img/aquarium_remove.png" alt="">
-                    </span>
-                    <span class="aquarium-menu-label"> Remove </span>
-                </button>
             </div>
             <button class="aquariumMenuBtn aquarium-hide-button" id="aquariumHideButton" type="button">
                 <span class="aquarium-icon-frame">
@@ -113,7 +113,7 @@
             <aside class="editor-toolbar" id="editorToolbar" inert hidden>
                 <button class="editor-layer-heading" id="editorSwitchLayer" type="button">
                     <span class="editor-layer-stack"><i></i><b id="editorLayerNumber">1</b></span>
-                    <span>Switch Layer</span>
+                    <span id="editorLayerName">Water Level</span>
                 </button>
                 <div class="editor-layer-list">
                     <div class="editor-item-slot"></div>
@@ -127,29 +127,21 @@
                     <button class="editor-layer-more" id="editorMoreItems" type="button">•••</button>
                 </div>
                 <button class="editor-close-button" id="editorCloseButton" type="button"><img src="../img/close_icon.png" alt=""></button>
+                <span class="editor-return-prompt">Put Back in Inventory</span>
             </aside>
-            <div class="editor-foreground-label" id="editorForegroundLabel"><span>FOREGROUND</span><b id="editorForegroundNumber">1</b></div>
+            <div class="editor-foreground-label" id="editorForegroundLabel"><span id="editorForegroundName">Water Level</span><b id="editorForegroundNumber">1</b></div>
 
             <div class="editor-inventory-backdrop" id="editorInventoryBackdrop" hidden></div>
-            <section class="editor-inventory-panel" id="editorInventoryPanel" hidden>
+            <section class="tank-store-panel editor-inventory-panel" id="editorInventoryPanel" hidden>
                 <div class="store-tabs editor-inventory-tabs">
-                    <span class="store-tab active" data-position="center">Objects</span>
+                    <button class="store-tab active" type="button" data-category="fish" data-position="center">Fish</button>
+                    <button class="store-tab" type="button" data-category="objects" data-position="right">Objects</button>
                 </div>
-                <div class="editor-inventory-items">
-                    <div class="store-items">
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                    </div>
+                <div class="store-catalog" id="inventoryFish">
+                    <div class="store-items"></div>
+                </div>
+                <div class="store-catalog" id="inventoryObjects" hidden>
+                    <div class="store-items"></div>
                 </div>
             </section>
 
@@ -171,23 +163,6 @@
                 </div>
             </section>
 
-            <div class="tank-store-backdrop" id="tankInventoryBackdrop" hidden></div>
-            <section class="tank-store-panel" id="tankInventoryPanel" hidden>
-                <div class="store-tabs">
-                    <button class="store-tab" id="inventoryObjectsTab" type="button" data-category="objects">Objects</button>
-                    <button class="store-tab active" id="inventoryFishTab" type="button" data-category="fish">Fish</button>
-                </div>
-                <div class="store-catalog" id="inventoryFish">
-                    <div class="store-items">
-                        <div class="store-item"><span class="store-product fish-product"></span></div>
-                    </div>
-                </div>
-                <div class="store-catalog" id="inventoryObjects" hidden>
-                    <div class="store-items">
-                        <div class="store-item"><span class="store-product object-product"></span></div>
-                    </div>
-                </div>
-            </section>
             <div class="inventory-fish-limit-message" id="inventoryFishLimitMessage" hidden>
                 Can not add more then 10 fish. Please remove a fish or start a new aquarium!
             </div>

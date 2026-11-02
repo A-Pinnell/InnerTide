@@ -90,6 +90,9 @@
             </filter>
         </svg>
     </main>
+    @if (setupQuiz) {
+        @await Html.PartialAsync("_DeveloperTools")
+    }
     @await Html.PartialAsync("_HelpPopup")
 </body>
 </html>
