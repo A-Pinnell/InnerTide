@@ -280,7 +280,7 @@ namespace Inner_TideMVCTest {
 
             var model = new AccountViewModel {
                 Login = new LoginViewModel {
-                    Email = "missing@test.com",
+                    EmailOrUserName = "missing@test.com",
                     Password = "Password123!"
                 }
             };
@@ -312,7 +312,7 @@ namespace Inner_TideMVCTest {
 
             var model = new AccountViewModel {
                 Login = new LoginViewModel {
-                    Email = user.Email,
+                    EmailOrUserName = user.Email,
                     Password = "WrongPassword"
                 }
             };
@@ -345,7 +345,7 @@ namespace Inner_TideMVCTest {
 
             var model = new AccountViewModel {
                 Login = new LoginViewModel {
-                    Email = user.Email,
+                    EmailOrUserName = user.Email,
                     Password = "Password123!"
                 }
             };
@@ -378,7 +378,7 @@ namespace Inner_TideMVCTest {
 
             var model = new AccountViewModel {
                 Login = new LoginViewModel {
-                    Email = user.Email,
+                    EmailOrUserName = user.Email,
                     Password = "Password123!"
                 }
             };
@@ -410,7 +410,7 @@ namespace Inner_TideMVCTest {
 
             var model = new AccountViewModel {
                 Login = new LoginViewModel {
-                    Email = user.Email,
+                    EmailOrUserName = user.Email,
                     Password = "Password123!"
                 }
             };

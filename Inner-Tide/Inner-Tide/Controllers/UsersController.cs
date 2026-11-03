@@ -38,7 +38,7 @@ namespace Inner_Tide.Controllers {
             RegisterViewModel user = model.Register;
 
             //Ensure That the Login Form Isn't Checked
-            ModelState.Remove("Login.Email");
+            ModelState.Remove("Login.EmailOrUserName");
             ModelState.Remove("Login.Password");
 
             if (!ModelState.IsValid) {
@@ -56,22 +56,21 @@ namespace Inner_Tide.Controllers {
 
                 ModelState.AddModelError("Register.Email", "Email is Already in use");
                 return View("Index", model);
+
             } else if (duplicateUsername != null) {
 
                 ModelState.AddModelError("Register.UserName", "Username is Already in use");
                 return View("Index", model);
             }
 
-                User newUser = new User {
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    CoinCount = 0,
-                    AccountLevel = 1,
-                    XPForNextLevel = 100,
-                    FirstTimeLogin = false
-                };
-
-            await _context.SaveChangesAsync();
+            User newUser = new User {
+                UserName = user.UserName,
+                Email = user.Email,
+                CoinCount = 0,
+                AccountLevel = 1,
+                XPForNextLevel = 100,
+                FirstTimeLogin = false
+            };
 
             var result = await userManager.CreateAsync(newUser, user.Password);
 
@@ -84,16 +83,19 @@ namespace Inner_Tide.Controllers {
                     CurrentObjects = 0,
                     CompletionPercentage = 0
                 });
+
                 await _context.SaveChangesAsync();
                 await signInManager.SignInAsync(newUser, isPersistent: false);
                 return RedirectToAction(nameof(Welcome));
             }
 
             foreach (var error in result.Errors) {
-                ModelState.AddModelError("", error.Description);
+                ModelState.AddModelError("Register.Password", error.Description);
             }
 
+            ViewData["ActiveAuthView"] = "register";
             return View("Index", model);
+
         }
 
         [HttpPost]
@@ -146,7 +148,7 @@ namespace Inner_Tide.Controllers {
                     ? RedirectToAction(nameof(Welcome))
                     : RedirectToAction("Index", "Home");
             } else {
-                ModelState.AddModelError("", "Email or Password is Incorrect");
+                ModelState.AddModelError("Login.Password", "Email or Password is Incorrect");
                 ViewData["ActiveAuthView"] = "login";
                 return View("Index", model);
             }
@@ -493,7 +495,7 @@ namespace Inner_Tide.Controllers {
             var user = await userManager.FindByEmailAsync(model.Email);
 
             if (user == null) {
-                ModelState.AddModelError("", "User was not Found");
+                ModelState.AddModelError("Verify.Email", "User was not Found");
                 return View("VerifyEmail", model);
             } else {
                 return RedirectToAction("ChangePassword", "Users", new { email = user.Email} );
@@ -516,22 +518,35 @@ namespace Inner_Tide.Controllers {
 
             var user = await userManager.FindByEmailAsync(model.Email);
 
-            if (user != null) {
-                var result = await userManager.RemovePasswordAsync(user);
+            if (user == null) {
+                ModelState.AddModelError(nameof(model.Email), "Email Not Found");
+                return View(model);
+            }
 
-                if (result.Succeeded) {
-                    result = await userManager.AddPasswordAsync(user, model.NewPassword);
-                    return RedirectToAction("Index", "Users");
-                } else {
+            if (user != null) {
+                var token = await userManager.GeneratePasswordResetTokenAsync(user);
+
+                var result = await userManager.ResetPasswordAsync(
+                    user,
+                    token,
+                    model.NewPassword
+                );
+
+                if (!result.Succeeded) {
                     foreach (var error in result.Errors) {
-                        ModelState.AddModelError("", error.Description);
+                        ModelState.AddModelError(
+                            nameof(model.NewPassword),
+                            error.Description
+                        );
                     }
 
                     return View(model);
                 }
 
+                return RedirectToAction("Index");
+
             } else {
-                ModelState.AddModelError("", "Email Not Found");
+                ModelState.AddModelError("ChangePassword.ConfirmNewPassword", "Email Not Found");
                 return View(model);
             }
         }
