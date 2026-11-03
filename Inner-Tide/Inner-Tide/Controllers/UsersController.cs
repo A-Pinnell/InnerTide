@@ -12,6 +12,7 @@ namespace Inner_Tide.Controllers {
     public class AddCoinModel() {
         public int Amount { get; set; }
     }
+
     public class UsersController : Controller {
         private readonly SignInManager<User> signInManager;
         private readonly UserManager<User> userManager;
@@ -44,14 +45,31 @@ namespace Inner_Tide.Controllers {
                 return View("Index", model);
             }
 
-            User newUser = new User {
-                UserName = user.UserName,
-                Email = user.Email,
-                CoinCount = 0,
-                AccountLevel = 1,
-                XPForNextLevel = 100,
-                FirstTimeLogin = false
-            };
+            var duplicateEmail = await userManager.FindByEmailAsync(user.Email);
+            var duplicateUsername = await userManager.FindByNameAsync(user.UserName);
+
+            if (duplicateEmail != null && duplicateUsername != null) {
+                ModelState.AddModelError("Register.Email", "Email and Username are Already in use");
+                return View("Index", model);
+            }
+            if (duplicateEmail != null) {
+
+                ModelState.AddModelError("Register.Email", "Email is Already in use");
+                return View("Index", model);
+            } else if (duplicateUsername != null) {
+
+                ModelState.AddModelError("Register.UserName", "Username is Already in use");
+                return View("Index", model);
+            }
+
+                User newUser = new User {
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    CoinCount = 0,
+                    AccountLevel = 1,
+                    XPForNextLevel = 100,
+                    FirstTimeLogin = false
+                };
 
             await _context.SaveChangesAsync();
 
@@ -93,10 +111,14 @@ namespace Inner_Tide.Controllers {
                 return View("Index", model);
             }
 
-            var foundUser = await userManager.FindByEmailAsync(user.Email);
+            var foundUser = await userManager.FindByEmailAsync(user.EmailOrUserName);
 
             if (foundUser == null) {
-                ModelState.AddModelError("", "Email or Password is Incorrect");
+                foundUser = await userManager.FindByNameAsync(user.EmailOrUserName);
+            }
+
+            if (foundUser == null) {
+                ModelState.AddModelError("", "UserName/Email or Password is Incorrect");
                 ViewData["ActiveAuthView"] = "login";
                 return View("Index", model);
             }

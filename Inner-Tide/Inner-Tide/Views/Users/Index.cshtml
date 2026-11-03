@@ -54,9 +54,9 @@
                 <form asp-controller="Users" asp-action="Login" method="post">
                     <fieldset>
                         <div class="auth-field">
-                            <label asp-for="Login.Email">Email Address</label>
-                            <input asp-for="Login.Email" type="email" autocomplete="email" placeholder="you@email.com">
-                            <span asp-validation-for="Login.Email" class="auth-error"></span>
+                            <label asp-for="Login.EmailOrUserName">Email Address</label>
+                            <input asp-for="Login.EmailOrUserName"placeholder ="Email or UserName">
+                            <span asp-validation-for="Login.EmailOrUserName" class="auth-error"></span>
                         </div>
 
                         <div class="auth-field">
