@@ -41,6 +41,10 @@
         if (errorMessage) {
             document.querySelector("#error-message").textContent = errorMessage;
         }
+        const fishLoadingFailurePattern = /fish\.find\(\).*buffering timed out|buffering timed out.*fish\.find\(\)|request failed with status 500/i;
+        if (errorMessage && fishLoadingFailurePattern.test(errorMessage)) {
+            document.querySelector("#error-message").textContent = "The Vercel has a nap. Hold out! Matthew!";
+        }
         const returnUrl = new URLSearchParams(window.location.search).get("returnUrl");
         const safeReturnUrl = returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//") && !returnUrl.toLowerCase().startsWith("/error.html")
             ? returnUrl
