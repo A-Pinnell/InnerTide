@@ -1,6 +1,7 @@
 - Aquarium Editor
 - Polish
 
-- update three dots to be grey chest
+- improve css on regenerate tasks
+- improve css on aquarium menu
 
 - (if time) stylize account settings better

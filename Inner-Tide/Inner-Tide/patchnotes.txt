@@ -1,0 +1,18 @@
+P3 - Version 2.0
+- Additional Quizzes are now acessiable, allowing you to curate your My Inner Tide stats to be more specific to you.
+- The Regenerate Tasks button now works as initally planned, seperated based on date category and resetting per day/week/month depending on date category
+- Tapping in empty spots in the Aquarium will now attract fish or scare away fish based on number of taps
+- Inventory button on Aquarium has been removed
+- Moving fish in the Aquarium has been removed
+- Clicking on a fish will now zoom onto the fish and show information and a fact about it!
+- Tank Store icon is now consistent with button theming
+- Fish rotation is now smoother
+- The editor menu now exists, controlling the placing and moving of fish and objects
+    - The editor menu will now show the last eight placed fish/objects
+    - The inventory menu has been moved to the editor menu
+- The inventory menu will now stack multiples of the same fish/objects
+- It is now possible to download your account data from the database in the Data Settings tab contained in the options
+- It is now possible to delete your account and data from the databases in the Data Settings tab contained in the options
+- Sound Effects have been added to places where it wasn't prior
+- Transitions have been made smoother and improved
+- Various bug fixes
