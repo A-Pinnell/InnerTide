@@ -25,6 +25,11 @@
             </form>
         </section>
 
+        <section class="developer-tool-section" id="developerAdditionalQuizTools">
+            <h3>Additional Quizzes</h3>
+            <button class="developer-tool-action" id="developerResetAdditionalQuizQuestions" type="button">Reset All Additional Quiz Questions</button>
+        </section>
+
         <section class="developer-tool-section" id="developerSetupQuizTools" hidden>
             <h3>Setup Quiz</h3>
             <form id="developerSkipSetupQuizForm" method="post" action="/Users/SkipSetupQuiz">
@@ -258,6 +263,7 @@
         const saveInventoryButton = document.querySelector("#developerSaveInventory");
         const aquariumFishList = document.querySelector("#developerAquariumFishList");
         const clearAquariumFishButton = document.querySelector("#developerClearAquariumFish");
+        const resetAdditionalQuizQuestionsButton = document.querySelector("#developerResetAdditionalQuizQuestions");
         const progressLimitToggle = document.querySelector("#developerDisableProgressLimit");
         const inventoryTabs = [...panel.querySelectorAll("[data-inventory-category]")];
         const csrfToken = document.querySelector('#developerToolsHost input[name="__RequestVerificationToken"]')?.value;
@@ -470,6 +476,27 @@
             } catch (error) {
                 console.error(error);
                 setDeveloperStatus(error.message, true);
+            }
+        });
+
+        resetAdditionalQuizQuestionsButton.addEventListener("click", async () => {
+            if (!window.confirm("Reset all additional quiz questions and restore category scores to your setup quiz results?")) {
+                return;
+            }
+
+            resetAdditionalQuizQuestionsButton.disabled = true;
+            try {
+                const response = await postDeveloperAction("/DeveloperTools/ResetAdditionalQuizQuestions");
+                const result = await response.json();
+                setDeveloperStatus(`${result.removed} additional quiz questions reset. Category scores restored to setup quiz results.`);
+                if (document.body.classList.contains("quiz-menu-page")) {
+                    window.setTimeout(() => window.location.reload(), 700);
+                }
+            } catch (error) {
+                console.error(error);
+                setDeveloperStatus(error.message, true);
+            } finally {
+                resetAdditionalQuizQuestionsButton.disabled = false;
             }
         });
 

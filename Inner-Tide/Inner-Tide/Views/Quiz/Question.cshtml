@@ -12,7 +12,7 @@
 }
 
 <body class="question-page @(setupQuiz ? "setup-quiz-page" : "")">
-    <main class="question-screen" data-setup-quiz="@setupQuiz.ToString().ToLowerInvariant()" data-save-answer-url="@Url.Action("SaveAnswer", "Quiz")">
+    <main class="question-screen" data-setup-quiz="@setupQuiz.ToString().ToLowerInvariant()" data-quiz-reward="@((int?)ViewData["QuizReward"] ?? 0)" data-save-answer-url="@Url.Action("SaveAnswer", "Quiz")" data-quiz-completed-url="@Url.Action("MyInnerTide", "Users", new { from = "quiz" })">
         <div class="question-background"></div>
         <section class="question-copy">
             <p class="question-number">
@@ -38,6 +38,9 @@
         }
 
         <section class="answer-panel">
+            <button class="question-arrow question-previous" id="previousQuestion" type="button" disabled>
+                <span></span>
+            </button>
             <div class="answer-track" id="answerTrack">
                 <button class="answer-choice" type="button" data-answer="0">
                     <span class="answer-circle"></span>
@@ -59,7 +62,7 @@
                     <span class="answer-circle"></span>
                     <span class="answer-label">Always</span>
                 </button>
-                <img class="answer-fish" id="answerFish" src="../img/quiz-fish.png" alt="" hidden>
+                <img class="answer-fish" id="answerFish" src="~/img/quiz-fish.png" alt="" hidden>
             </div>
             <button class="question-arrow question-next" id="nextQuestion" type="button">
                 <span></span>
@@ -68,10 +71,17 @@
         @if (setupQuiz) {
             <div class="setup-quiz-progress" id="setupQuizProgress">
                 <span class="setup-quiz-progress-fill" id="setupQuizProgressFill"></span>
-                <img class="setup-quiz-progress-fish" id="setupQuizProgressFish" src="../img/quiz-fish.png" alt="">
+                <img class="setup-quiz-progress-fish" id="setupQuizProgressFish" src="~/img/quiz-fish.png" alt="">
             </div>
         }
-        <p class="question-save-error" id="questionSaveError" role="alert" hidden>Could not save your answer. Please try again.</p>
+        <p class="question-save-error" id="questionSaveError" hidden>Could not save your answer. Please try again.</p>
+        <div class="question-reward-overlay" id="questionRewardOverlay" hidden>
+            <div class="question-reward-counter">
+                <img src="~/img/coin.png" alt="">
+                <span id="questionRewardAmount">+0</span>
+                <small>COINS</small>
+            </div>
+        </div>
 
         <nav class="question-actions">
             @if (!setupQuiz) {
@@ -79,7 +89,7 @@
             }
         </nav>
         <button class="help-button" type="button">
-            <img src="../img/help_icon.png" alt="">
+            <img src="~/img/help_icon.png" alt="">
         </button>
         <svg focusable="false" width="0" height="0">
             <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">

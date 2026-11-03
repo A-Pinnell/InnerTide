@@ -977,6 +977,14 @@ object-fit: cover;
     justify-content: center;
 }
 
+.inventory-fish-count {
+    flex: 0 0 auto;
+    color: #fff;
+    font-family: Neuropolx, "Aquino", sans-serif;
+    font-size: clamp(13px, 1.4vw, 19px);
+    text-shadow: 1px 2px 2px rgba(12, 59, 82, .75);
+}
+
 .editor-toolbar {
     position: absolute;
     z-index: 24;
@@ -1100,12 +1108,44 @@ object-fit: cover;
 }
 
 .editor-item-slot {
+    display: grid;
     width: min(72%, 78px);
     aspect-ratio: 1;
     flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 0;
     border-radius: 24%;
+    overflow: hidden;
     background: #fff;
     box-shadow: 0 2px 4px rgba(130, 83, 0, .12);
+}
+
+.editor-item-slot:disabled {
+    opacity: 1;
+}
+
+.editor-item-slot.inventoryGrabbable {
+    cursor: grab;
+}
+
+.editor-item-slot.inventoryGrabbable:active {
+    cursor: grabbing;
+}
+
+.editor-item-slot img {
+    width: 82%;
+    height: 82%;
+    object-fit: cover;
+    object-position: left -12%;
+    transform: scale(1.8);
+    transform-origin: left center;
+    pointer-events: none;
+}
+
+.editor-item-slot.is-depleted img {
+    filter: grayscale(1);
+    opacity: .4;
 }
 
 .editor-layer-more {
@@ -1226,22 +1266,30 @@ object-fit: cover;
     visibility: visible;
 }
 
-.aquarium-page.editor-mode .task-tab {
+.aquarium-page.editor-mode .task-tab,
+.aquarium-page.aquarium-hide-mode .task-tab,
+.aquarium-page.is-fish-focused .task-tab {
     opacity: 0;
     transform: translateX(-110%);
 }
 
 .aquarium-page.editor-mode .menu-buttons,
+.aquarium-page.aquarium-hide-mode .menu-buttons,
+.aquarium-page.is-fish-focused .menu-buttons,
 .aquarium-page:not(.aquarium-ready) .menu-buttons {
     transform: translateX(calc(-13.5vw + 8px));
 }
 
-.aquarium-page.editor-mode #journalButton {
+.aquarium-page.editor-mode #journalButton,
+.aquarium-page.aquarium-hide-mode #journalButton,
+.aquarium-page.is-fish-focused #journalButton {
     pointer-events: none;
     transform: translate(-50%, calc(100% + 80px));
 }
 
-.aquarium-page.editor-mode #storeCoinDiv {
+.aquarium-page.editor-mode #storeCoinDiv,
+.aquarium-page.aquarium-hide-mode #storeCoinDiv,
+.aquarium-page.is-fish-focused #storeCoinDiv {
     pointer-events: none;
     transform: translateX(calc(100% + 4vw));
 }
@@ -1276,7 +1324,9 @@ object-fit: cover;
     transition: transform .65s cubic-bezier(.22, 1, .36, 1), filter .25s ease, visibility 0s;
 }
 
-.aquarium-page.editor-mode .aquarium-hide-button {
+.aquarium-page.editor-mode .aquarium-hide-button,
+.aquarium-page.aquarium-hide-mode .aquarium-hide-button,
+.aquarium-page.is-fish-focused .aquarium-hide-button {
     pointer-events: none;
     transform: translateX(calc(100% + 4vw));
     transition: transform .65s cubic-bezier(.22, 1, .36, 1), filter .25s ease, visibility 0s linear .65s;
@@ -1338,7 +1388,20 @@ html.reduced-motion .aquarium-page .aquarium-hide-button {
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
-    transition: opacity .4s ease, visibility .4s ease;
+}
+
+.aquarium-page.aquarium-hide-mode .task-tab,
+.aquarium-page.is-fish-focused .task-tab,
+.aquarium-page.aquarium-hide-mode .menu-buttons,
+.aquarium-page.is-fish-focused .menu-buttons {
+    transition: transform .75s cubic-bezier(.22, 1, .36, 1), opacity .45s ease, visibility 0s linear .75s;
+}
+
+.aquarium-page.aquarium-hide-mode #storeCoinDiv,
+.aquarium-page.is-fish-focused #storeCoinDiv,
+.aquarium-page.aquarium-hide-mode #journalButton,
+.aquarium-page.is-fish-focused #journalButton {
+    transition: transform .65s cubic-bezier(.22, 1, .36, 1), opacity .4s ease, visibility 0s linear .65s;
 }
 
 .aquarium-hide-exit {

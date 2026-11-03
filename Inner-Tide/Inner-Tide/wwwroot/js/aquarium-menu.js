@@ -3,6 +3,103 @@ let fishList = [];
 let aquariumAnimationRunning = false;
 let aquariumFishReady = Promise.resolve();
 let closeActiveAquariumMenu = null;
+let inventoryFishCache = null;
+
+function getRecentFishStorageKey(layer = document.body.dataset.editorLayer || "Water Level") {
+    const accountId = document.body.dataset.accountId || "anonymous";
+    const aquariumId = document.body.dataset.aquariumId || "1";
+    return `innerTide.aquariumRecentFish.${accountId}.${aquariumId}.${layer}`;
+}
+
+function renderRecentFishShortcut(inventoryFish) {
+    if (!Array.isArray(inventoryFish)) return;
+
+    const slots = [...document.querySelectorAll(".editor-item-slot")];
+    if (slots.length === 0 || slots.some(slot => !(slot instanceof HTMLButtonElement))) return;
+
+    let recentFishList = [];
+    try {
+        const storedFish = localStorage.getItem(getRecentFishStorageKey());
+        const parsedFish = storedFish ? JSON.parse(storedFish) : [];
+        recentFishList = Array.isArray(parsedFish) ? parsedFish : parsedFish ? [parsedFish] : [];
+    } catch (error) {
+        console.error("Could not load the recent aquarium fish.", error);
+    }
+
+    const claimedFishIds = new Set();
+    slots.forEach((slot, index) => {
+        const recentFish = recentFishList[index];
+        slot.replaceChildren();
+        slot.classList.remove("inventoryGrabbable", "is-depleted");
+        slot.removeAttribute("value");
+        slot.removeAttribute("value2");
+        slot.disabled = true;
+        slot.title = "";
+
+        if (!recentFish?.fishId || !recentFish?.sprite || !recentFish?.species) {
+            return;
+        }
+
+        const fish = inventoryFish.find(item =>
+            item.fishId === recentFish.fishId && !claimedFishIds.has(item.userFishId)
+        );
+        const image = document.createElement("img");
+        image.src = recentFish.sprite;
+        image.alt = recentFish.species;
+        image.draggable = false;
+        slot.appendChild(image);
+        slot.dataset.sprite = recentFish.sprite;
+        slot.dataset.species = recentFish.species;
+        slot.dataset.description = recentFish.description ?? "";
+        slot.dataset.acquiredAt = recentFish.acquiredAt ?? "";
+        slot.dataset.funFacts = JSON.stringify(recentFish.funFacts ?? []);
+        slot.dataset.height = String(recentFish.height ?? "");
+        slot.dataset.width = String(recentFish.width ?? "");
+
+        if (!fish) {
+            slot.classList.add("is-depleted");
+            slot.title = `No more ${recentFish.species} in inventory`;
+            return;
+        }
+
+        claimedFishIds.add(fish.userFishId);
+        slot.classList.add("inventoryGrabbable");
+        slot.disabled = false;
+        slot.setAttribute("value", String(fish.userFishId));
+        slot.setAttribute("value2", fish.fishId);
+        slot.title = `Drag to place another ${recentFish.species}`;
+    });
+}
+
+function rememberRecentlyPlacedFish(source) {
+    const fishId = source.getAttribute("value2");
+    const sprite = source.dataset.sprite;
+    const species = source.dataset.species;
+    if (!fishId || !sprite || !species) {
+        throw new Error("Cannot remember a recently placed fish because its display data is missing.");
+    }
+
+    const recentFish = {
+        fishId,
+        sprite,
+        species,
+        description: source.dataset.description ?? "",
+        acquiredAt: source.dataset.acquiredAt ?? "",
+        funFacts: JSON.parse(source.dataset.funFacts || "[]"),
+        height: source.dataset.height ?? "",
+        width: source.dataset.width ?? ""
+    };
+
+    try {
+        const storedFish = localStorage.getItem(getRecentFishStorageKey());
+        const parsedFish = storedFish ? JSON.parse(storedFish) : [];
+        const recentFishList = Array.isArray(parsedFish) ? parsedFish : parsedFish ? [parsedFish] : [];
+        recentFishList.unshift(recentFish);
+        localStorage.setItem(getRecentFishStorageKey(), JSON.stringify(recentFishList.slice(0, 8)));
+    } catch (error) {
+        console.error("Could not save the recent aquarium fish.", error);
+    }
+}
 
 if (taskMenuLink) {
     taskMenuLink.addEventListener("click", event => {
@@ -271,6 +368,8 @@ async function renderInventoryFish() {
         }
 
         const fish = await res.json();
+        inventoryFishCache = fish;
+        renderRecentFishShortcut(fish);
 
         const inventoryContainer =
             document.querySelector("#editorInventoryPanel #inventoryFish .store-items");
@@ -279,8 +378,15 @@ async function renderInventoryFish() {
 
         inventoryContainer.innerHTML = "";
 
-        fish.forEach(f => {
+        const fishStacks = [...fish.reduce((stacks, ownedFish) => {
+            const stack = stacks.get(ownedFish.fishId) ?? [];
+            stack.push(ownedFish);
+            stacks.set(ownedFish.fishId, stack);
+            return stacks;
+        }, new Map()).values()];
 
+        fishStacks.forEach(stack => {
+            const f = stack[0];
             const item = document.createElement("div");
             item.className = "store-item inventoryGrabbable";
             item.setAttribute("value", f.userFishId);
@@ -305,6 +411,7 @@ async function renderInventoryFish() {
 
             <div class="store-item-details">
                 <p class="store-product-name">${f.species}</p>
+                ${stack.length > 1 ? `<span class="inventory-fish-count">x${stack.length}</span>` : ""}
             </div>
             <span class="inventory-drag-indicator"><i></i><i></i><i></i></span>`;
 
@@ -493,6 +600,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
         editorLayerName.textContent = editorLayerNames[layer];
         editorForegroundName.textContent = editorLayerNames[layer];
         document.body.dataset.editorLayer = editorLayerNames[layer];
+        renderRecentFishShortcut(inventoryFishCache);
     }
 
     function setAquariumFishFrozen(frozen) {
@@ -508,8 +616,9 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
             }
 
             restoreAquariumFishVisual(fish);
-            fish.targetX = randomRange(0, Math.max(0, fish.element.parentElement.clientWidth - fish.element.offsetWidth));
-            fish.targetY = randomRange(0, Math.max(0, fish.element.parentElement.clientHeight - fish.element.offsetHeight));
+            const swimBounds = getFishSwimBounds(fish.element.parentElement, fish.element);
+            fish.targetX = randomRange(0, swimBounds.maxX);
+            fish.targetY = randomRange(0, swimBounds.maxY);
             fish.moving = true;
         });
         if (!frozen) startAquariumAnimation();
@@ -682,8 +791,6 @@ function appendAquariumFish(f, x, y, startMoving = false) {
     const item = document.createElement("div");
     item.classList.add("aquariumFish", "aquariumGrabbable");
     item.tabIndex = 0;
-    item.setAttribute("role", "button");
-    item.setAttribute("aria-label", `View ${f.species} details`);
     item.setAttribute("value", f.userFishId);
     item.setAttribute("value2", f.fishId);
 
@@ -740,6 +847,7 @@ function appendAquariumFish(f, x, y, startMoving = false) {
         }
     }
 
+    const swimBounds = getFishSwimBounds(fishContainer, item);
     fish = {
         element: item,
         sprite: f.sprite,
@@ -756,8 +864,9 @@ function appendAquariumFish(f, x, y, startMoving = false) {
         freezeVisualWhenLoaded: false,
         x,
         y,
-        targetX: randomRange(0, Math.max(0, fishContainer.clientWidth - 125)),
-        targetY: randomRange(0, Math.max(0, fishContainer.clientHeight - 80)),
+        rotation: null,
+        targetX: randomRange(0, swimBounds.maxX),
+        targetY: randomRange(0, swimBounds.maxY),
         speed: speed,
         cruiseSpeed: speed,
         tapSpeedBoosted: false,
@@ -785,7 +894,6 @@ function freezeAquariumFishVisual(fish) {
     frozenFrame.height = image.naturalHeight;
     frozenFrame.style.width = image.style.width || "125px";
     frozenFrame.style.height = "auto";
-    frozenFrame.setAttribute("aria-label", fish.species);
     const context = frozenFrame.getContext("2d");
     if (!context) {
         throw new Error("Cannot freeze an aquarium fish because canvas rendering is unavailable.");
@@ -844,8 +952,9 @@ async function renderAquariumFish() {
         await Promise.all(renderedFish.map(({ imageLoaded }) => imageLoaded));
 
         renderedFish.forEach(({ fish: rendered }) => {
-            rendered.targetX = randomRange(0, Math.max(0, fishContainer.clientWidth - rendered.element.offsetWidth));
-            rendered.targetY = randomRange(0, Math.max(0, fishContainer.clientHeight - rendered.element.offsetHeight));
+            const swimBounds = getFishSwimBounds(fishContainer, rendered.element);
+            rendered.targetX = randomRange(0, swimBounds.maxX);
+            rendered.targetY = randomRange(0, swimBounds.maxY);
             rendered.moving = !document.body.classList.contains("editor-mode");
             if (!rendered.moving) freezeAquariumFishVisual(rendered);
         });
@@ -861,6 +970,19 @@ async function renderAquariumFish() {
 }
 
 const sand2 = document.querySelector("#sand2");
+
+function getFishSwimBounds(fishContainer, fishElement) {
+    const fishWidth = fishElement.offsetWidth;
+    const fishHeight = fishElement.offsetHeight;
+    const maxX = Math.max(0, fishContainer.clientWidth - fishWidth);
+    const sandTop = sand2.offsetTop - fishContainer.offsetTop + 100;
+    const maxY = Math.max(0, Math.min(
+        fishContainer.clientHeight - fishHeight,
+        sandTop - fishHeight
+    ));
+
+    return { maxX, maxY };
+}
 
 aquariumFishReady = renderAquariumFish();
 
@@ -886,10 +1008,6 @@ function animate(now) {
     const fishContainer = document.querySelector("#fishContainer");
     if (!fishContainer) return;
 
-    const width = fishContainer.clientWidth;
-    const height = fishContainer.clientHeight;
-    const aquariumRect = fishContainer.getBoundingClientRect();
-    const sandRect = sand2.getBoundingClientRect();
     const elapsedSeconds = Math.min((now - (animate.lastFrameTime ?? now)) / 1000, 0.05);
     animate.lastFrameTime = now;
 
@@ -897,13 +1015,7 @@ function animate(now) {
     fishList.forEach(fish => {
         if (!fish.moving || !fish.element.isConnected) return;
 
-        const fishWidth = fish.element.offsetWidth;
-        const fishHeight = fish.element.offsetHeight;
-        const maxX = Math.max(0, width - fishWidth);
-        const maxY = Math.max(0, Math.min(
-            height - fishHeight,
-            sandRect.top + 100 - aquariumRect.top - fishHeight
-        ));
+        const { maxX, maxY } = getFishSwimBounds(fishContainer, fish.element);
         fish.x = Math.max(0, Math.min(fish.x, maxX));
         fish.y = Math.max(0, Math.min(fish.y, maxY));
         fish.targetX = Math.max(0, Math.min(fish.targetX, maxX));
@@ -932,9 +1044,15 @@ function animate(now) {
         fish.element.style.top = `${fish.y}px`;
 
         const direction = Math.atan2(dy, dx) * (180 / Math.PI);
-        const rotation = dx > 0 ? direction : direction - 180;
+        const targetRotation = dx > 0 ? direction : direction - 180;
+        if (fish.rotation === null) {
+            fish.rotation = targetRotation;
+        } else {
+            const rotationDelta = ((targetRotation - fish.rotation + 540) % 360) - 180;
+            fish.rotation += rotationDelta * (1 - Math.exp(-1.5 * elapsedSeconds));
+        }
         const flip = dx > 0 ? -1 : 1;
-        fish.element.style.transform = `rotate(${rotation}deg) scaleX(${flip})`;
+        fish.element.style.transform = `rotate(${fish.rotation}deg) scaleX(${flip})`;
 
         if (now >= fish.nextBubbleAt) {
             emitFishBubble(fish, direction);
@@ -984,18 +1102,13 @@ function moveFishFromGlassTap(event, startled) {
     }
 
     const fishContainerRect = fishContainer.getBoundingClientRect();
-    const sandRect = sand2?.getBoundingClientRect();
     const tapX = event.clientX - fishContainerRect.left;
     const tapY = event.clientY - fishContainerRect.top;
 
     fishList.forEach(fish => {
         const fishWidth = fish.element.offsetWidth;
         const fishHeight = fish.element.offsetHeight;
-        const maxX = Math.max(0, fishContainer.clientWidth - fishWidth);
-        const maxY = Math.max(0, Math.min(
-            fishContainer.clientHeight - fishHeight,
-            sandRect ? sandRect.top + 100 - fishContainerRect.top - fishHeight : fishContainer.clientHeight - fishHeight
-        ));
+        const { maxX, maxY } = getFishSwimBounds(fishContainer, fish.element);
 
         fish.speed = fish.cruiseSpeed * (startled ? 2.5 : 2);
         fish.tapSpeedBoosted = true;
@@ -1486,6 +1599,7 @@ async function placeSelectedInventoryFish(event) {
             throw new Error(`Failed to place fish: ${res.status}`);
         }
         const placement = await res.json();
+        rememberRecentlyPlacedFish(source);
 
         const placedFish = appendAquariumFish({
             userFishId: Number(userFishId),
@@ -1500,8 +1614,7 @@ async function placeSelectedInventoryFish(event) {
             isFirstPlaced: placement.isFirstPlaced ?? false
         }, x, y, !document.body.classList.contains("editor-mode"));
         void placedFish.imageLoaded.then(() => {
-            const maxX = Math.max(0, fishContainer.clientWidth - placedFish.fish.element.offsetWidth);
-            const maxY = Math.max(0, fishContainer.clientHeight - placedFish.fish.element.offsetHeight);
+            const { maxX, maxY } = getFishSwimBounds(fishContainer, placedFish.fish.element);
             placedFish.fish.x = Math.min(maxX, Math.max(0, placedFish.fish.x));
             placedFish.fish.y = Math.min(maxY, Math.max(0, placedFish.fish.y));
             placedFish.fish.element.style.left = `${placedFish.fish.x}px`;

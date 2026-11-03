@@ -96,6 +96,26 @@ function revealPageAfterAssetsLoad() {
         }
     }));
 
+    const imageLoads = Array.from(document.images, image => {
+        if (image.complete) {
+            if (image.naturalWidth === 0 && image.currentSrc) {
+                console.error(`Unable to load page image: ${image.currentSrc}`);
+            }
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            const finish = () => {
+                if (image.naturalWidth === 0) {
+                    console.error(`Unable to load page image: ${image.currentSrc || image.src}`);
+                }
+                resolve();
+            };
+            image.addEventListener("load", finish, { once: true });
+            image.addEventListener("error", finish, { once: true });
+        });
+    });
+
     const fontsLoaded = Promise.all([
         document.fonts.load('16px "Neuropolx"'),
         document.fonts.load('16px "Aquino"'),
@@ -104,7 +124,18 @@ function revealPageAfterAssetsLoad() {
         document.fonts.ready
     ]);
 
-    const allAssetsLoaded = Promise.all([fontsLoaded, ...backgroundLoads]);
+    const allAssetsLoaded = Promise.all([fontsLoaded, ...backgroundLoads, ...imageLoads]);
+    const assetsSettled = allAssetsLoaded.then(
+        () => {
+            document.documentElement.classList.add("page-assets-loaded");
+            window.dispatchEvent(new Event("page-assets-loaded"));
+        },
+        error => {
+            console.error("Unable to prepare page assets.", error);
+            document.documentElement.classList.add("page-assets-loaded");
+            window.dispatchEvent(new Event("page-assets-loaded"));
+        }
+    );
     let loadingTimeoutId;
     const loadingTimeout = new Promise(resolve => {
         loadingTimeoutId = window.setTimeout(() => {
@@ -113,7 +144,7 @@ function revealPageAfterAssetsLoad() {
         }, 15000);
     });
 
-    Promise.race([allAssetsLoaded, loadingTimeout]).then(() => {
+    Promise.race([assetsSettled, loadingTimeout]).then(() => {
         window.clearTimeout(loadingTimeoutId);
         document.documentElement.classList.remove("page-assets-loading");
         document.documentElement.classList.add("page-assets-ready");
@@ -122,8 +153,9 @@ function revealPageAfterAssetsLoad() {
             window.dispatchEvent(new Event("page-assets-ready"));
         }, 400);
     }).catch(error => {
-        console.error("Unable to prepare page assets.", error);
+        console.error("Unable to reveal the page after asset loading.", error);
         document.documentElement.classList.remove("page-assets-loading");
+        window.dispatchEvent(new Event("page-assets-ready"));
     });
 }
 

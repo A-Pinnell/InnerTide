@@ -222,15 +222,41 @@ body.question-page {
 
     .setup-results-category-heading {
         display: flex;
+        align-items: baseline;
         justify-content: space-between;
         gap: 16px;
         margin-bottom: 7px;
         font-size: 19px;
     }
 
+    .setup-results-score-change {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 8px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .setup-results-previous-percent {
+        color: rgba(247, 244, 255, .72);
+        font-size: .82em;
+    }
+
     .setup-results-category-heading label {
         font-family: "Neuropolx", sans-serif;
         cursor: default;
+    }
+
+    .setup-results-score-change strong {
+        font-size: .82em;
+    }
+
+    .setup-results-score-change.increased strong {
+        color: #8dffbd;
+    }
+
+    .setup-results-score-change.decreased strong {
+        color: #ff9a9a;
     }
 
     .setup-results-percent {
@@ -241,31 +267,64 @@ body.question-page {
     }
 
     .setup-results-progress {
+        position: relative;
         display: block;
         width: 100%;
         height: 15px;
         overflow: hidden;
+        box-sizing: border-box;
         border: 1px solid rgba(227, 194, 248, .58);
         border-radius: 999px;
-        appearance: none;
         background: rgba(5, 6, 18, .8);
     }
 
-    .setup-results-progress::-webkit-progress-bar {
-        border-radius: 999px;
-        background: rgba(5, 6, 18, .8);
+    .setup-results-progress-fill,
+    .setup-results-progress-change {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        border-radius: inherit;
     }
 
-    .setup-results-progress::-webkit-progress-value {
-        border-radius: 999px;
+    .setup-results-progress-fill {
         background: linear-gradient(90deg, #a86bc9, #e6b2f3);
         box-shadow: 0 0 14px rgba(214, 159, 255, .6);
     }
 
-    .setup-results-progress::-moz-progress-bar {
+    .setup-results-progress-change.increased {
+        background: #54df91;
+        box-shadow: 0 0 12px rgba(84, 223, 145, .72);
+    }
+
+    .setup-results-progress-change.decreased {
+        background: #ed626d;
+        box-shadow: 0 0 12px rgba(237, 98, 109, .72);
+    }
+
+    .setup-results-progress-change {
+        z-index: 1;
+    }
+
+    .setup-results-quizzes-button {
+        align-self: center;
+        margin-top: 24px;
+        padding: 13px 24px;
+        border: 1px solid rgba(238, 199, 255, .8);
         border-radius: 999px;
-        background: linear-gradient(90deg, #a86bc9, #e6b2f3);
-        box-shadow: 0 0 14px rgba(214, 159, 255, .6);
+        color: #fff;
+        background: linear-gradient(135deg, #a86bc9, #7045a8);
+        box-shadow: 0 0 18px rgba(214, 159, 255, .32);
+        font: 16px "Neuropolx", sans-serif;
+        text-align: center;
+        text-decoration: none;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .setup-results-quizzes-button:hover {
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 0 24px rgba(214, 159, 255, .55);
     }
 
     html.reduced-motion .setup-results-card {
@@ -560,6 +619,77 @@ body.question-page .question-arrow {
 
 body.question-page .question-next {
     right: 4.8%;
+}
+
+body.question-page .question-previous {
+    left: 4.8%;
+}
+
+body.question-page .question-previous span {
+    transform: scaleX(-1);
+}
+
+body.question-page .question-reward-overlay[hidden] {
+    display: none;
+}
+
+body.question-page .question-reward-overlay {
+    position: fixed;
+    z-index: 20;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(4, 17, 47, .66);
+    backdrop-filter: blur(7px);
+    animation: question-reward-fade-in .45s ease both;
+}
+
+body.question-page .question-reward-counter {
+    display: grid;
+    min-width: min(72vw, 360px);
+    justify-items: center;
+    gap: 8px;
+    padding: 28px 42px;
+    border: 4px solid rgba(255,255,255,.9);
+    border-radius: 32px;
+    background: linear-gradient(145deg, rgba(20, 86, 157, .96), rgba(11, 42, 105, .96));
+    box-shadow: 0 0 48px rgba(255, 214, 87, .4), inset 0 0 24px rgba(255,255,255,.18);
+    color: #fff;
+    text-align: center;
+    animation: question-reward-counter-pop .65s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+body.question-page .question-reward-counter img {
+    width: clamp(68px, 13vw, 112px);
+    height: clamp(68px, 13vw, 112px);
+    object-fit: contain;
+    filter: drop-shadow(0 0 18px rgba(255, 215, 83, .72));
+}
+
+body.question-page #questionRewardAmount {
+    font: clamp(52px, 10vw, 90px)/1 "Hydration", sans-serif;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 22px rgba(255, 218, 91, .56);
+}
+
+body.question-page .question-reward-counter small {
+    font: clamp(16px, 3vw, 24px) "Neuropolx", sans-serif;
+    letter-spacing: .12em;
+}
+
+@keyframes question-reward-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes question-reward-counter-pop {
+    from { opacity: 0; transform: scale(.72) translateY(24px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+html.reduced-motion body.question-page .question-reward-overlay,
+html.reduced-motion body.question-page .question-reward-counter {
+    animation: none;
 }
 
 body.question-page .question-actions {

@@ -5,11 +5,16 @@ namespace Inner_Tide.ViewModels {
         public required string StrongestCategory { get; init; }
 
         public required string FocusCategory { get; init; }
+
+        public string? ChangedCategory { get; init; }
+
+        public int? PreviousCategoryPercentage { get; init; }
     }
 
     public class SetupQuizCategoryProgress {
         public required string Name { get; init; }
 
         public required int Percentage { get; init; }
+
     }
 }

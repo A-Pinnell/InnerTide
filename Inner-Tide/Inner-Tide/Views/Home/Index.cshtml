@@ -97,7 +97,7 @@
             </button>
             <h2 id="optionsHeading">Options</h2>
             @if (accountSettingsMessage != null) {
-                <p class="account-settings-message @accountSettingsMessageType" role="status">@accountSettingsMessage</p>
+                <p class="account-settings-message @accountSettingsMessageType">@accountSettingsMessage</p>
             }
             <details class="options-dropdown">
                 <summary>Graphic Settings</summary>
@@ -206,11 +206,11 @@
                 <form id="regenerateTasksForm" hidden>
                     @Html.AntiForgeryToken()
                 </form>
-                <a class="element-action" asp-area="" asp-controller="Quiz" asp-action="Index">
+                <a class="element-action task-quiz-link" asp-area="" asp-controller="Quiz" asp-action="Index" asp-route-from="task">
                     <span class="element-action-icon element-icon"><img src="img/additional_quiz.png" alt=""></span>
                     <span>Additional Quizzes</span>
                 </a>
-                <a class="element-action" asp-area="" asp-controller="Users" asp-action="MyInnerTide">
+                <a class="element-action" asp-area="" asp-controller="Users" asp-action="MyInnerTide" asp-route-from="task">
                     <span class="element-action-icon element-icon"><img src="img/task_stats.png" alt=""></span>
                     <span>My Inner Tide</span>
                 </a>
@@ -258,14 +258,14 @@
         <h2 class="aquarium-selector-title" id="aquariumSelectorTitle">Aquarium 1</h2>
         <button class="aquarium-selector-choose" id="aquariumSelectorChoose" type="button">Choose</button>
         <button class="aquarium-selector-close" id="aquariumSelectorClose" type="button">×</button>
-        <div class="aquarium-unlock-popup" id="aquariumUnlockPopup" role="alertdialog" hidden>
+        <div class="aquarium-unlock-popup" id="aquariumUnlockPopup" hidden>
             <div class="aquarium-unlock-popup-card">
                 <p id="aquariumUnlockMessage"></p>
                 <button id="aquariumUnlockClose" type="button">Confirm</button>
             </div>
         </div>
     </section>
-    <dialog class="task-regeneration-dialog" id="regenerateTasksDialog" aria-labelledby="regenerateTasksHeading">
+    <dialog class="task-regeneration-dialog" id="regenerateTasksDialog">
         <h2 id="regenerateTasksHeading">Refresh tasks</h2>
         <p>Choose which task list to refresh. Free refreshes reset after one day, seven days, or one month.</p>
         <div class="task-regeneration-options">
@@ -282,7 +282,7 @@
                 <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span> coins</span>
             </button>
         </div>
-        <p id="regenerateTasksStatus" class="task-regeneration-status" role="status" hidden></p>
+        <p id="regenerateTasksStatus" class="task-regeneration-status" hidden></p>
         <button type="button" class="task-regeneration-cancel" id="regenerateTasksCancel">Cancel</button>
     </dialog>
 </body>

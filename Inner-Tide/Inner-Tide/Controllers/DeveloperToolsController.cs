@@ -80,6 +80,86 @@ namespace Inner_Tide.Controllers {
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetAdditionalQuizQuestions() {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var setupQuizId = await _context.Quizzes
+                .Where(quiz => quiz.QuizTitle == Quiz.SetupQuizTitle)
+                .Select(quiz => (int?)quiz.QuizId)
+                .SingleOrDefaultAsync();
+            if (!setupQuizId.HasValue) {
+                return Conflict("The setup quiz is not configured.");
+            }
+
+            var additionalQuizQuestions = await _context.QuizQuestions
+                .Where(question => question.UserId == user.Id && question.QuizId != setupQuizId.Value)
+                .ToListAsync();
+            var setupAnswers = await _context.QuizQuestions
+                .AsNoTracking()
+                .Where(question => question.UserId == user.Id &&
+                    question.QuizId == setupQuizId.Value &&
+                    question.AnswerValue > 0)
+                .Include(question => question.Question)
+                .ToListAsync();
+            var categoryValues = await _context.UserCategoryValues
+                .SingleOrDefaultAsync(values => values.UserId == user.Id);
+            if (categoryValues == null) {
+                categoryValues = new UserCategoryValues { UserId = user.Id };
+                _context.UserCategoryValues.Add(categoryValues);
+            }
+
+            var categories = new[] {
+                "Sleep", "Hydration", "Fitness", "Learning", "Organization",
+                "Mood", "Nutrition", "Social", "Productivity", "Finance",
+                "Exploration", "Habit", "Hobby", "Wellness", "Creativity"
+            };
+            foreach (var category in categories) {
+                var answers = setupAnswers
+                    .Where(answer => answer.Question != null &&
+                        string.Equals(answer.Question.CategoryTag.Trim(), category, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                var percentage = answers.Count == 0
+                    ? 0
+                    : (int)Math.Round(
+                        answers.Sum(answer => answer.AnswerValue) * 100d / (5 * answers.Count),
+                        MidpointRounding.AwayFromZero);
+                SetCategoryPercentage(categoryValues, category, percentage);
+            }
+
+            _context.QuizQuestions.RemoveRange(additionalQuizQuestions);
+            await _context.SaveChangesAsync();
+            return Ok(new { removed = additionalQuizQuestions.Count });
+        }
+
+        private static void SetCategoryPercentage(UserCategoryValues values, string category, int percentage) {
+            switch (category) {
+                case "Sleep": values.Sleep = percentage; break;
+                case "Hydration": values.Hydration = percentage; break;
+                case "Fitness": values.Fitness = percentage; break;
+                case "Learning": values.Learning = percentage; break;
+                case "Organization": values.Organization = percentage; break;
+                case "Mood": values.Mood = percentage; break;
+                case "Nutrition": values.Nutrition = percentage; break;
+                case "Social": values.Social = percentage; break;
+                case "Productivity": values.Productivity = percentage; break;
+                case "Finance": values.Finance = percentage; break;
+                case "Exploration": values.Exploration = percentage; break;
+                case "Habit": values.Habit = percentage; break;
+                case "Hobby": values.Hobby = percentage; break;
+                case "Wellness": values.Wellness = percentage; break;
+                case "Creativity": values.Creativity = percentage; break;
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SetCoins([FromBody] SetCoinsRequest request) {
             if (!IsDeveloperEnvironment()) {
                 return NotFound();

@@ -182,6 +182,18 @@ namespace Inner_TideMVCTest {
                 Times.Once);
         }
 
+        [TestMethod]
+        public async System.Threading.Tasks.Task MyInnerTideReturnsToItsOriginatingMenu() {
+            _context.UserCategoryValues.Add(new UserCategoryValues { UserId = "1" });
+            await _context.SaveChangesAsync();
+
+            var quizResult = (ViewResult)await controller.MyInnerTide("quiz");
+            Assert.AreEqual(true, quizResult.ViewData["InnerTideReturnToQuiz"]);
+
+            var taskResult = (ViewResult)await controller.MyInnerTide("task");
+            Assert.AreEqual(false, taskResult.ViewData["InnerTideReturnToQuiz"]);
+        }
+
         #endregion
 
         #region "Register"

@@ -1,30 +1,55 @@
 @model Inner_Tide.ViewModels.SetupQuizResultsViewModel
 
 @{
-    ViewData["Title"] = "Your Setup Results";
+    var isMyInnerTide = ViewData["IsMyInnerTidePage"] is true;
+    var returnToQuiz = ViewData["InnerTideReturnToQuiz"] is true;
+    var returnController = returnToQuiz ? "Quiz" : "Home";
+    ViewData["Title"] = isMyInnerTide ? "My Inner Tide" : "Your Setup Results";
     ViewData["PageStylesheets"] = new[] { "quiz-question.css" };
     ViewData["PageScripts"] = new[] { "setup-results.js" };
 }
 
 <main class="setup-results-page">
     <section class="setup-results-card">
-        <a class="setup-results-close" asp-controller="Home" asp-action="Index" title="Return to tasks">
+        <a class="setup-results-close" asp-controller="@returnController" asp-action="Index" title="Return to @(returnToQuiz ? "quizzes" : "tasks")">
             <img src="~/img/close_icon.png" alt="">
         </a>
-        <h1>Your Inner Tide</h1>
+        <h1>@(isMyInnerTide ? "My Inner Tide" : "Your Inner Tide")</h1>
         <br>
         <div class="setup-results-category-scroll">
             <div class="setup-results-categories">
                 @foreach (var category in Model.Categories) {
+                    var isChangedCategory = Model.ChangedCategory == category.Name && Model.PreviousCategoryPercentage.HasValue;
+                    var previousPercentage = Model.PreviousCategoryPercentage ?? 0;
+                    var change = category.Percentage - previousPercentage;
                     <div class="setup-results-category">
                         <div class="setup-results-category-heading">
                             <label for="category-progress-@category.Name">@category.Name</label>
-                            <span class="setup-results-percent">@category.Percentage%</span>
+                            @if (isChangedCategory) {
+                                <span class="setup-results-score-change @(change > 0 ? "increased" : change < 0 ? "decreased" : "unchanged")">
+                                    <span class="setup-results-previous-percent">@previousPercentage%</span>
+                                    <span>→</span>
+                                    <span class="setup-results-percent">@category.Percentage%</span>
+                                    @if (change != 0) {
+                                        <strong>@(change > 0 ? "+" : "")@change%</strong>
+                                    }
+                                </span>
+                            } else {
+                                <span class="setup-results-percent">@category.Percentage%</span>
+                            }
                         </div>
-                        <progress class="setup-results-progress" id="category-progress-@category.Name" value="0" max="100" data-target-value="@category.Percentage">@category.Percentage%</progress>
+                        <div class="setup-results-progress" id="category-progress-@category.Name" data-target-value="@category.Percentage" data-has-change="@isChangedCategory.ToString().ToLowerInvariant()" data-previous-value="@previousPercentage">
+                            <span class="setup-results-progress-fill"></span>
+                            @if (isChangedCategory && previousPercentage != category.Percentage) {
+                                <span class="setup-results-progress-change @(category.Percentage > previousPercentage ? "increased" : "decreased")"></span>
+                            }
+                        </div>
                     </div>
                 }
             </div>
         </div>
+        @if (isMyInnerTide) {
+            <a class="setup-results-quizzes-button" asp-controller="@returnController" asp-action="Index">Back</a>
+        }
     </section>
 </main>

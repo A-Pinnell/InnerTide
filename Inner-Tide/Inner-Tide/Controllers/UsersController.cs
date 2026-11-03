@@ -403,7 +403,7 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> MyInnerTide() {
+        public async Task<IActionResult> MyInnerTide(string? from = null) {
             if (User.Identity?.IsAuthenticated != true) {
                 return RedirectToAction(nameof(Index));
             }
@@ -419,6 +419,12 @@ namespace Inner_Tide.Controllers {
             if (values == null) {
                 return NotFound("Complete the setup quiz before viewing your Inner Tide results.");
             }
+            ViewData["IsMyInnerTidePage"] = true;
+            ViewData["InnerTideReturnToQuiz"] = string.Equals(from, "quiz", StringComparison.OrdinalIgnoreCase);
+            var changedCategory = TempData["InnerTideChangedCategory"] as string;
+            var previousPercentage = TempData["InnerTidePreviousCategoryPercentage"] is int previous
+                ? previous
+                : (int?)null;
 
             var categories = new List<SetupQuizCategoryProgress> {
                 new() { Name = "Sleep", Percentage = values.Sleep },
@@ -441,7 +447,9 @@ namespace Inner_Tide.Controllers {
             return View("SetupQuizResults", new SetupQuizResultsViewModel {
                 Categories = categories,
                 StrongestCategory = categories.OrderByDescending(category => category.Percentage).First().Name,
-                FocusCategory = categories.OrderBy(category => category.Percentage).First().Name
+                FocusCategory = categories.OrderBy(category => category.Percentage).First().Name,
+                ChangedCategory = changedCategory,
+                PreviousCategoryPercentage = previousPercentage
             });
         }
 

@@ -692,6 +692,24 @@ if (document.body.classList.contains("task-menu-page") && ["aquarium", "quiz"].i
     }
 }
 
+const taskQuizLink = document.querySelector(".task-quiz-link");
+taskQuizLink?.addEventListener("click", event => {
+    if (event.defaultPrevented || event.button !== 0 ||
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    event.preventDefault();
+    const destination = new URL(taskQuizLink.href);
+    destination.searchParams.set("from", "task");
+    sessionStorage.setItem("innerTide.taskToQuizTransition", "true");
+    document.documentElement.classList.add("task-quiz-transition-exiting");
+    document.body.classList.add("task-quiz-transition-exiting");
+
+    window.setTimeout(
+        () => window.location.assign(destination.href),
+        isReducedMotionEnabled() ? 180 : 1500
+    );
+});
+
 let closeActiveAquariumMenu = null;
 
 if (["aquarium", "quiz"].includes(new URLSearchParams(window.location.search).get("from"))) {

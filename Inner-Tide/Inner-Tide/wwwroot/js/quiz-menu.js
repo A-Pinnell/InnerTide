@@ -16,6 +16,67 @@ document.querySelectorAll(".quiz-progress[data-progress]").forEach(progress => {
 });
 
 if (document.body.classList.contains("quiz-menu-page")) {
+    if (sessionStorage.getItem("innerTide.taskToQuizTransition") === "true") {
+        sessionStorage.removeItem("innerTide.taskToQuizTransition");
+        const revealQuizMenu = () => {
+            document.documentElement.classList.remove("task-quiz-transition-pending");
+            document.documentElement.classList.add("task-quiz-transition-revealing");
+            window.setTimeout(
+                () => document.documentElement.classList.remove("task-quiz-transition-revealing"),
+                1100
+            );
+        };
+
+        if (document.documentElement.classList.contains("page-assets-loaded")) {
+            revealQuizMenu();
+        } else {
+            window.addEventListener("page-assets-loaded", revealQuizMenu, { once: true });
+        }
+    }
+
+    const categoryViewport = document.querySelector(".quiz-card-viewport");
+    const multiCategoryMessage = document.querySelector("#multiCategoryEmpty");
+    const availableQuizCount = document.querySelector("#quizAvailableCount");
+    const categoryButtons = Array.from(document.querySelectorAll("[data-quiz-category]"));
+    if (!categoryViewport || !multiCategoryMessage || !availableQuizCount || categoryButtons.length !== 2) {
+        throw new Error("The quiz menu requires its category controls and quiz viewport.");
+    }
+
+    categoryButtons.forEach(button => {
+        button.addEventListener("click", async () => {
+            const isMultiCategory = button.dataset.quizCategory === "multi";
+            if (categoryViewport.classList.contains("is-multi-category") === isMultiCategory ||
+                categoryViewport.classList.contains("is-switching-category")) return;
+
+            categoryButtons.forEach(categoryButton => { categoryButton.disabled = true; });
+            categoryViewport.classList.add("is-switching-category");
+            await new Promise(resolve => window.setTimeout(resolve, 180));
+            categoryViewport.classList.toggle("is-multi-category", isMultiCategory);
+            multiCategoryMessage.hidden = !isMultiCategory;
+            availableQuizCount.textContent = isMultiCategory
+                ? "0"
+                : String(document.querySelectorAll('.quiz-card[data-completed="false"]').length);
+            categoryButtons.forEach(categoryButton => {
+                const isSelected = categoryButton === button;
+                categoryButton.classList.toggle("is-selected", isSelected);
+            });
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(() => {
+                    categoryViewport.classList.remove("is-switching-category");
+                    categoryButtons.forEach(categoryButton => { categoryButton.disabled = false; });
+                });
+            });
+        });
+    });
+
+    const playerCard = document.querySelector(".quiz-menu-page .player-card");
+    const profileToggle = playerCard?.querySelector(".avatar");
+    profileToggle?.addEventListener("click", () => {
+        const isOpen = playerCard.classList.toggle("profile-open");
+        playerCard.classList.toggle("profile-collapsed", !isOpen);
+        playElementsTransitionSound(isOpen ? "in" : "out");
+    });
+
     function createQuizCardTransition(card, bounds) {
         const transitionCard = card.cloneNode(true);
         const cardStyle = getComputedStyle(card);
@@ -74,6 +135,10 @@ if (document.body.classList.contains("quiz-menu-page")) {
     document.querySelectorAll(".quiz-card[href]").forEach(card => {
         card.addEventListener("click", event => {
             if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (card.dataset.completed === "true") {
+                event.preventDefault();
+                return;
+            }
             event.preventDefault();
             playElementsTransitionSound("in");
 
@@ -123,4 +188,3 @@ if (document.body.classList.contains("quiz-menu-page")) {
         });
     });
 }
-

@@ -1,7 +1,8 @@
 ﻿@using Inner_Tide.Models
+@using Inner_Tide.ViewModels
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<User> UserManager
-@model List<Quiz>
+@model QuizMenuViewModel
 
 @{
     ViewData["Title"] = "Quiz Menu";
@@ -38,6 +39,7 @@
         <nav class="main-nav">
             <a class="nav-link nav-task" asp-area="" asp-controller="Home" asp-action="Index"><span class="nav-label">Task Menu</span><span class="nav-arrow"></span></a>
             <a class="nav-link nav-aquarium" asp-area="" asp-controller="Aquarium" asp-action="Index"><span class="nav-label">Aquarium</span><span class="nav-arrow"></span></a>
+            <a class="nav-link nav-inner-tide" asp-area="" asp-controller="Users" asp-action="MyInnerTide" asp-route-from="quiz"><span class="nav-label">My Inner Tide</span><span class="nav-arrow"></span></a>
         </nav>
 
         <header class="player-card profile-collapsed">
@@ -49,11 +51,11 @@
                 <div class="xp-track"><span></span></div>
             </div>
             <button class="avatar" type="button">
-                <img src="../img/placeholder.webp" alt="">
+                <img src="~/img/placeholder.webp" alt="">
                 <span class="player-level">DEMO ACCOUNT</span>
             </button>
             <div class="coin-counter" id="coinCounterTask">
-                <img src="../img/coin.png" alt="">
+                <img src="~/img/coin.png" alt="">
                 <span class="coin-total">
                     <span id="coin-count"> @coinCount </span>
                     <small>COINS</small>
@@ -62,19 +64,51 @@
         </header>
 
         <section class="quiz-carousel">
-            <div class="quiz-track" id="quizTrack">
-                @for (var index = 0; index < Model.Count; index++) {
-                    var quiz = Model[index];
-                    <a class="quiz-card @cardColors[index % cardColors.Length]" asp-area="" asp-controller="Quiz" asp-action="Question" asp-route-id="@quiz.QuizId">
-                        <span class="card-watermark">@((index + 1).ToString("00"))</span>
-                        <h1>@quiz.QuizTitle</h1>
-                        <div class="quiz-meta">
-                            <span class="time-meta">⏳<span class="time-unit">m</span></span>
-                            <span class="reward-meta"><img src="../img/coin.png" alt="">@quiz.CoinRewards</span>
-                        </div>
-                        <div class="quiz-progress" data-progress="0"><span></span><strong>0%</strong></div>
-                    </a>
-                }
+            <p class="quiz-availability"><strong id="quizAvailableCount">@Model.Quizzes.Count(quiz => !quiz.IsCompleted)</strong> quizzes available</p>
+            <div class="quiz-card-viewport">
+                <div class="quiz-track" id="quizTrack">
+                    @for (var index = 0; index < Model.Quizzes.Count; index++) {
+                        var quizCard = Model.Quizzes[index];
+                        var quiz = quizCard.Quiz;
+                        <a class="quiz-card @cardColors[index % cardColors.Length] @(quizCard.IsCompleted ? "is-completed" : "")"
+                           asp-area="" asp-controller="Quiz" asp-action="Question" asp-route-id="@quiz.QuizId"
+                           tabindex="@(quizCard.IsCompleted ? "-1" : "0")"
+                           data-completed="@quizCard.IsCompleted.ToString().ToLowerInvariant()">
+                            <span class="card-watermark">@((index + 1).ToString("00"))</span>
+                            @if (quizCard.IsCompleted) {
+                                <span class="quiz-lock-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12a2 2 0 0 1 2 2v8H4v-8a2 2 0 0 1 2-2Zm6 4v3" />
+                                    </svg>
+                                </span>
+                            }
+                            <div class="quiz-title-row">
+                                <h1>@quiz.QuizTitle</h1>
+                                @if (quizCard.IsPriority) {
+                                    <img class="quiz-priority-icon" src="~/img/priority-task.png" alt="Priority quiz">
+                                }
+                            </div>
+                            <div class="quiz-meta">
+                                <span class="time-meta">
+                                    <span>📋</span>
+                                    <span class="quiz-question-count">@quizCard.QuestionCount</span>
+                                </span>
+                                <span class="reward-meta">
+                                    <img src="~/img/coin.png" alt=""><span class="quiz-reward-value">@quiz.CoinRewards</span>
+                                    @if (quizCard.IsPriority) {
+                                        <span class="priority-multiplier">x2</span>
+                                    }
+                                </span>
+                            </div>
+                            <div class="quiz-progress" data-progress="@quizCard.ProgressPercentage"><span></span><strong>@(quizCard.ProgressPercentage)%</strong></div>
+                        </a>
+                    }
+                </div>
+                <p class="quiz-multi-empty" id="multiCategoryEmpty" hidden>No multi-category quizzes available yet.</p>
+            </div>
+            <div class="quiz-category-controls">
+                <button class="is-selected" type="button" data-quiz-category="single">Single Category</button>
+                <button type="button" data-quiz-category="multi">Multi-Category</button>
             </div>
         </section>
 
@@ -83,7 +117,7 @@
         </h1>
 
         <button class="help-button" id="helpButton" type="button">
-            <img src="../img/help_icon.png" alt="">
+            <img src="~/img/help_icon.png" alt="">
         </button>
         <svg focusable="false" width="0" height="0">
             <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">
@@ -94,5 +128,6 @@
             </filter>
         </svg>
         @await Html.PartialAsync("_HelpPopup")
+        @await Html.PartialAsync("_DeveloperTools")
     </main>
 </body>
