@@ -582,7 +582,8 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
 
 initializeAquariumMenu(storeBtn, storePanel, storeBackdrop, "store");
 
-if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && editorMoreItems && editorLayerNumber && editorForegroundLabel && editorForegroundNumber && editorInventoryPanel && editorInventoryBackdrop) {
+const editorInventoryHeading = document.querySelector("#editorInventoryHeading");
+if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && editorMoreItems && editorLayerNumber && editorForegroundLabel && editorForegroundNumber && editorInventoryPanel && editorInventoryBackdrop && editorInventoryHeading) {
     let editorOpen = false;
     let editorInventoryOpen = false;
     let selectedEditorLayer = 0;
@@ -643,10 +644,12 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
         if (open) {
             if (closeActiveAquariumMenu) closeActiveAquariumMenu();
             void Promise.all([renderInventoryFish(), renderInventoryItems()]);
+            editorInventoryHeading.hidden = false;
             editorInventoryPanel.hidden = false;
             editorInventoryBackdrop.hidden = false;
             void editorInventoryPanel.offsetWidth;
             editorInventoryPanel.classList.add("is-open");
+            editorInventoryHeading.classList.add("is-open");
             editorInventoryBackdrop.classList.add("is-open");
             closeActiveAquariumMenu = closeEditorInventoryMenu;
             editorInventoryPanel.querySelector(".store-tab.active")?.focus();
@@ -657,9 +660,11 @@ if (editorBtn && editorToolbar && editorCloseButton && editorSwitchLayer && edit
             closeActiveAquariumMenu = null;
         }
         editorInventoryPanel.classList.remove("is-open");
+        editorInventoryHeading.classList.remove("is-open");
         editorInventoryBackdrop.classList.remove("is-open");
         window.setTimeout(() => {
             if (!editorInventoryOpen) {
+                editorInventoryHeading.hidden = true;
                 editorInventoryPanel.hidden = true;
                 editorInventoryBackdrop.hidden = true;
             }
