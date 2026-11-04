@@ -529,7 +529,7 @@ namespace Inner_Tide.Controllers {
                 || request.UserItemId <= 0
                 || request.AquariumId <= 0
                 || request.SandLayer < 0
-                || request.SandLayer > 2
+                || request.SandLayer > 5
                 || request.GridX < 0
                 || request.GridY < 0) {
                 return BadRequest("The object placement is invalid.");
@@ -577,7 +577,7 @@ namespace Inner_Tide.Controllers {
                 || itemHeight > AquariumObjectGridRows
                 || request.GridX + itemWidth > AquariumObjectGridColumns
                 || request.GridY + itemHeight > AquariumObjectGridRows) {
-                return BadRequest("The item does not fit in the selected sand grid.");
+                return BadRequest("The item does not fit in the selected layer grid.");
             }
 
             try {

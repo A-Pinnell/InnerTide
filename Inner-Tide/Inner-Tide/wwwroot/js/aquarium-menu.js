@@ -735,13 +735,13 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
     let editorOpen = false;
     let editorInventoryOpen = false;
     const editorLayers = [
-        { id: "water-1", name: "Back Water", type: "water", storageKey: "Water Level", sandLayer: null },
-        { id: "water-2", name: "Center Water", type: "water", storageKey: "Water Level", sandLayer: null },
-        { id: "water-3", name: "Top Water", type: "water", storageKey: "Water Level", sandLayer: null },
-        { id: "fish", name: "Fish", type: "fish", storageKey: "Water Level", sandLayer: null },
-        { id: "sand-1", name: "Back Sand", type: "sand", storageKey: "Back Sand", sandLayer: 0 },
-        { id: "sand-2", name: "Center Sand", type: "sand", storageKey: "Center Sand", sandLayer: 1 },
-        { id: "sand-3", name: "Top Sand", type: "sand", storageKey: "Top Sand", sandLayer: 2 }
+        { id: "water-1", name: "Back Water", type: "water", storageKey: "Water Level", objectLayer: 3, sandLayer: null },
+        { id: "water-2", name: "Center Water", type: "water", storageKey: "Water Level", objectLayer: 4, sandLayer: null },
+        { id: "water-3", name: "Top Water", type: "water", storageKey: "Water Level", objectLayer: 5, sandLayer: null },
+        { id: "fish", name: "Fish", type: "fish", storageKey: "Water Level", objectLayer: null, sandLayer: null },
+        { id: "sand-1", name: "Back Sand", type: "sand", storageKey: "Back Sand", objectLayer: 0, sandLayer: 0 },
+        { id: "sand-2", name: "Center Sand", type: "sand", storageKey: "Center Sand", objectLayer: 1, sandLayer: 1 },
+        { id: "sand-3", name: "Top Sand", type: "sand", storageKey: "Top Sand", objectLayer: 2, sandLayer: 2 }
     ];
     const editorLayerOptions = [...editorLayerMenu.querySelectorAll(".editor-layer-option")];
     const editorForegroundName = document.querySelector("#editorForegroundName");
@@ -756,17 +756,20 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
         document.body.dataset.editorLayerName = selectedLayer.name;
         document.body.dataset.editorLayerType = selectedLayer.type;
         document.body.dataset.editorLayerStorageKey = selectedLayer.storageKey;
+        document.body.dataset.editorObjectLayer = selectedLayer.objectLayer == null ? "" : String(selectedLayer.objectLayer);
         document.body.dataset.editorSandLayer = selectedLayer.sandLayer == null ? "" : String(selectedLayer.sandLayer);
         document.querySelectorAll(".sand-object-grid").forEach(grid => {
-            grid.classList.toggle("is-active", selectedLayer.sandLayer != null && Number(grid.dataset.sandLayer) === selectedLayer.sandLayer);
+            grid.classList.toggle("is-active", selectedLayer.objectLayer != null && Number(grid.dataset.sandLayer) === selectedLayer.objectLayer);
         });
-        document.querySelector(".sand-grid-overlay")?.classList.toggle("is-visible", selectedLayer.sandLayer != null);
+        const gridOverlay = document.querySelector(".sand-grid-overlay");
+        gridOverlay?.classList.toggle("is-visible", selectedLayer.type === "water" || selectedLayer.sandLayer != null);
+        gridOverlay?.classList.toggle("is-water-visible", selectedLayer.type === "water");
         editorLayerOptions.forEach((option, index) => {
             const isSelected = index === layer;
             option.classList.toggle("is-selected", isSelected);
         });
         setEditorInventoryCategory(
-            selectedLayer.type === "sand" ? "objects" :
+            selectedLayer.type === "sand" || selectedLayer.type === "water" ? "objects" :
                 selectedLayer.type === "fish" ? "fish" : editorInventoryCategory
         );
         renderEditorRecentShortcuts();
@@ -1179,7 +1182,7 @@ aquariumFishReady = renderAquariumFish();
 async function renderAquariumObjects() {
     const aquariumId = Number(document.body.dataset.aquariumId) || 1;
     const grids = [...document.querySelectorAll(".sand-object-grid")];
-    if (grids.length !== 3) {
+    if (grids.length !== 6) {
         throw new Error("Aquarium object grids are missing.");
     }
 
@@ -1217,7 +1220,8 @@ function createAquariumObjectElement(object, dimensions = parseItemGridSpace(obj
     placedObject.dataset.gridX = String(object.gridX);
     placedObject.dataset.gridY = String(object.gridY);
     placedObject.style.gridColumn = `${Number(object.gridX) + 1} / span ${dimensions.width}`;
-    placedObject.style.gridRow = `${Number(object.gridY) + aquariumObjectGridSandRowOffset + 1} / span ${dimensions.height}`;
+    const rowOffset = Number(object.sandLayer) >= 3 ? 0 : aquariumObjectGridSandRowOffset;
+    placedObject.style.gridRow = `${Number(object.gridY) + rowOffset + 1} / span ${dimensions.height}`;
     placedObject.style.setProperty("--object-grid-cell-width", `${100 / dimensions.width}%`);
     placedObject.style.setProperty("--object-grid-cell-height", `${100 / dimensions.height}%`);
     placedObject.title = `Move ${object.name}`;
@@ -1932,12 +1936,12 @@ async function placeSelectedInventoryFish(event) {
     }
 }
 
-function getActiveSandObjectGrid() {
-    const sandLayerValue = document.body.dataset.editorSandLayer;
-    if (sandLayerValue == null || sandLayerValue === "") return null;
-    const sandLayer = Number(sandLayerValue);
-    if (!Number.isInteger(sandLayer) || sandLayer < 0 || sandLayer > 2) return null;
-    return document.querySelector(`.sand-object-grid[data-sand-layer="${sandLayer}"]`);
+function getActiveObjectGrid() {
+    const objectLayerValue = document.body.dataset.editorObjectLayer;
+    if (objectLayerValue == null || objectLayerValue === "") return null;
+    const objectLayer = Number(objectLayerValue);
+    if (!Number.isInteger(objectLayer) || objectLayer < 0 || objectLayer > 5) return null;
+    return document.querySelector(`.sand-object-grid[data-sand-layer="${objectLayer}"]`);
 }
 
 function getObjectGridPlacement(event, grid, dimensions) {
@@ -1950,8 +1954,9 @@ function getObjectGridPlacement(event, grid, dimensions) {
     const cellWidth = rect.width / aquariumObjectGridColumns;
     const cellHeight = rect.height / aquariumObjectGridVisualRows;
     const pointerGridY = (event.clientY - rect.top) / cellHeight;
-    if (pointerGridY < aquariumObjectGridSandRowOffset) return null;
-    const pointerSandRow = Math.floor(pointerGridY) - aquariumObjectGridSandRowOffset;
+    const rowOffset = grid.dataset.gridRegion === "water" ? 0 : aquariumObjectGridSandRowOffset;
+    if (pointerGridY < rowOffset || pointerGridY >= rowOffset + aquariumObjectGridRows) return null;
+    const pointerGridRow = Math.floor(pointerGridY) - rowOffset;
 
     return {
         grid,
@@ -1961,7 +1966,7 @@ function getObjectGridPlacement(event, grid, dimensions) {
         )),
         gridY: Math.max(0, Math.min(
             aquariumObjectGridRows - dimensions.height,
-            Math.round(pointerSandRow - (dimensions.height - 1) / 2)
+            Math.round(pointerGridRow - (dimensions.height - 1) / 2)
         )),
         cellWidth,
         cellHeight,
@@ -1973,7 +1978,7 @@ function updateObjectDragPreview(event) {
     if (!selectedObjectDrag) return;
 
     const drag = selectedObjectDrag;
-    const placement = getObjectGridPlacement(event, getActiveSandObjectGrid(), drag.dimensions);
+    const placement = getObjectGridPlacement(event, getActiveObjectGrid(), drag.dimensions);
     drag.placement = placement;
     if (!placement) {
         drag.preview.style.left = `${event.clientX}px`;
@@ -1983,7 +1988,8 @@ function updateObjectDragPreview(event) {
     }
 
     drag.preview.style.left = `${placement.rect.left + placement.gridX * placement.cellWidth}px`;
-    drag.preview.style.top = `${placement.rect.top + (aquariumObjectGridSandRowOffset + placement.gridY) * placement.cellHeight}px`;
+    const rowOffset = placement.grid.dataset.gridRegion === "water" ? 0 : aquariumObjectGridSandRowOffset;
+    drag.preview.style.top = `${placement.rect.top + (rowOffset + placement.gridY) * placement.cellHeight}px`;
     drag.preview.style.transform = "none";
 }
 
@@ -2055,15 +2061,15 @@ function persistAquariumObjectReturn(payload, source) {
 function startObjectDrag(event, source, isPlaced) {
     if (!document.body.classList.contains("editor-mode")) return;
 
-    const grid = getActiveSandObjectGrid();
+    const grid = getActiveObjectGrid();
     const dimensions = parseItemGridSpace(source.dataset.gridSpace);
     const sprite = source.dataset.sprite;
     if (!grid || !dimensions || !sprite) {
-        showObjectPlacementNotice("Select a sand layer and a valid object to place it.");
+        showObjectPlacementNotice("Select a water or sand layer and a valid object to place it.");
         return;
     }
     if (dimensions.width > aquariumObjectGridColumns || dimensions.height > aquariumObjectGridRows) {
-        showObjectPlacementNotice("This object is too large for the sand grid.");
+        showObjectPlacementNotice("This object is too large for the selected layer grid.");
         return;
     }
 
@@ -2142,14 +2148,15 @@ async function finishObjectDrag(event) {
             return;
         }
 
-        const placement = getObjectGridPlacement(event, getActiveSandObjectGrid(), drag.dimensions);
+        const placement = getObjectGridPlacement(event, getActiveObjectGrid(), drag.dimensions);
         if (!placement) {
-            showObjectPlacementNotice("Objects can only be placed on the sand.");
+            showObjectPlacementNotice("Objects can only be placed in the active layer's grid.");
             return;
         }
 
         drag.preview.style.left = `${placement.rect.left + placement.gridX * placement.cellWidth}px`;
-        drag.preview.style.top = `${placement.rect.top + (aquariumObjectGridSandRowOffset + placement.gridY) * placement.cellHeight}px`;
+        const rowOffset = placement.grid.dataset.gridRegion === "water" ? 0 : aquariumObjectGridSandRowOffset;
+        drag.preview.style.top = `${placement.rect.top + (rowOffset + placement.gridY) * placement.cellHeight}px`;
         drag.preview.style.transform = "none";
         const placedObject = createAquariumObjectElement({
             userItemId,
@@ -2203,15 +2210,15 @@ function cancelObjectDrag() {
 
 document.addEventListener("pointerdown", event => {
     if (event.button !== 0 || !document.body.classList.contains("editor-mode")) return;
-    const grid = getActiveSandObjectGrid();
+    const grid = getActiveObjectGrid();
     if (!grid) return;
 
     const gridRect = grid.getBoundingClientRect();
     const cellWidth = gridRect.width / aquariumObjectGridColumns;
     const cellHeight = gridRect.height / aquariumObjectGridVisualRows;
     const pointerColumn = Math.floor((event.clientX - gridRect.left) / cellWidth);
-    const pointerRow = Math.floor((event.clientY - gridRect.top) / cellHeight)
-        - aquariumObjectGridSandRowOffset;
+    const rowOffset = grid.dataset.gridRegion === "water" ? 0 : aquariumObjectGridSandRowOffset;
+    const pointerRow = Math.floor((event.clientY - gridRect.top) / cellHeight) - rowOffset;
     if (pointerColumn < 0 || pointerColumn >= aquariumObjectGridColumns
         || pointerRow < 0 || pointerRow >= aquariumObjectGridRows) return;
 

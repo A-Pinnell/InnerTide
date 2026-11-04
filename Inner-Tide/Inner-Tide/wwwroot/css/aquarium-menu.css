@@ -101,16 +101,16 @@
 .aquarium-page.editor-mode:not([data-editor-layer-type="sand"]) #sand,
 .aquarium-page.editor-mode:not([data-editor-layer-type="sand"]) #sand-layer,
 .aquarium-page.editor-mode:not([data-editor-layer-type="sand"]) #sand2,
-.aquarium-page.editor-mode:not([data-editor-layer-type="sand"]) .sand-object-grid,
 .aquarium-page.editor-mode[data-editor-sand-layer="0"] #sand-layer,
 .aquarium-page.editor-mode[data-editor-sand-layer="0"] #sand,
-.aquarium-page.editor-mode[data-editor-sand-layer="0"] .sand-object-grid:not([data-sand-layer="0"]),
 .aquarium-page.editor-mode[data-editor-sand-layer="1"] #sand,
 .aquarium-page.editor-mode[data-editor-sand-layer="1"] #sand2,
-.aquarium-page.editor-mode[data-editor-sand-layer="1"] .sand-object-grid:not([data-sand-layer="1"]),
 .aquarium-page.editor-mode[data-editor-sand-layer="2"] #sand2,
-.aquarium-page.editor-mode[data-editor-sand-layer="2"] #sand-layer,
-.aquarium-page.editor-mode[data-editor-sand-layer="2"] .sand-object-grid:not([data-sand-layer="2"]) {
+.aquarium-page.editor-mode[data-editor-sand-layer="2"] #sand-layer {
+    filter: brightness(.42);
+}
+
+.aquarium-page.editor-mode .sand-object-grid:not(.is-active) {
     filter: brightness(.42);
 }
 
@@ -133,6 +133,18 @@
 
 .sand-object-grid[data-sand-layer="2"] {
     z-index: 7;
+}
+
+.sand-object-grid[data-sand-layer="3"] {
+    z-index: 3;
+}
+
+.sand-object-grid[data-sand-layer="4"] {
+    z-index: 4;
+}
+
+.sand-object-grid[data-sand-layer="5"] {
+    z-index: 5;
 }
 
 .sand-grid-overlay {
@@ -169,6 +181,17 @@
     opacity: .88;
     visibility: visible;
     transition-delay: 0s;
+}
+
+.aquarium-page.editor-mode .sand-grid-overlay.is-water-visible {
+    opacity: .38;
+}
+
+.aquarium-page.editor-mode .sand-grid-overlay.is-water-visible::before {
+    inset: 0 0 75%;
+    background-image: url("../img/grid.png");
+    background-size: 3.5714% 25%;
+    background-repeat: repeat;
 }
 
 .editor-placement-notice {
@@ -1637,6 +1660,10 @@ object-fit: cover;
     pointer-events: auto;
     transition: opacity .4s ease;
     visibility: visible;
+}
+
+.aquarium-page.editor-mode:not([data-editor-layer-type="fish"]) #fishContainer {
+    pointer-events: none;
 }
 
 .aquarium-page.editor-mode .aquariumFish:not(.is-dragging) {
