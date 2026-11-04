@@ -14,6 +14,7 @@ P3 - Version 2.0
 - The inventory menu will now stack multiples of the same fish/objects
 - It is now possible to download your account data from the database in the Data Settings tab contained in the options
 - It is now possible to delete your account and data from the databases in the Data Settings tab contained in the options
+- It is now possible to wipe your data without wiping your account from the databases in the Data Settings tab contained in the options
 - Sound Effects have been added to places where it wasn't prior
 - Transitions have been made smoother and improved
 - Various bug fixes

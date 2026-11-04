@@ -761,15 +761,7 @@ namespace Inner_Tide.Controllers {
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
             var userId = user.Id;
-            _context.UserTasks.RemoveRange(await _context.UserTasks.Where(task => task.UserId == userId).ToListAsync());
-            _context.QuizQuestions.RemoveRange(await _context.QuizQuestions.Where(answer => answer.UserId == userId).ToListAsync());
-            _context.Journals.RemoveRange(await _context.Journals.Where(journal => journal.UserId == userId).ToListAsync());
-            _context.UserItems.RemoveRange(await _context.UserItems.Where(item => item.UserId == userId).ToListAsync());
-            _context.UserFish.RemoveRange(await _context.UserFish.Where(fish => fish.UserId == userId).ToListAsync());
-            _context.UserCategoryValues.RemoveRange(
-                await _context.UserCategoryValues.Where(values => values.UserId == userId).ToListAsync());
-            _context.Aquariums.RemoveRange(await _context.Aquariums.Where(aquarium => aquarium.UserId == userId).ToListAsync());
-            await _context.SaveChangesAsync();
+            await ClearUserAppDataAsync(userId);
 
             var deleteResult = await userManager.DeleteAsync(user);
             if (!deleteResult.Succeeded) {
@@ -779,6 +771,74 @@ namespace Inner_Tide.Controllers {
             await transaction.CommitAsync();
             await signInManager.SignOutAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearUserData([FromForm] string currentPassword) {
+            if (User.Identity?.IsAuthenticated != true) {
+                return Unauthorized();
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrWhiteSpace(currentPassword) ||
+                !await userManager.CheckPasswordAsync(user, currentPassword)) {
+                return AccountSettingsFailure("Your current password is required to clear your saved app data.");
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            await ClearUserAppDataAsync(user.Id);
+
+            user.AccountLevel = 1;
+            user.XPForNextLevel = 100;
+            user.CoinCount = 0;
+            user.DailyTaskRegenerationCount = 0;
+            user.WeeklyTaskRegenerationCount = 0;
+            user.MonthlyTaskRegenerationCount = 0;
+            user.DailyLastFreeTaskRefreshAt = null;
+            user.WeeklyLastFreeTaskRefreshAt = null;
+            user.MonthlyLastFreeTaskRefreshAt = null;
+            user.FirstTimeLogin = false;
+
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded) {
+                return AccountSettingsFailure(string.Join(" ", updateResult.Errors.Select(error => error.Description)));
+            }
+
+            await transaction.CommitAsync();
+            TempData["ClearedUserData"] = true;
+            return RedirectToAction(nameof(Welcome));
+        }
+
+        private async System.Threading.Tasks.Task ClearUserAppDataAsync(string userId) {
+            var aquariums = await _context.Aquariums.Where(aquarium => aquarium.UserId == userId).ToListAsync();
+            var fish = await _context.UserFish.Where(item => item.UserId == userId).ToListAsync();
+            var items = await _context.UserItems.Where(item => item.UserId == userId).ToListAsync();
+
+            foreach (var aquarium in aquariums) {
+                aquarium.FirstPlacedUserFishId = null;
+            }
+            foreach (var fishItem in fish) {
+                fishItem.AquariumId = null;
+            }
+            foreach (var userItem in items) {
+                userItem.AquariumId = null;
+            }
+            await _context.SaveChangesAsync();
+
+            _context.UserTasks.RemoveRange(await _context.UserTasks.Where(task => task.UserId == userId).ToListAsync());
+            _context.QuizQuestions.RemoveRange(await _context.QuizQuestions.Where(answer => answer.UserId == userId).ToListAsync());
+            _context.Journals.RemoveRange(await _context.Journals.Where(journal => journal.UserId == userId).ToListAsync());
+            _context.UserCategoryValues.RemoveRange(
+                await _context.UserCategoryValues.Where(values => values.UserId == userId).ToListAsync());
+            _context.UserItems.RemoveRange(items);
+            _context.Aquariums.RemoveRange(aquariums);
+            _context.UserFish.RemoveRange(fish);
+            await _context.SaveChangesAsync();
         }
 
         private IActionResult AccountSettingsFailure(string message) {

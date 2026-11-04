@@ -330,6 +330,11 @@ if (gameShell) {
             event.preventDefault();
         }
     });
+    document.querySelector("#clearUserDataForm")?.addEventListener("submit", event => {
+        if (!window.confirm("This permanently clears your aquariums, quiz results, tasks, journals, coins, and progress. Your account will remain, and you will start over. Continue?")) {
+            event.preventDefault();
+        }
+    });
     if (document.body.dataset.accountSettingsMessage === "true") {
         setInfoPanel("options");
     }

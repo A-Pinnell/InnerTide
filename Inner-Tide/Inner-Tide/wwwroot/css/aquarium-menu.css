@@ -1418,6 +1418,28 @@ object-fit: cover;
     transform: translateX(0);
 }
 
+.aquarium-page.editor-mode[data-editor-layer-type="sand"] .editor-toolbar.is-grid-covered-menu-hidden {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    pointer-events: none;
+    transform: translateX(calc(-100% + 76px));
+}
+
+.aquarium-page.editor-mode[data-editor-layer-type="sand"] .editor-toolbar.is-grid-covered-menu-hidden .editor-layer-list {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.aquarium-page.editor-mode[data-editor-layer-type="sand"] .editor-toolbar.is-grid-covered-menu-hidden .editor-close-button {
+    top: 5px;
+    bottom: auto;
+    right: 7px;
+    left: auto;
+    pointer-events: auto;
+}
+
 .editor-toolbar.is-object-dragging {
     opacity: 0;
     pointer-events: none;
@@ -1533,6 +1555,12 @@ object-fit: cover;
     transform: translate(0, -50%);
 }
 
+.aquarium-page.editor-inventory-open .editor-layer-menu {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(120%, -50%);
+}
+
 .editor-layer-option {
     display: grid;
     width: min(100%, 68px);
@@ -1644,7 +1672,7 @@ object-fit: cover;
 
 .editor-close-button {
     position: absolute;
-    bottom: 5px;
+    top: 5px;
     left: 7px;
     display: grid;
     width: 65px;
@@ -1835,6 +1863,36 @@ object-fit: cover;
     transform: translateX(calc(100% + 4vw));
     transition: transform .65s cubic-bezier(.22, 1, .36, 1), filter .25s ease, visibility 0s linear .65s;
     visibility: hidden;
+}
+
+.aquarium-page.editor-mode:not(.aquarium-hide-mode) .aquarium-hide-button {
+    z-index: 46;
+    top: 2%;
+    right: 2%;
+    bottom: auto;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    visibility: visible;
+}
+
+.aquarium-page.editor-isolate-layer .sand-object-grid:not(.is-isolation-visible),
+.aquarium-page.editor-isolate-layer #sand,
+.aquarium-page.editor-isolate-layer #sand-layer,
+.aquarium-page.editor-isolate-layer #sand2,
+.aquarium-page.editor-isolate-layer #fishContainer {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.aquarium-page.editor-isolate-layer .sand-object-grid.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #sand.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #sand-layer.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #sand2.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #fishContainer.is-isolation-visible {
+    opacity: 1;
+    visibility: visible;
 }
 
 html.reduced-motion .aquarium-page .aquarium-hide-button {

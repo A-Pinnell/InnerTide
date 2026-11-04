@@ -3,6 +3,7 @@
     ViewData["PageStylesheets"] = new[] { "users-menu.css" };
     ViewData["PageScripts"] = new[] { "users-menu.js" };
     var userName = ViewData["UserName"] as string ?? "there";
+    var dataWasCleared = TempData["ClearedUserData"] is true;
 }
 
 <body class="users-page onboarding-page">
@@ -11,6 +12,9 @@
         <section class="onboarding-content">
             <div class="onboarding-screen" id="welcomeScreen">
                 <h1>Welcome to Inner Tide, @userName!</h1>
+                @if (dataWasCleared) {
+                    <p class="onboarding-description">Your saved app data has been cleared. Your account is unchanged. Let's start fresh.</p>
+                }
                 <p class="onboarding-description">
                     Inner Tide helps you build a calmer, more mindful routine with small daily tasks and reflection.
                     As you make progress, earn coins, collect fish, and create an aquarium that feels like yours.

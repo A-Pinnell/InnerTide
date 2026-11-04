@@ -38,6 +38,7 @@
       data-monthly-regeneration-count="@monthlyTaskRegenerationCount" data-monthly-last-free-refresh-at="@monthlyLastFreeTaskRefreshAt"
       data-account-settings-message="@(accountSettingsMessage != null ? "true" : "false")">
     <main class="game-shell">
+        <div class="task-regeneration-backdrop" id="regenerateTasksBackdrop" hidden></div>
         <header class="player-card profile-collapsed">
             <div class="profile-details" id="profile-details">
                 <div class="player-copy">
@@ -166,8 +167,17 @@
             <details class="options-dropdown data-settings">
                 <summary>Data Settings</summary>
                 <div class="options-dropdown-content">
-                    <p>Download a copy of the information currently stored for your account, or permanently delete your account and its data.</p>
+                    <p>Download your saved data, clear your app progress while keeping your account, or permanently delete your account.</p>
                     <a class="options-back data-export-button" asp-controller="Users" asp-action="ExportUserData">Download My Data</a>
+                    <form id="clearUserDataForm" asp-controller="Users" asp-action="ClearUserData" method="post">
+                        @Html.AntiForgeryToken()
+                        <p>Clears aquariums, owned fish and objects, quiz results, tasks, journals, coins, and progress. Your account and sign-in details will remain.</p>
+                        <label>
+                            <span>Current Password (required to clear data)</span>
+                            <input type="password" name="currentPassword" autocomplete="current-password" required>
+                        </label>
+                        <button class="options-back data-reset-button" type="submit">Clear My App Data and Start Over</button>
+                    </form>
                     <form id="deleteUserDataForm" asp-controller="Users" asp-action="DeleteUserData" method="post">
                         @Html.AntiForgeryToken()
                         <label>
@@ -266,20 +276,21 @@
         </div>
     </section>
     <dialog class="task-regeneration-dialog" id="regenerateTasksDialog">
+        <div class="task-regeneration-coin-layer" id="regenerateTasksCoinLayer" aria-hidden="true"></div>
         <h2 id="regenerateTasksHeading">Refresh tasks</h2>
-        <p>Choose which task list to refresh. Free refreshes reset after one day, seven days, or one month.</p>
+        <p>Choose which task list to refresh. The coin amounts will refresh based on the selected period.</p>
         <div class="task-regeneration-options">
             <button type="button" class="task-regeneration-choice" data-regeneration-period="daily">
                 <span>Daily</span>
-                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span> coins</span>
+                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span><img src="img/coin.png" alt=""></span>
             </button>
             <button type="button" class="task-regeneration-choice" data-regeneration-period="weekly">
                 <span>Weekly</span>
-                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span> coins</span>
+                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span><img src="img/coin.png" alt=""></span>
             </button>
             <button type="button" class="task-regeneration-choice" data-regeneration-period="monthly">
                 <span>Monthly</span>
-                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span> coins</span>
+                <span class="task-regeneration-choice-cost"><span data-regeneration-cost>0</span><img src="img/coin.png" alt=""></span>
             </button>
         </div>
         <p id="regenerateTasksStatus" class="task-regeneration-status" hidden></p>

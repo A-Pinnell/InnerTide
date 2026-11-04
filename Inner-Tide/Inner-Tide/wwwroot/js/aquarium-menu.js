@@ -61,6 +61,7 @@ function clearEditorItemSlots() {
         delete slot.dataset.itemId;
         delete slot.dataset.sprite;
         delete slot.dataset.gridSpace;
+        delete slot.dataset.isFloating;
         delete slot.dataset.name;
         delete slot.dataset.species;
         delete slot.dataset.description;
@@ -141,6 +142,17 @@ function renderRecentObjectShortcut(inventoryItems) {
         console.error("Could not load the recent aquarium objects.", error);
     }
 
+    const isWaterLayer = document.body.dataset.editorLayerType === "water";
+    recentObjectList = recentObjectList.filter(recentObject => {
+        if (!recentObject || typeof recentObject !== "object") return false;
+
+        const inventoryItem = inventoryItemsCache?.find(candidate =>
+            String(candidate.itemId) === String(recentObject.itemId)
+        );
+        const isFloating = inventoryItem?.isFloating ?? recentObject.isFloating;
+        return typeof isFloating === "boolean" && isFloating === isWaterLayer;
+    });
+
     const claimedUserItemIds = new Set();
     slots.forEach((slot, index) => {
         const recentObject = recentObjectList[index];
@@ -174,6 +186,7 @@ function renderRecentObjectShortcut(inventoryItems) {
         slot.disabled = false;
         slot.setAttribute("value", String(item.userItemId));
         slot.dataset.userItemId = String(item.userItemId);
+        slot.dataset.isFloating = String(item.isFloating === true);
         slot.title = `Drag to place ${recentObject.name}`;
     });
 }
@@ -184,7 +197,7 @@ function renderEditorRecentShortcuts() {
         document.body.dataset.editorLayerType === "fish" ? "fish" :
             document.body.dataset.editorInventoryCategory || "fish";
     if (category === "objects") {
-        renderRecentObjectShortcut(inventoryItemsCache);
+        renderRecentObjectShortcut(getEditorLayerItems(inventoryItemsCache));
     } else {
         renderRecentFishShortcut(inventoryFishCache);
     }
@@ -225,7 +238,8 @@ function rememberRecentlyPlacedObject(source) {
         itemId: source.dataset.itemId,
         sprite: source.dataset.sprite,
         gridSpace: source.dataset.gridSpace,
-        name: source.dataset.name
+        name: source.dataset.name,
+        isFloating: source.dataset.isFloating === "true"
     };
     if (!recentObject.itemId || !recentObject.sprite || !recentObject.gridSpace || !recentObject.name) {
         throw new Error("Cannot remember a recently placed object because its display data is missing.");
@@ -475,39 +489,37 @@ async function renderStoreFish() {
     }
 }
 
-async function renderInventoryItems() {
+function getEditorLayerItems(items) {
+    if (!Array.isArray(items)) return [];
 
-    try {
+    const layerType = document.body.dataset.editorLayerType;
+    if (layerType !== "water" && layerType !== "sand") return items;
 
-        const res = await fetch('/Aquarium/GetUserItems');
+    const isWaterLayer = layerType === "water";
+    return items.filter(item => item.isFloating === isWaterLayer);
+}
 
-        if (!res.ok) {
-            throw new Error("Failed to load item");
-        }
+function renderEditorInventoryItems() {
+    if (!Array.isArray(inventoryItemsCache)) return;
 
-        const items = await res.json();
-        inventoryItemsCache = items;
-        renderEditorRecentShortcuts();
+    const inventoryContainer =
+        document.querySelector("#editorInventoryPanel #inventoryObjects .store-items");
+    if (!inventoryContainer) return;
 
-        const inventoryContainer =
-            document.querySelector("#editorInventoryPanel #inventoryObjects .store-items");
+    inventoryContainer.replaceChildren();
 
-        if (!inventoryContainer) return;
+    getEditorLayerItems(inventoryItemsCache).forEach(i => {
+        const item = document.createElement("div");
+        item.className = "store-item";
+        item.setAttribute("value", i.userItemId);
+        item.dataset.itemId = i.itemId;
+        item.dataset.sprite = i.sprite;
+        item.dataset.gridSpace = i.gridSpace;
+        item.dataset.name = i.name;
+        item.dataset.isFloating = String(i.isFloating === true);
+        item.classList.add("inventoryObjectGrabbable");
 
-        inventoryContainer.innerHTML = "";
-
-        items.forEach(i => {
-
-            const item = document.createElement("div");
-            item.className = "store-item";
-            item.setAttribute("value", i.userItemId);
-            item.dataset.itemId = i.itemId;
-            item.dataset.sprite = i.sprite;
-            item.dataset.gridSpace = i.gridSpace;
-            item.dataset.name = i.name;
-            item.classList.add("inventoryObjectGrabbable");
-
-            item.innerHTML = `
+        item.innerHTML = `
             <div class="store-item-image">
                 <img class="item-preview"
                      src="${i.sprite}"
@@ -520,10 +532,21 @@ async function renderInventoryItems() {
                 <p class="store-product-name">${i.name}</p>
             </div>`;
 
-            showStoreImageLoading(item);
-            inventoryContainer.appendChild(item);
-        });
+        showStoreImageLoading(item);
+        inventoryContainer.appendChild(item);
+    });
+}
 
+async function renderInventoryItems() {
+    try {
+        const res = await fetch('/Aquarium/GetUserItems');
+        if (!res.ok) {
+            throw new Error("Failed to load item");
+        }
+
+        inventoryItemsCache = await res.json();
+        renderEditorRecentShortcuts();
+        renderEditorInventoryItems();
     }
     catch (err) {
         console.error(err);
@@ -626,6 +649,16 @@ if (document.body.classList.contains("aquarium-page")) {
 
     if (hideButton && hideExitButton && hideModeTime && hideModeDate) {
         hideButton.addEventListener("click", () => {
+            if (document.body.classList.contains("editor-mode")) {
+                const isolateLayers = document.body.classList.toggle("editor-isolate-layer");
+                const label = hideButton.querySelector(".aquarium-menu-label");
+                if (label) label.textContent = isolateLayers ? "Show Other Layers" : "Hide Other Layers";
+                const icon = hideButton.querySelector(".aquarium-icon-frame img");
+                if (icon) icon.src = isolateLayers ? "../img/open_crab.png" : "../img/close_crab.png";
+                playSideNavigationSound(isolateLayers ? "right" : "left");
+                return;
+            }
+
             updateHideModeClock();
             hideModeClockInterval = window.setInterval(updateHideModeClock, 1000);
             hideExitButton.hidden = false;
@@ -768,12 +801,17 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
         { id: "sand-2", name: "Center Sand", type: "sand", storageKey: "Center Sand", objectLayer: 1, sandLayer: 1 },
         { id: "sand-3", name: "Top Sand", type: "sand", storageKey: "Top Sand", objectLayer: 2, sandLayer: 2 }
     ];
+    let activeEditorLayer = 0;
     const editorLayerOptions = [...editorLayerMenu.querySelectorAll(".editor-layer-option")];
     const editorForegroundName = document.querySelector("#editorForegroundName");
     const editorInventoryTabs = editorInventoryPanel.querySelector(".editor-inventory-tabs");
     let editorInventoryCategory = "fish";
     const closeEditorInventoryMenu = () => setEditorInventoryOpen(false, false);
     function setEditorLayer(layer) {
+        if (layer !== activeEditorLayer) {
+            playSideNavigationSound(layer > activeEditorLayer ? "right" : "left");
+            activeEditorLayer = layer;
+        }
         const selectedLayer = editorLayers[layer];
         editorForegroundNumber.textContent = String(layer + 1);
         editorForegroundName.textContent = selectedLayer.name;
@@ -785,6 +823,18 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
         document.body.dataset.editorSandLayer = selectedLayer.sandLayer == null ? "" : String(selectedLayer.sandLayer);
         document.querySelectorAll(".sand-object-grid").forEach(grid => {
             grid.classList.toggle("is-active", selectedLayer.objectLayer != null && Number(grid.dataset.sandLayer) === selectedLayer.objectLayer);
+        });
+        const selectedSandElementId = selectedLayer.sandLayer === 0 ? "sand2" :
+            selectedLayer.sandLayer === 1 ? "sand-layer" :
+                selectedLayer.sandLayer === 2 ? "sand" : null;
+        document.querySelectorAll(".sand-object-grid, #sand, #sand-layer, #sand2, #fishContainer").forEach(element => {
+            const isSelectedGrid = element.classList.contains("sand-object-grid")
+                && selectedLayer.objectLayer != null
+                && Number(element.dataset.sandLayer) === selectedLayer.objectLayer;
+            element.classList.toggle(
+                "is-isolation-visible",
+                isSelectedGrid || element.id === selectedSandElementId || (selectedLayer.type === "fish" && element.id === "fishContainer")
+            );
         });
         const gridOverlay = document.querySelector(".sand-grid-overlay");
         gridOverlay?.classList.toggle("is-visible", selectedLayer.type === "water" || selectedLayer.sandLayer != null);
@@ -798,6 +848,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
                 selectedLayer.type === "fish" ? "fish" : editorInventoryCategory
         );
         renderEditorRecentShortcuts();
+        renderEditorInventoryItems();
     }
 
     function setAquariumFishFrozen(frozen) {
@@ -824,7 +875,8 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
     function setEditorInventoryCategory(category) {
         editorInventoryCategory = category;
         document.body.dataset.editorInventoryCategory = category;
-        const requiredCategory = document.body.dataset.editorLayerType === "sand" ? "objects" :
+        const layerType = document.body.dataset.editorLayerType;
+        const requiredCategory = layerType === "sand" || layerType === "water" ? "objects" :
             document.body.dataset.editorLayerType === "fish" ? "fish" : null;
         editorInventoryTabs.hidden = requiredCategory !== null;
         editorInventoryTabs.querySelectorAll(".store-tab").forEach(tab => {
@@ -840,6 +892,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
 
     function setEditorInventoryOpen(open, restoreFocus = true) {
         editorInventoryOpen = open;
+        document.body.classList.toggle("editor-inventory-open", open);
         editorMoreItems.classList.toggle("is-open", open);
         if (open || restoreFocus) playAquariumMenuSound(open);
 
@@ -903,6 +956,12 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
             void editorLayerMenu.offsetWidth;
             editorLayerMenu.classList.add("is-visible");
             document.body.classList.add("editor-mode");
+            document.body.classList.remove("editor-isolate-layer");
+            const hideButtonLabel = document.querySelector("#aquariumHideButton .aquarium-menu-label");
+            const hideButton = document.querySelector("#aquariumHideButton");
+            if (hideButtonLabel) hideButtonLabel.textContent = "Hide Other Layers";
+            const hideButtonIcon = hideButton?.querySelector(".aquarium-icon-frame img");
+            if (hideButtonIcon) hideButtonIcon.src = "../img/close_crab.png";
             editorCloseButton.focus();
             return;
         }
@@ -921,10 +980,49 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
             }
         }, isReducedMotionEnabled() ? 180 : 380);
         if (restoreFocus) editorBtn.focus();
+        document.body.classList.remove("editor-isolate-layer");
+        const hideButtonLabel = document.querySelector("#aquariumHideButton .aquarium-menu-label");
+        const hideButton = document.querySelector("#aquariumHideButton");
+        if (hideButtonLabel) hideButtonLabel.textContent = "Hide";
+        const hideButtonIcon = hideButton?.querySelector(".aquarium-icon-frame img");
+        if (hideButtonIcon) hideButtonIcon.src = "../img/close_crab.png";
     }
 
     editorBtn.addEventListener("click", () => setEditorOpen(!editorOpen));
     editorCloseButton.addEventListener("click", () => setEditorOpen(false));
+    document.addEventListener("pointermove", event => {
+        const toolbarBounds = editorToolbar.getBoundingClientRect();
+        const activeGrid = getActiveObjectGrid();
+        const activeGridBounds = activeGrid?.getBoundingClientRect();
+        const closeButtonBounds = editorCloseButton.getBoundingClientRect();
+        const itemListBounds = editorToolbar.querySelector(".editor-layer-list")?.getBoundingClientRect();
+        const toolbarIsHidden = editorToolbar.classList.contains("is-grid-covered-menu-hidden");
+        const overItemList = !toolbarIsHidden
+            && itemListBounds != null
+            && event.clientX >= itemListBounds.left
+            && event.clientX <= itemListBounds.right
+            && event.clientY >= itemListBounds.top
+            && event.clientY <= itemListBounds.bottom;
+        const toolbarLeft = toolbarBounds.left + (toolbarIsHidden ? editorToolbar.offsetWidth - 76 : 0);
+        const toolbarRight = toolbarLeft + editorToolbar.offsetWidth;
+        const sandGridTop = activeGridBounds
+            ? activeGridBounds.top + activeGridBounds.height
+                * (aquariumObjectGridVisualRows - aquariumObjectGridRows) / aquariumObjectGridVisualRows
+            : 0;
+        const overCoveredGrid = event.pointerType === "mouse"
+            && editorOpen
+            && document.body.dataset.editorLayerType === "sand"
+            && activeGridBounds != null
+            && event.clientX >= Math.max(toolbarLeft, activeGridBounds.left)
+            && event.clientX <= Math.min(toolbarRight, activeGridBounds.right)
+            && event.clientY >= Math.max(toolbarBounds.top, sandGridTop)
+            && event.clientY <= Math.min(toolbarBounds.bottom, activeGridBounds.bottom);
+        const overCloseButton = event.clientX >= closeButtonBounds.left
+            && event.clientX <= closeButtonBounds.right
+            && event.clientY >= closeButtonBounds.top
+            && event.clientY <= closeButtonBounds.bottom;
+        editorToolbar.classList.toggle("is-grid-covered-menu-hidden", overCoveredGrid && !overCloseButton && !overItemList);
+    });
     editorLayerOptions.forEach((option, index) => {
         option.addEventListener("click", () => setEditorLayer(index));
     });
@@ -949,6 +1047,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
         }
         if (editorOpen) setEditorOpen(false);
     });
+    window.addEventListener("blur", () => editorToolbar.classList.remove("is-grid-covered-menu-hidden"));
 }
 
 if (document.body.classList.contains("aquarium-page")) {
@@ -1247,6 +1346,7 @@ function createAquariumObjectElement(object, dimensions = parseItemGridSpace(obj
     placedObject.dataset.sprite = object.sprite;
     placedObject.dataset.gridSpace = object.gridSpace;
     placedObject.dataset.name = object.name;
+    placedObject.dataset.isFloating = String(object.isFloating === true);
     placedObject.dataset.sandLayer = String(object.sandLayer);
     placedObject.dataset.gridX = String(object.gridX);
     placedObject.dataset.gridY = String(object.gridY);
@@ -1975,8 +2075,14 @@ function getActiveObjectGrid() {
     return document.querySelector(`.sand-object-grid[data-sand-layer="${objectLayer}"]`);
 }
 
-function getObjectGridPlacement(event, grid, dimensions) {
+function isObjectAllowedOnGrid(isFloating, grid) {
+    if (!(grid instanceof HTMLElement) || !grid.classList.contains("sand-object-grid")) return false;
+    return isFloating === (Number(grid.dataset.sandLayer) >= 3);
+}
+
+function getObjectGridPlacement(event, grid, dimensions, isFloating) {
     if (!grid || dimensions.height > aquariumObjectGridRows) return null;
+    if (!isObjectAllowedOnGrid(isFloating, grid)) return null;
 
     const rect = grid.getBoundingClientRect();
     if (event.clientX < rect.left || event.clientX > rect.right
@@ -2009,7 +2115,7 @@ function updateObjectDragPreview(event) {
     if (!selectedObjectDrag) return;
 
     const drag = selectedObjectDrag;
-    const placement = getObjectGridPlacement(event, getActiveObjectGrid(), drag.dimensions);
+    const placement = getObjectGridPlacement(event, getActiveObjectGrid(), drag.dimensions, drag.isFloating);
     drag.placement = placement;
     if (!placement) {
         drag.preview.style.left = `${event.clientX}px`;
@@ -2093,6 +2199,13 @@ function startObjectDrag(event, source, isPlaced) {
     if (!document.body.classList.contains("editor-mode")) return;
 
     const grid = getActiveObjectGrid();
+    const isFloating = source.dataset.isFloating === "true";
+    if (!isPlaced && !isObjectAllowedOnGrid(isFloating, grid)) {
+        showObjectPlacementNotice(isFloating
+            ? "Floating objects can only be placed in water layers."
+            : "Non-floating objects can only be placed in sand layers.");
+        return;
+    }
     const dimensions = parseItemGridSpace(source.dataset.gridSpace);
     const sprite = source.dataset.sprite;
     if (!grid || !dimensions || !sprite) {
@@ -2121,7 +2234,8 @@ function startObjectDrag(event, source, isPlaced) {
     document.body.appendChild(preview);
 
     if (isPlaced) source.classList.add("is-moving");
-    selectedObjectDrag = { source, preview, dimensions, isPlaced };
+    selectedObjectDrag = { source, preview, dimensions, isPlaced, isFloating };
+    playElementsTransitionSound("in");
     const toolbar = document.querySelector("#editorToolbar");
     toolbar?.classList.add("is-object-dragging");
     setObjectDragToolbarTarget(event);
@@ -2165,7 +2279,8 @@ async function finishObjectDrag(event) {
                 itemId: drag.source.dataset.itemId,
                 sprite: drag.source.dataset.sprite,
                 gridSpace: drag.source.dataset.gridSpace,
-                name: drag.source.dataset.name
+                name: drag.source.dataset.name,
+                isFloating: drag.isFloating
             };
             inventoryItemsCache = [
                 ...(Array.isArray(inventoryItemsCache) ? inventoryItemsCache : [])
@@ -2179,7 +2294,14 @@ async function finishObjectDrag(event) {
             return;
         }
 
-        const placement = getObjectGridPlacement(event, getActiveObjectGrid(), drag.dimensions);
+        const activeGrid = getActiveObjectGrid();
+        if (activeGrid && !isObjectAllowedOnGrid(drag.isFloating, activeGrid)) {
+            showObjectPlacementNotice(drag.isFloating
+                ? "Floating objects can only be placed in water layers."
+                : "Non-floating objects can only be placed in sand layers.");
+            return;
+        }
+        const placement = getObjectGridPlacement(event, activeGrid, drag.dimensions, drag.isFloating);
         if (!placement) {
             showObjectPlacementNotice("Objects can only be placed in the active layer's grid.");
             return;
@@ -2195,6 +2317,7 @@ async function finishObjectDrag(event) {
             sprite: drag.source.dataset.sprite,
             gridSpace: drag.source.dataset.gridSpace,
             name: drag.source.dataset.name,
+            isFloating: drag.isFloating,
             sandLayer: Number(placement.grid.dataset.sandLayer),
             gridX: placement.gridX,
             gridY: placement.gridY

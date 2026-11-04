@@ -3,6 +3,5 @@
 
 - improve css on regenerate tasks
 - improve css on aquarium menu
-- objects need a isFloating variable for water layers
 
 - (if time) stylize account settings better

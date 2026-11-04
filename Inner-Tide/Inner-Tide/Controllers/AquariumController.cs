@@ -225,7 +225,8 @@ namespace Inner_Tide.Controllers {
                             res.Name,
                             res.Description,
                             res.Price,
-                            res.GridSpace
+                            res.GridSpace,
+                            res.IsFloating
                         });
                     }
                 }//end foreach
@@ -510,6 +511,7 @@ namespace Inner_Tide.Controllers {
                         item.Sprite,
                         item.Name,
                         item.GridSpace,
+                        item.IsFloating,
                         sandLayer = placedItem.SandLayer,
                         gridX = placedItem.GridX,
                         gridY = placedItem.GridY
@@ -569,6 +571,12 @@ namespace Inner_Tide.Controllers {
                 return Problem(
                     detail: "This item has invalid placement dimensions and cannot be placed.",
                     statusCode: StatusCodes.Status422UnprocessableEntity);
+            }
+
+            if (catalogItem.IsFloating != (request.SandLayer >= 3)) {
+                return BadRequest(catalogItem.IsFloating
+                    ? "Floating objects can only be placed in water layers."
+                    : "Non-floating objects can only be placed in sand layers.");
             }
 
             if (request.GridX >= AquariumObjectGridColumns

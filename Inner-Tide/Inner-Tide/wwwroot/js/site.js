@@ -369,8 +369,11 @@ if (regenerateTasksButton) {
     const regenerateTasksStatus = document.querySelector("#regenerateTasksStatus");
     const regenerateUrl = regenerateTasksButton.dataset.regenerateUrl;
     const regenerateTasksDialog = document.querySelector("#regenerateTasksDialog");
+    const regenerateTasksCoinLayer = document.querySelector("#regenerateTasksCoinLayer");
+    const regenerateTasksBackdrop = document.querySelector("#regenerateTasksBackdrop");
     const regenerateTasksCancel = document.querySelector("#regenerateTasksCancel");
     const regenerationChoices = Array.from(document.querySelectorAll(".task-regeneration-choice"));
+    let regenerationInProgress = false;
     const taskRegenerationCounts = {
         daily: {
             count: Number.parseInt(document.body.dataset.dailyRegenerationCount, 10) || 0,
@@ -388,9 +391,21 @@ if (regenerateTasksButton) {
     const getTaskRegenerationCost = count => count <= 0 ? 0 : count >= 31 ? 2147483647 : 2 ** count;
 
     if (!regenerateTasksForm || !taskRequestVerificationToken || !regenerateUrl ||
-        !regenerateTasksStatus || !regenerateTasksDialog || !regenerateTasksCancel || regenerationChoices.length !== 3) {
+        !regenerateTasksStatus || !regenerateTasksDialog || !regenerateTasksCoinLayer || !regenerateTasksBackdrop ||
+        !regenerateTasksCancel || regenerationChoices.length !== 3) {
         throw new Error("Task regeneration requires its URL, verification token, dialog, and status message.");
     }
+
+    regenerateTasksDialog.addEventListener("close", () => {
+        regenerateTasksBackdrop.hidden = true;
+        regenerateTasksBackdrop.classList.remove("is-closing");
+    });
+
+    regenerateTasksDialog.addEventListener("cancel", event => {
+        if (regenerationInProgress) {
+            event.preventDefault();
+        }
+    });
 
     function hasFreeRefreshElapsed(lastFreeRefreshAt, period) {
         if (!lastFreeRefreshAt) {
@@ -431,18 +446,73 @@ if (regenerateTasksButton) {
         });
     }
 
-    async function regenerateTasks(period) {
+    function closeRegenerationDialogWithAnimation() {
+        if (!regenerateTasksDialog.open) {
+            return Promise.resolve();
+        }
+
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            regenerateTasksDialog.close();
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            const finishClose = event => {
+                if (event.target !== regenerateTasksDialog ||
+                    event.animationName !== "task-regeneration-exit") {
+                    return;
+                }
+
+                regenerateTasksDialog.removeEventListener("animationend", finishClose);
+                regenerateTasksDialog.classList.remove("is-closing");
+                regenerateTasksDialog.close();
+                resolve();
+            };
+
+            regenerateTasksDialog.addEventListener("animationend", finishClose);
+            regenerateTasksBackdrop.classList.add("is-closing");
+            regenerateTasksDialog.classList.add("is-closing");
+        });
+    }
+
+    async function regenerateTasks(period, choice) {
         if (gameShell.classList.contains("elements-open")) {
             setAquariumOpen(false);
         }
+        const startingCoinBalance = coinCount
+            ? Number(coinCount.textContent.trim())
+            : null;
         regenerationChoices.forEach(choice => {
             choice.disabled = true;
         });
         regenerateTasksCancel.disabled = true;
+        regenerationInProgress = true;
         regenerateTasksStatus.hidden = true;
         regenerateTasksStatus.textContent = "";
-        setTaskListLoading(true);
+        let spendAnimationPlayed = false;
+        let regenerationSucceeded = false;
         try {
+            if (startingCoinBalance !== null && !Number.isSafeInteger(startingCoinBalance)) {
+                throw new TypeError("Displayed coin balance must be a safe integer.");
+            }
+
+            const selectedCost = Number(choice.querySelector("[data-regeneration-cost]").textContent.trim());
+            if (!Number.isSafeInteger(selectedCost) || selectedCost < 0) {
+                throw new TypeError("Task refresh cost must be a non-negative safe integer.");
+            }
+
+            if (coinCount && selectedCost <= startingCoinBalance) {
+                await animateCoinSpend(
+                    selectedCost,
+                    choice,
+                    startingCoinBalance - selectedCost,
+                    regenerateTasksCoinLayer
+                );
+                spendAnimationPlayed = true;
+                await closeRegenerationDialogWithAnimation();
+                setTaskListLoading(true);
+            }
+
             const response = await fetch(regenerateUrl, {
                 method: "POST",
                 credentials: "same-origin",
@@ -459,29 +529,51 @@ if (regenerateTasksButton) {
                 throw new Error(details || `Refreshing tasks failed with status ${response.status}.`);
             }
             const result = await response.json();
+            regenerationSucceeded = true;
             taskRegenerationCounts[period].count = result.regenerationCount;
             if (result.regenerationCost === 0) {
                 taskRegenerationCounts[period].lastFreeRefreshAt = new Date().toISOString();
             }
             updateRegenerationCosts();
             if (coinCount) {
-                skipCoinChangeAnimation(result.coins);
+                if (spendAnimationPlayed) {
+                    skipCoinChangeAnimation(result.coins);
+                } else {
+                    await animateCoinSpend(
+                        result.regenerationCost,
+                        choice,
+                        result.coins,
+                        regenerateTasksCoinLayer
+                    );
+                }
             }
+            if (regenerateTasksDialog.open) {
+                await closeRegenerationDialogWithAnimation();
+            }
+            setTaskListLoading(true);
             document.querySelector(`.tab[data-period="${period}"]`)?.click();
             await getTaskData();
-            regenerateTasksDialog.close();
         } catch (error) {
             console.error("Unable to regenerate tasks.", error);
+            if (spendAnimationPlayed && !regenerationSucceeded) {
+                skipCoinChangeAnimation(startingCoinBalance);
+            }
             regenerateTasksStatus.textContent = error instanceof Error
                 ? error.message
                 : "Could not refresh your tasks. Please try again.";
             regenerateTasksStatus.hidden = false;
+            regenerateTasksDialog.classList.remove("is-closing");
+            if (!regenerateTasksDialog.open) {
+                regenerateTasksBackdrop.hidden = false;
+                regenerateTasksDialog.showModal();
+            }
         } finally {
             setTaskListLoading(false);
             regenerationChoices.forEach(choice => {
                 choice.disabled = false;
             });
             regenerateTasksCancel.disabled = false;
+            regenerationInProgress = false;
         }
     }
 
@@ -489,12 +581,13 @@ if (regenerateTasksButton) {
         updateRegenerationCosts();
         regenerateTasksStatus.hidden = true;
         regenerateTasksStatus.textContent = "";
+        regenerateTasksBackdrop.hidden = false;
         regenerateTasksDialog.showModal();
         regenerationChoices[0].focus();
     });
     regenerationChoices.forEach(choice => {
         choice.addEventListener("click", () => {
-            void regenerateTasks(choice.dataset.regenerationPeriod);
+            void regenerateTasks(choice.dataset.regenerationPeriod, choice);
         });
     });
     regenerateTasksCancel.addEventListener("click", () => {
@@ -557,15 +650,19 @@ function incrementDisplayedCoinCount() {
     pulseCoinCounter();
 }
 
-function decrementDisplayedCoinCount(shouldPulse = true) {
+function decrementDisplayedCoinCount(amount = 1, shouldPulse = true) {
     if (!coinCount) return;
+
+    if (!Number.isSafeInteger(amount) || amount < 0) {
+        throw new TypeError("Coin decrement must be a non-negative safe integer.");
+    }
 
     const displayedBalance = Number(coinCount.textContent.trim());
     if (!Number.isSafeInteger(displayedBalance)) {
         throw new TypeError("Displayed coin balance must be a safe integer.");
     }
 
-    coinCount.textContent = String(displayedBalance - 1);
+    coinCount.textContent = String(displayedBalance - amount);
     playCoinChangeSound();
     if (shouldPulse) pulseCoinCounter();
 }
@@ -665,7 +762,7 @@ function getCoinFlightKeyframes(sourceX, sourceY, targetX, targetY, startScale, 
     });
 }
 
-function animateCoinSpend(amount, destination, nextBalance) {
+function animateCoinSpend(amount, destination, nextBalance, flightContainer = document.body) {
     if (!Number.isSafeInteger(amount) || amount < 0) {
         throw new TypeError("Coin spend must be a non-negative safe integer.");
     }
@@ -695,20 +792,24 @@ function animateCoinSpend(amount, destination, nextBalance) {
     const sourceCoin = coinCounter.querySelector("img");
     const source = (sourceCoin || coinCounter).getBoundingClientRect();
     const target = destination.getBoundingClientRect();
+    const container = flightContainer.getBoundingClientRect();
     const coinSize = 70;
-    const sourceX = source.left + source.width / 2 - coinSize / 2;
-    const sourceY = source.top + source.height / 2 - coinSize / 2;
-    const targetX = target.left + target.width / 2 - coinSize / 2;
-    const targetY = target.top + target.height / 2 - coinSize / 2;
-    const flights = Array.from({ length: amount }, (_, index) => {
-        const { delay, duration } = getCoinFlightTiming(index, amount, 24, 260);
+    const sourceX = source.left + source.width / 2 - coinSize / 2 - container.left;
+    const sourceY = source.top + source.height / 2 - coinSize / 2 - container.top;
+    const targetX = target.left + target.width / 2 - coinSize / 2 - container.left;
+    const targetY = target.top + target.height / 2 - coinSize / 2 - container.top;
+    const flightCount = Math.min(amount, 12);
+    const coinsPerFlight = Math.floor(amount / flightCount);
+    const remainingCoins = amount % flightCount;
+    const flights = Array.from({ length: flightCount }, (_, index) => {
+        const { delay, duration } = getCoinFlightTiming(index, flightCount, 24, 260);
         const coin = document.createElement("img");
         coin.className = "coin-flight";
         coin.src = "img/coin.png";
         coin.alt = "";
         coin.style.left = `${sourceX}px`;
         coin.style.top = `${sourceY}px`;
-        document.body.append(coin);
+        flightContainer.append(coin);
 
         const animation = coin.animate(
             getCoinFlightKeyframes(sourceX, sourceY, targetX, targetY, .8, .45, .2),
@@ -722,7 +823,7 @@ function animateCoinSpend(amount, destination, nextBalance) {
 
         const timeout = window.setTimeout(() => {
             coinSpendTimeouts.delete(timeout);
-            decrementDisplayedCoinCount(false);
+            decrementDisplayedCoinCount(coinsPerFlight + (index < remainingCoins ? 1 : 0), false);
         }, delay);
         coinSpendTimeouts.add(timeout);
 
