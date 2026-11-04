@@ -72,6 +72,11 @@
             <div id="sand"></div>
             <div id="sand-layer"></div>
             <div id="sand2"></div>
+            <div class="sand-object-grid" id="sandObjectGridBack" data-sand-layer="0"></div>
+            <div class="sand-object-grid" id="sandObjectGridCenter" data-sand-layer="1"></div>
+            <div class="sand-object-grid" id="sandObjectGridTop" data-sand-layer="2"></div>
+            <div class="sand-grid-overlay"></div>
+            <div class="editor-placement-notice" id="editorPlacementNotice" hidden></div>
             <div class="hide-mode-clock" id="hideModeClock">
                 <time id="hideModeTime"></time>
                 <span id="hideModeDate"></span>
@@ -97,11 +102,16 @@
             <div class="menu-buttons">
                 <button class="aquariumMenuBtn" id="editorBtn" type="button">
                     <span class="aquarium-icon-frame">
-                        <img src="../img/aquarium_editor.png" alt="">
+                        <img src="../img/aquarium_inventory.png" alt="">
                     </span>
                     <span class="aquarium-menu-label">Editor</span>
                 </button>
-
+                <button class="aquariumMenuBtn" id="actionsBtn" type="button">
+                    <span class="aquarium-icon-frame">
+                        <img src="../img/aquarium_editor.png" alt="">
+                    </span>
+                    <span class="aquarium-menu-label">Actions</span>
+                </button>
             </div>
             <button class="aquariumMenuBtn aquarium-hide-button" id="aquariumHideButton" type="button">
                 <span class="aquarium-icon-frame">
@@ -111,10 +121,6 @@
             </button>
 
             <aside class="editor-toolbar" id="editorToolbar" inert hidden>
-                <button class="editor-layer-heading" id="editorSwitchLayer" type="button">
-                    <span class="editor-layer-stack"><i></i><b id="editorLayerNumber">1</b></span>
-                    <span id="editorLayerName">Water Level</span>
-                </button>
                 <div class="editor-layer-list">
                     <button class="editor-item-slot" type="button" disabled></button>
                     <button class="editor-item-slot" type="button" disabled></button>
@@ -129,7 +135,30 @@
                 <button class="editor-close-button" id="editorCloseButton" type="button"><img src="../img/close_icon.png" alt=""></button>
                 <span class="editor-return-prompt">Put Back in Inventory</span>
             </aside>
-            <div class="editor-foreground-label" id="editorForegroundLabel"><span id="editorForegroundName">Water Level</span><b id="editorForegroundNumber">1</b></div>
+            <nav class="editor-layer-menu" id="editorLayerMenu" inert hidden>
+                <button class="editor-layer-option is-selected" type="button" data-layer-index="0" title="Back water">
+                    <img src="../img/editor_waterLayer.png" alt="">
+                </button>
+                <button class="editor-layer-option" type="button" data-layer-index="1" title="Center water">
+                    <img src="../img/editor_waterLayer.png" alt="">
+                </button>
+                <button class="editor-layer-option" type="button" data-layer-index="2" title="Top water">
+                    <img src="../img/editor_waterLayer.png" alt="">
+                </button>
+                <button class="editor-layer-option editor-fish-layer-option" type="button" data-layer-index="3" title="Fish layer">
+                    <img src="../img/quiz-fish.png" alt="">
+                </button>
+                <button class="editor-layer-option" type="button" data-layer-index="4" title="Back sand layer">
+                    <img src="../img/editor_sandLayer.png" alt="">
+                </button>
+                <button class="editor-layer-option" type="button" data-layer-index="5" title="Center sand layer">
+                    <img src="../img/editor_sandLayer.png" alt="">
+                </button>
+                <button class="editor-layer-option" type="button" data-layer-index="6" title="Top sand layer">
+                    <img src="../img/editor_sandLayer.png" alt="">
+                </button>
+            </nav>
+            <div class="editor-foreground-label" id="editorForegroundLabel"><span id="editorForegroundName">Back Water</span><b id="editorForegroundNumber">1</b></div>
 
             <div class="editor-inventory-backdrop" id="editorInventoryBackdrop" hidden></div>
             <h2 class="editor-inventory-heading" id="editorInventoryHeading" hidden>Inventory</h2>

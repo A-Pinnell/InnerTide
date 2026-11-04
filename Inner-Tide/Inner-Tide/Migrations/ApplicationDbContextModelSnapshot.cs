@@ -61,6 +61,39 @@ namespace Inner_Tide.Migrations
                     b.ToTable("Aquariums");
                 });
 
+            modelBuilder.Entity("Inner_Tide.Models.AquariumItemGridCell", b =>
+                {
+                    b.Property<int>("AquariumItemGridCellId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AquariumItemGridCellId"));
+
+                    b.Property<int>("AquariumId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridX")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridY")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SandLayer")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserItemId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AquariumItemGridCellId");
+
+                    b.HasIndex("UserItemId");
+
+                    b.HasIndex("AquariumId", "SandLayer", "GridX", "GridY")
+                        .IsUnique();
+
+                    b.ToTable("AquariumItemGridCells");
+                });
+
             modelBuilder.Entity("Inner_Tide.Models.Journal", b =>
                 {
                     b.Property<int>("JournalId")
@@ -403,6 +436,15 @@ namespace Inner_Tide.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserItemId"));
 
+                    b.Property<int?>("AquariumId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GridX")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GridY")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsInAquarium")
                         .HasColumnType("bit");
 
@@ -410,11 +452,16 @@ namespace Inner_Tide.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SandLayer")
+                        .HasColumnType("int");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("UserItemId");
+
+                    b.HasIndex("AquariumId");
 
                     b.HasIndex("UserId");
 
@@ -608,6 +655,15 @@ namespace Inner_Tide.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Inner_Tide.Models.AquariumItemGridCell", b =>
+                {
+                    b.HasOne("Inner_Tide.Models.UserItem", null)
+                        .WithMany()
+                        .HasForeignKey("UserItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Inner_Tide.Models.Journal", b =>
                 {
                     b.HasOne("Inner_Tide.Models.User", "User")
@@ -671,18 +727,23 @@ namespace Inner_Tide.Migrations
 
                     b.Navigation("Aquarium");
 
-                    b.Navigation("FirstPlacedInAquariums");
-
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserItem", b =>
                 {
+                    b.HasOne("Inner_Tide.Models.Aquarium", "Aquarium")
+                        .WithMany()
+                        .HasForeignKey("AquariumId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Inner_Tide.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Aquarium");
 
                     b.Navigation("User");
                 });

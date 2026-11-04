@@ -14,5 +14,11 @@ namespace Inner_Tide.Models {
 
         [Required]
         public required string ItemId { get; set; }
+
+        public int? AquariumId { get; set; }
+        public Aquarium? Aquarium { get; set; }
+        public int? SandLayer { get; set; }
+        public int? GridX { get; set; }
+        public int? GridY { get; set; }
     }
 }
