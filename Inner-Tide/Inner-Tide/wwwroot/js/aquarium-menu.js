@@ -283,12 +283,36 @@ async function purchaseStoreFish(_id, item) {
 
         const result = await res.json();
         coinBalance = result.remainingCoins;
+        showEditorInventoryPriority();
         await animateCoinSpend(result.coinsSpent, item || storePanel, result.remainingCoins);
         renderInventoryFish();
     } catch (error) {
         console.error("Could not purchase fish.", error);
         window.alert(error instanceof Error ? error.message : "Could not purchase fish. Please try again.");
     }
+}
+
+function showEditorInventoryPriority() {
+    const badge = document.querySelector("#editorInventoryPriorityBadge");
+    if (!badge) return;
+
+    const alreadyVisible = !badge.hidden && badge.classList.contains("is-visible");
+    badge.hidden = false;
+    badge.classList.add("is-visible");
+
+    if (!alreadyVisible || isReducedMotionEnabled()) {
+        badge.classList.remove("is-new-purchase");
+        return;
+    }
+
+    badge.classList.remove("is-new-purchase");
+    void badge.offsetWidth;
+    badge.classList.add("is-new-purchase");
+    badge.onanimationend = event => {
+        if (event.animationName === "editor-inventory-priority-purchase") {
+            badge.classList.remove("is-new-purchase");
+        }
+    };
 }
 
 async function purchaseStoreItem(_id, item) {
@@ -308,6 +332,7 @@ async function purchaseStoreItem(_id, item) {
 
     const result = await res.json();
     coinBalance = result.remainingCoins;
+    showEditorInventoryPriority();
     await animateCoinSpend(result.coinsSpent, item || storePanel, result.remainingCoins);
     renderInventoryItems();
 }
@@ -861,6 +886,12 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
         if (open || restoreFocus) playAquariumMenuSound(open);
 
         if (open) {
+            const editorPriorityBadge = document.querySelector("#editorInventoryPriorityBadge");
+            if (editorPriorityBadge) {
+                editorPriorityBadge.classList.remove("is-visible", "is-new-purchase");
+                editorPriorityBadge.onanimationend = null;
+                editorPriorityBadge.hidden = true;
+            }
             if (closeActiveAquariumMenu) closeActiveAquariumMenu();
             setAquariumFishFrozen(true);
             editorToolbar.hidden = false;

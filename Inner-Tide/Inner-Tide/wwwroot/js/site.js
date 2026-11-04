@@ -633,6 +633,38 @@ function beginCoinChangeAnimation(nextBalance) {
     return { sequence };
 }
 
+function getCoinFlightTiming(index, amount, baseInterval, baseDuration) {
+    const progress = amount > 1 ? index / (amount - 1) : 0;
+    const easedProgress = progress * progress * progress;
+    const firstInterval = baseInterval * .8;
+    const intervalGrowth = baseInterval * 3.7;
+    const squaredProgressSum = amount > 1
+        ? (index * (index - 1) / 2) ** 2 / (amount - 1) ** 3
+        : 0;
+    const delay = firstInterval * index + intervalGrowth * squaredProgressSum;
+    const duration = amount > 1
+        ? baseDuration * (.35 + 3.15 * easedProgress)
+        : baseDuration;
+
+    return { delay, duration };
+}
+
+function getCoinFlightKeyframes(sourceX, sourceY, targetX, targetY, startScale, endScale, endOpacity) {
+    const offsets = [0, .12, .35, .55, .7, 1];
+    const distances = [0, 0, .7, .9, .97, 1];
+
+    return offsets.map((offset, index) => {
+        const progress = distances[index];
+        const scale = startScale + (endScale - startScale) * progress;
+        return {
+            offset,
+            transform: `translate(${(targetX - sourceX) * progress}px, ${(targetY - sourceY) * progress}px) scale(${scale})`,
+            opacity: index === 0 ? 0 : index === offsets.length - 1 ? endOpacity : 1,
+            ...(index === 0 ? { zIndex: "1" } : { zIndex: "20" })
+        };
+    });
+}
+
 function animateCoinSpend(amount, destination, nextBalance) {
     if (!Number.isSafeInteger(amount) || amount < 0) {
         throw new TypeError("Coin spend must be a non-negative safe integer.");
@@ -669,7 +701,7 @@ function animateCoinSpend(amount, destination, nextBalance) {
     const targetX = target.left + target.width / 2 - coinSize / 2;
     const targetY = target.top + target.height / 2 - coinSize / 2;
     const flights = Array.from({ length: amount }, (_, index) => {
-        const delay = index * 75;
+        const { delay, duration } = getCoinFlightTiming(index, amount, 24, 260);
         const coin = document.createElement("img");
         coin.className = "coin-flight";
         coin.src = "img/coin.png";
@@ -678,16 +710,15 @@ function animateCoinSpend(amount, destination, nextBalance) {
         coin.style.top = `${sourceY}px`;
         document.body.append(coin);
 
-        const animation = coin.animate([
-            { transform: "translate(0, 0) scale(.8)", opacity: 0, zIndex: "1", offset: 0 },
-            { transform: "translate(0, 0) scale(.8)", opacity: 1, zIndex: "20", offset: .16 },
-            { transform: `translate(${targetX - sourceX}px, ${targetY - sourceY}px) scale(.45)`, opacity: .2 }
-        ], {
-            duration: 550,
-            delay,
-            easing: "cubic-bezier(.22,.75,.35,1)",
-            fill: "both"
-        });
+        const animation = coin.animate(
+            getCoinFlightKeyframes(sourceX, sourceY, targetX, targetY, .8, .45, .2),
+            {
+                duration,
+                delay,
+                easing: "linear",
+                fill: "both"
+            }
+        );
 
         const timeout = window.setTimeout(() => {
             coinSpendTimeouts.delete(timeout);

@@ -17,6 +17,7 @@
 }
 
 .aquarium-icon-frame {
+    position: relative;
     display: flex;
     width: 88px;
     height: 88px;
@@ -34,11 +35,96 @@
     opacity: 0;
 }
 
-.aquarium-icon-frame > img {
+.aquarium-icon-frame > img:not(.editor-inventory-priority) {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+
+.editor-inventory-priority {
+    position: absolute;
+    z-index: 1;
+    top: -4px;
+    right: -4px;
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    opacity: 0;
+    transform: scale(1);
+}
+
+.editor-inventory-priority.is-visible {
+    animation:
+        editor-inventory-priority-fade .35s ease-out forwards,
+        editor-inventory-priority-idle 3.6s 1s ease-in-out infinite;
+}
+
+.editor-inventory-priority.is-visible.is-new-purchase {
+    animation-name: editor-inventory-priority-fade, editor-inventory-priority-purchase;
+    animation-duration: .35s, .7s;
+    animation-delay: 0s, 0s;
+    animation-iteration-count: 1, 1;
+    animation-fill-mode: forwards, forwards;
+}
+
+@keyframes editor-inventory-priority-fade {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes editor-inventory-priority-idle {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    8% {
+        transform: scale(1.12);
+    }
+}
+
+@keyframes editor-inventory-priority-purchase {
+    0% {
+        transform: scale(1);
+    }
+
+    38% {
+        transform: scale(1.38);
+    }
+
+    70% {
+        transform: scale(.94);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.editor-inventory-priority[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html .editor-inventory-priority.is-visible,
+    html .editor-inventory-priority.is-visible.is-new-purchase {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+html.reduced-motion .editor-inventory-priority.is-visible,
+html.reduced-motion .editor-inventory-priority.is-visible.is-new-purchase {
+    animation: none;
+    opacity: 1;
+    transform: none;
 }
 
 .aquarium-menu-label {
