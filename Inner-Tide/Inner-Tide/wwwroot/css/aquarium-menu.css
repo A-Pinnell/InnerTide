@@ -17,6 +17,7 @@
 }
 
 .aquarium-icon-frame {
+    position: relative;
     display: flex;
     width: 88px;
     height: 88px;
@@ -34,11 +35,96 @@
     opacity: 0;
 }
 
-.aquarium-icon-frame > img {
+.aquarium-icon-frame > img:not(.editor-inventory-priority) {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+
+.editor-inventory-priority {
+    position: absolute;
+    z-index: 1;
+    top: -4px;
+    right: -4px;
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    opacity: 0;
+    transform: scale(1);
+}
+
+.editor-inventory-priority.is-visible {
+    animation:
+        editor-inventory-priority-fade .35s ease-out forwards,
+        editor-inventory-priority-idle 3.6s 1s ease-in-out infinite;
+}
+
+.editor-inventory-priority.is-visible.is-new-purchase {
+    animation-name: editor-inventory-priority-fade, editor-inventory-priority-purchase;
+    animation-duration: .35s, .7s;
+    animation-delay: 0s, 0s;
+    animation-iteration-count: 1, 1;
+    animation-fill-mode: forwards, forwards;
+}
+
+@keyframes editor-inventory-priority-fade {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes editor-inventory-priority-idle {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    8% {
+        transform: scale(1.12);
+    }
+}
+
+@keyframes editor-inventory-priority-purchase {
+    0% {
+        transform: scale(1);
+    }
+
+    38% {
+        transform: scale(1.38);
+    }
+
+    70% {
+        transform: scale(.94);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.editor-inventory-priority[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html .editor-inventory-priority.is-visible,
+    html .editor-inventory-priority.is-visible.is-new-purchase {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+html.reduced-motion .editor-inventory-priority.is-visible,
+html.reduced-motion .editor-inventory-priority.is-visible.is-new-purchase {
+    animation: none;
+    opacity: 1;
+    transform: none;
 }
 
 .aquarium-menu-label {
@@ -56,7 +142,7 @@
     position: absolute;
     bottom: -45px;
     left: -10%;
-    z-index: 3;
+    z-index: 6;
     width: 120%;
     height: 135px;
     background: var(--aquarium-sand-back, #dcae20);
@@ -67,7 +153,7 @@
     position: absolute;
     bottom: 18px;
     left: -10%;
-    z-index: 2;
+    z-index: 4;
     width: 120%;
     height: 150px;
     background: var(--aquarium-sand-middle, #edc833);
@@ -83,6 +169,261 @@
     height: 300px;
     background: var(--aquarium-sand-front, #ffeb70);
     clip-path: url("#sand-front-shape");
+}
+
+.aquarium-page.editor-mode #sand,
+.aquarium-page.editor-mode #sand-layer,
+.aquarium-page.editor-mode #sand2 {
+    pointer-events: none;
+}
+
+.aquarium-page.editor-mode #sand,
+.aquarium-page.editor-mode #sand-layer,
+.aquarium-page.editor-mode #sand2,
+.aquarium-page.editor-mode .sand-object-grid {
+    transition: filter .2s ease;
+}
+
+.aquarium-page.editor-mode:not([data-editor-layer-type="sand"]) #sand,
+.aquarium-page.editor-mode:not([data-editor-layer-type="sand"]) #sand-layer,
+.aquarium-page.editor-mode:not([data-editor-layer-type="sand"]) #sand2,
+.aquarium-page.editor-mode[data-editor-sand-layer="0"] #sand-layer,
+.aquarium-page.editor-mode[data-editor-sand-layer="0"] #sand,
+.aquarium-page.editor-mode[data-editor-sand-layer="1"] #sand,
+.aquarium-page.editor-mode[data-editor-sand-layer="1"] #sand2,
+.aquarium-page.editor-mode[data-editor-sand-layer="2"] #sand2,
+.aquarium-page.editor-mode[data-editor-sand-layer="2"] #sand-layer {
+    filter: brightness(.42);
+}
+
+.aquarium-page.editor-mode .sand-object-grid:not(.is-active) {
+    filter: brightness(.42);
+}
+
+.sand-object-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(28, minmax(0, 1fr));
+    grid-template-rows: repeat(16, minmax(0, 1fr));
+    pointer-events: none;
+}
+
+.sand-object-grid[data-sand-layer="0"] {
+    z-index: 3;
+}
+
+.sand-object-grid[data-sand-layer="1"] {
+    z-index: 5;
+}
+
+.sand-object-grid[data-sand-layer="2"] {
+    z-index: 7;
+}
+
+.sand-object-grid[data-sand-layer="3"] {
+    z-index: 3;
+}
+
+.sand-object-grid[data-sand-layer="4"] {
+    z-index: 4;
+}
+
+.sand-object-grid[data-sand-layer="5"] {
+    z-index: 5;
+}
+
+.sand-grid-overlay {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity .16s ease, visibility 0s linear .16s;
+}
+
+.sand-grid-overlay::before {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(
+            to bottom,
+            transparent 75%,
+            rgba(196, 137, 16, .72) 75%
+        ),
+        url("../img/grid.png");
+    background-position: 0 0, 0 0;
+    background-size: 100% 100%, 3.5714% 6.25%;
+    background-repeat: no-repeat, repeat;
+    content: "";
+}
+
+.aquarium-page.editor-mode .sand-object-grid.is-active {
+    pointer-events: auto;
+}
+
+.aquarium-page.editor-mode .sand-grid-overlay.is-visible {
+    opacity: .88;
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.aquarium-page.editor-mode .sand-grid-overlay.is-water-visible {
+    opacity: .38;
+}
+
+.aquarium-page.editor-mode .sand-grid-overlay.is-water-visible::before {
+    inset: 0 0 75%;
+    background-image: url("../img/grid.png");
+    background-size: 3.5714% 25%;
+    background-repeat: repeat;
+}
+
+.editor-placement-notice {
+    position: absolute;
+    z-index: 45;
+    bottom: 24px;
+    left: 50%;
+    max-width: min(90vw, 520px);
+    padding: 10px 18px;
+    border: 2px solid rgba(255, 225, 71, .95);
+    border-radius: 12px;
+    background: rgba(18, 97, 132, .96);
+    box-shadow: 0 4px 14px rgba(0, 34, 52, .45);
+    color: #fff;
+    font-family: "Neuropolx", sans-serif;
+    font-size: clamp(12px, 1.2vw, 16px);
+    text-align: center;
+    transform: translateX(-50%);
+}
+
+.editor-placement-notice[hidden] {
+    display: none;
+}
+
+.aquarium-object {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    isolation: isolate;
+    place-items: center;
+    padding: 3px;
+    border: 0;
+    color: inherit;
+    background-color: transparent;
+    background-image: none;
+    appearance: none;
+    background-size: var(--object-grid-cell-width) var(--object-grid-cell-height);
+    background-repeat: repeat;
+    cursor: grab;
+    touch-action: none;
+    opacity: 0;
+    transition: opacity .6s ease;
+}
+
+@property --object-footprint-tint {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: rgba(255, 0, 0, .72);
+}
+
+.aquarium-page.editor-mode .aquarium-object::before,
+.aquarium-object-drag-preview::before {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--object-footprint-tint), var(--object-footprint-tint)),
+        url("../img/grid.png");
+    background-size: 100% 100%, var(--object-grid-cell-width) var(--object-grid-cell-height);
+    background-repeat: no-repeat, repeat;
+    background-blend-mode: color, normal;
+    content: "";
+    transition: --object-footprint-tint .65s ease;
+}
+
+.aquarium-page.editor-mode .aquarium-object.is-placement-preview::before,
+.aquarium-object-drag-preview::before {
+    --object-footprint-tint: rgba(0, 255, 48, .72);
+}
+
+.aquarium-object.is-loaded {
+    opacity: 1;
+}
+
+.aquarium-object-drag-preview {
+    opacity: 0;
+    animation: aquarium-object-reveal .6s ease forwards;
+}
+
+@keyframes aquarium-object-reveal {
+    to {
+        opacity: 1;
+    }
+}
+
+.aquarium-page.editor-mode .sand-object-grid:not(.is-active) .aquarium-object,
+.aquarium-page:not(.editor-mode) .aquarium-object {
+    pointer-events: none;
+}
+
+.inventoryObjectGrabbable {
+    cursor: grab;
+    touch-action: none;
+}
+
+.inventoryObjectGrabbable:active {
+    cursor: grabbing;
+}
+
+.aquarium-object:active {
+    cursor: grabbing;
+}
+
+.aquarium-object img {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    pointer-events: none;
+    filter: drop-shadow(0 5px 6px rgba(0, 12, 24, .65));
+    transform: scale(3.3);
+}
+
+.aquarium-object.is-moving {
+    opacity: .2;
+}
+
+.aquarium-object-drag-preview {
+    position: fixed;
+    z-index: 40;
+    isolation: isolate;
+    overflow: visible;
+    display: grid;
+    place-items: center;
+    padding: 3px;
+    background-image: url("../img/grid.png");
+    background-size: var(--object-grid-cell-width) var(--object-grid-cell-height);
+    background-repeat: repeat;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+.aquarium-object-drag-preview img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    filter: drop-shadow(0 5px 6px rgba(0, 12, 24, .72));
+    transform: scale(3.3);
 }
 
 #aquarium {
@@ -121,6 +462,7 @@
     inset: 0;
     background: color-mix(in srgb, var(--aquarium-background-tint-color, transparent) 55%, transparent);
     content: "";
+    transition: background .2s ease;
 }
 
 .aquarium-fish-info-backdrop {
@@ -243,7 +585,8 @@
 .aquarium-page .aquarium-scene,
 .aquarium-page #sand,
 .aquarium-page #sand-layer,
-.aquarium-page #sand2 {
+.aquarium-page #sand2,
+.aquarium-page .sand-object-grid {
     transform-origin: 0 0;
     transition: transform .35s cubic-bezier(.22, 1, .36, 1);
 }
@@ -257,7 +600,8 @@
 .aquarium-page.is-fish-focused .aquarium-scene,
 .aquarium-page.is-fish-focused #sand,
 .aquarium-page.is-fish-focused #sand-layer,
-.aquarium-page.is-fish-focused #sand2 {
+.aquarium-page.is-fish-focused #sand2,
+.aquarium-page.is-fish-focused .sand-object-grid {
     transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1));
     transition: none;
     will-change: transform;
@@ -475,7 +819,7 @@ html.reduced-motion .glass-tap-ripple {
 
 #journalButton {
     position: absolute;
-    z-index: 2;
+    z-index: 10;
     display: flex;
     flex-direction: column;
     align-content: center;
@@ -489,15 +833,17 @@ html.reduced-motion .glass-tap-ripple {
 
 .journalText {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: .12em;
     font-size: 11vh;
+    text-decoration: none;
 }
 
-    .journalText b {
-        position: absolute;
-        left: 50%;
-        top: -50%;
-        transform: translateX(-50%);
-    }
+.journalText b {
+    position: static;
+    transform: none;
+}
 
 #journalButton:hover {
     transform: translateX(-50%) scale(1.05);
@@ -736,6 +1082,10 @@ html.reduced-motion .fish-startle-message {
     min-height: 68px;
     margin: 0 0 12px;
     overflow: visible;
+}
+
+.editor-inventory-tabs[hidden] {
+    display: none;
 }
 
 .editor-inventory-tabs .store-tab.active {
@@ -1042,9 +1392,10 @@ object-fit: cover;
 .editor-toolbar {
     position: absolute;
     z-index: 24;
-    inset: 0 auto 0 0;
+    inset: 0 auto auto 0;
     display: flex;
     width: 13.5%;
+    height: 100%;
     flex-direction: column;
     align-items: center;
     padding: 18px 10px 12px;
@@ -1055,7 +1406,7 @@ object-fit: cover;
     box-shadow: 0 8px 28px rgba(160, 120, 15, .18), inset 0 6px 0 rgba(255, 239, 128, .7), inset 0 -7px 0 rgba(204, 146, 0, .3), inset -6px 0 0 rgba(204, 146, 0, .24), inset 0 0 30px rgba(255,255,255,.15);
     opacity: 0;
     transform: translateX(-102%);
-    transition: opacity .35s ease, transform .65s cubic-bezier(.22, 1, .36, 1);
+    transition: opacity .35s ease, transform .65s cubic-bezier(.22, 1, .36, 1), top .4s ease, height .4s ease, padding .4s ease;
 }
 
 .editor-toolbar[hidden] {
@@ -1067,26 +1418,64 @@ object-fit: cover;
     transform: translateX(0);
 }
 
-.editor-toolbar.is-fish-drop-target {
+.aquarium-page.editor-mode[data-editor-layer-type="sand"] .editor-toolbar.is-grid-covered-menu-hidden {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    pointer-events: none;
+    transform: translateX(calc(-100% + 76px));
+}
+
+.aquarium-page.editor-mode[data-editor-layer-type="sand"] .editor-toolbar.is-grid-covered-menu-hidden .editor-layer-list {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.aquarium-page.editor-mode[data-editor-layer-type="sand"] .editor-toolbar.is-grid-covered-menu-hidden .editor-close-button {
+    top: 5px;
+    bottom: auto;
+    right: 7px;
+    left: auto;
+    pointer-events: auto;
+}
+
+.editor-toolbar.is-object-dragging {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-102%);
+}
+
+.editor-toolbar.is-object-dragging.is-object-drop-target {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0) translateY(-50%);
+}
+
+.editor-toolbar.is-fish-drop-target,
+.editor-toolbar.is-object-drop-target {
+    top: 50%;
+    height: min(68vh, 560px);
+    padding-block: 12px;
+    transform: translateX(0) translateY(-50%);
     filter: brightness(1.12);
     box-shadow: 0 8px 28px rgba(160, 120, 15, .26), inset 0 6px 0 rgba(255, 239, 128, .7), inset 0 -7px 0 rgba(204, 146, 0, .3), inset -6px 0 0 rgba(204, 146, 0, .24), inset 0 0 30px rgba(255,255,255,.15), 0 0 24px rgba(255, 245, 139, .9);
 }
 
-.editor-toolbar.is-fish-drop-target .editor-layer-heading,
-.editor-toolbar.is-fish-drop-target .editor-layer-list,
-.editor-toolbar.is-fish-drop-target .editor-close-button {
-    display: none;
-}
-
 .editor-return-prompt {
-    display: none;
-}
-
-.editor-toolbar.is-fish-drop-target .editor-return-prompt {
+    position: absolute;
+    inset: 12px;
     display: flex;
-    flex: 1;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .18s ease, visibility 0s linear .18s;
+}
+
+.editor-toolbar.is-fish-drop-target .editor-return-prompt,
+.editor-toolbar.is-object-drop-target .editor-return-prompt {
     color: #fff;
     font-family: "Ipanema", "Neuropolx", sans-serif;
     font-size: clamp(30px, 4vw, 56px);
@@ -1095,61 +1484,10 @@ object-fit: cover;
     text-align: center;
     text-shadow: 1px 3px 2px rgba(76, 62, 16, .6);
     writing-mode: vertical-rl;
+    transition: opacity .18s ease .4s, visibility 0s linear .4s;
+    opacity: 1;
+    visibility: visible;
     transform: rotate(180deg);
-}
-
-.editor-layer-heading {
-    display: grid;
-    width: 100%;
-    justify-items: center;
-    gap: 4px;
-    margin-bottom: clamp(18px, 2.5vh, 34px);
-    padding: 0;
-    border: 0;
-    color: #111;
-    background: transparent;
-    font-family: "Neuropolx", sans-serif;
-    font-size: clamp(12px, 1.25vw, 17px);
-    line-height: 1.05;
-    text-align: center;
-    cursor: pointer;
-    transition: filter .16s ease, transform .16s ease;
-}
-
-.editor-layer-heading:hover {
-    filter: brightness(1.1);
-    transform: scale(1.04);
-}
-
-.editor-layer-stack {
-    position: relative;
-    display: block;
-    width: 50px;
-    height: 42px;
-}
-
-.editor-layer-stack i {
-    position: absolute;
-    top: 3px;
-    left: 5px;
-    width: 37px;
-    height: 28px;
-    border: 3px solid #111;
-}
-
-.editor-layer-stack b {
-    position: absolute;
-    right: 1px;
-    bottom: 0;
-    display: grid;
-    width: 27px;
-    height: 30px;
-    place-items: center;
-    background: #111;
-    color: #ffcf24;
-    font-family: Arial, sans-serif;
-    font-size: 24px;
-    line-height: 1;
 }
 
 .editor-layer-list {
@@ -1158,12 +1496,116 @@ object-fit: cover;
     flex: 1;
     flex-direction: column;
     align-items: center;
-    gap: clamp(8px, 1.25vh, 16px);
+    justify-content: center;
+    gap: clamp(6px, .75vh, 12px);
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .18s ease .4s, flex-basis .4s ease, visibility 0s linear .4s;
+}
+
+.editor-toolbar.is-fish-drop-target .editor-layer-list,
+.editor-toolbar.is-object-drop-target .editor-layer-list {
+    flex: 0 0 0;
+    gap: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .18s ease, flex-basis .4s ease, visibility 0s linear .18s;
+}
+
+.editor-close-button {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .18s ease .4s, visibility 0s linear .4s, transform .18s ease, filter .18s ease;
+}
+
+.editor-toolbar.is-fish-drop-target .editor-close-button,
+.editor-toolbar.is-object-drop-target .editor-close-button {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .18s ease, visibility 0s linear .18s, transform .18s ease, filter .18s ease;
+}
+
+.editor-layer-menu {
+    position: absolute;
+    z-index: 35;
+    top: 50%;
+    right: 0;
+    display: flex;
+    width: clamp(58px, 6.5vw, 84px);
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(3px, .55vh, 8px);
+    padding: 12px 7px;
+    border: 4px solid rgba(255, 225, 71, .95);
+    border-right: 0;
+    border-radius: 90px 0 0 90px;
+    background: rgba(255, 198, 24, .94);
+    box-shadow: 0 8px 28px rgba(160, 120, 15, .18), inset 0 6px 0 rgba(255, 239, 128, .7), inset 0 -7px 0 rgba(204, 146, 0, .3), inset 6px 0 0 rgba(204, 146, 0, .24), inset 0 0 30px rgba(255,255,255,.15);
+    opacity: 0;
+    transform: translate(120%, -50%);
+    transition: opacity .35s ease, transform .65s cubic-bezier(.22, 1, .36, 1);
+}
+
+.editor-layer-menu[hidden] {
+    display: none;
+}
+
+.editor-layer-menu.is-visible {
+    opacity: 1;
+    transform: translate(0, -50%);
+}
+
+.aquarium-page.editor-inventory-open .editor-layer-menu {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(120%, -50%);
+}
+
+.editor-layer-option {
+    display: grid;
+    width: min(100%, 68px);
+    aspect-ratio: 1;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 7%;
+    border: 3px solid transparent;
+    border-radius: 24%;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(130, 83, 0, .2);
+    cursor: pointer;
+    transition: border-color .16s ease, transform .16s ease, filter .16s ease;
+}
+
+.editor-layer-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.editor-layer-option:hover {
+    filter: brightness(1.06);
+    transform: scale(1.06);
+}
+
+.editor-layer-option.is-selected {
+    border-color: #111;
+    background: #126184;
+    transform: scale(1.08);
+}
+
+.editor-layer-option:focus-visible {
+    outline: 3px solid #126184;
+    outline-offset: 2px;
+}
+
+.editor-fish-layer-option {
+    background: #80cde4;
 }
 
 .editor-item-slot {
     display: grid;
-    width: min(72%, 78px);
+    width: min(86%, 5vw, 92px);
     aspect-ratio: 1;
     flex: 0 0 auto;
     place-items: center;
@@ -1188,13 +1630,19 @@ object-fit: cover;
 }
 
 .editor-item-slot img {
-    width: 82%;
-    height: 82%;
+    width: 90%;
+    height: 90%;
     object-fit: cover;
     object-position: left -12%;
     transform: scale(1.8);
     transform-origin: left center;
     pointer-events: none;
+}
+
+.editor-item-slot.is-object-slot img {
+    object-fit: contain;
+    object-position: center;
+    transform: scale(1.15);
 }
 
 .editor-item-slot.is-depleted img {
@@ -1204,7 +1652,7 @@ object-fit: cover;
 
 .editor-layer-more {
     display: grid;
-    width: min(72%, 78px);
+    width: min(86%, 5vw, 92px);
     aspect-ratio: 1;
     flex: 0 0 auto;
     place-items: center;
@@ -1216,15 +1664,15 @@ object-fit: cover;
 }
 
 .editor-layer-more img {
-    width: 82%;
-    height: 82%;
+    width: 90%;
+    height: 90%;
     object-fit: contain;
     pointer-events: none;
 }
 
 .editor-close-button {
     position: absolute;
-    bottom: 5px;
+    top: 5px;
     left: 7px;
     display: grid;
     width: 65px;
@@ -1238,7 +1686,7 @@ object-fit: cover;
     box-shadow: none;
     color: #fff5fb;
     cursor: pointer;
-    transition: transform .18s ease, filter .18s ease;
+    transition: opacity .18s ease .4s, visibility 0s linear .4s, transform .18s ease, filter .18s ease;
 }
 
     .editor-close-button img {
@@ -1255,7 +1703,7 @@ object-fit: cover;
 
 .editor-foreground-label {
     position: absolute;
-    z-index: 5;
+    z-index: 12;
     bottom: 2%;
     left: 13.5%;
     display: flex;
@@ -1308,6 +1756,10 @@ object-fit: cover;
     opacity: 0.5;
 }
 
+.aquarium-page.editor-mode:not([data-editor-layer-type="fish"]) .aquarium-scene::after {
+    background: rgba(0, 0, 0, .72);
+}
+
 .aquarium-page.editor-mode .aquarium-bubbles {
     opacity: 0;
 }
@@ -1324,6 +1776,18 @@ object-fit: cover;
     visibility: visible;
 }
 
+.aquarium-page.editor-mode:not([data-editor-layer-type="fish"]) #fishContainer {
+    pointer-events: none;
+}
+
+.aquarium-page.editor-mode .aquariumFish:not(.is-dragging) {
+    transition: opacity .2s ease;
+}
+
+.aquarium-page.editor-mode:not([data-editor-layer-type="fish"]) .aquariumFish.is-loaded:not(.is-dragging) {
+    opacity: .1;
+}
+
 .aquarium-page.editor-mode .task-tab,
 .aquarium-page.aquarium-hide-mode .task-tab,
 .aquarium-page.is-fish-focused .task-tab {
@@ -1331,11 +1795,21 @@ object-fit: cover;
     transform: translateX(-110%);
 }
 
+.aquarium-page.editor-mode .task-tab {
+    transform: translateX(-145%);
+}
+
 .aquarium-page.editor-mode .menu-buttons,
 .aquarium-page.aquarium-hide-mode .menu-buttons,
 .aquarium-page.is-fish-focused .menu-buttons,
 .aquarium-page:not(.aquarium-ready) .menu-buttons {
     transform: translateX(calc(-13.5vw + 8px));
+}
+
+.aquarium-page.editor-mode .menu-buttons {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(calc(-100% - 13.5vw - 24px));
 }
 
 .aquarium-page.editor-mode #journalButton,
@@ -1376,7 +1850,7 @@ object-fit: cover;
 
 .aquarium-hide-button {
     position: fixed;
-    z-index: 4;
+    z-index: 11;
     right: 2%;
     bottom: 310px;
     transition: transform .65s cubic-bezier(.22, 1, .36, 1), filter .25s ease, visibility 0s;
@@ -1389,6 +1863,36 @@ object-fit: cover;
     transform: translateX(calc(100% + 4vw));
     transition: transform .65s cubic-bezier(.22, 1, .36, 1), filter .25s ease, visibility 0s linear .65s;
     visibility: hidden;
+}
+
+.aquarium-page.editor-mode:not(.aquarium-hide-mode) .aquarium-hide-button {
+    z-index: 46;
+    top: 2%;
+    right: 2%;
+    bottom: auto;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    visibility: visible;
+}
+
+.aquarium-page.editor-isolate-layer .sand-object-grid:not(.is-isolation-visible),
+.aquarium-page.editor-isolate-layer #sand,
+.aquarium-page.editor-isolate-layer #sand-layer,
+.aquarium-page.editor-isolate-layer #sand2,
+.aquarium-page.editor-isolate-layer #fishContainer {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.aquarium-page.editor-isolate-layer .sand-object-grid.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #sand.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #sand-layer.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #sand2.is-isolation-visible,
+.aquarium-page.editor-isolate-layer #fishContainer.is-isolation-visible {
+    opacity: 1;
+    visibility: visible;
 }
 
 html.reduced-motion .aquarium-page .aquarium-hide-button {

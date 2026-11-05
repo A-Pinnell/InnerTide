@@ -87,6 +87,10 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     transition: width .76s cubic-bezier(.16, 1, .3, 1), border-radius .65s cubic-bezier(.16, 1, .3, 1), background .55s ease, box-shadow .65s ease;
 }
 
+.task-menu-page .player-card {
+    z-index: 1000;
+}
+
 .player-card.profile-open {
     width: clamp(240px, 36vw, 440px);
     min-width: 0;
@@ -177,6 +181,10 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     pointer-events: none;
     object-fit: contain;
     will-change: transform, opacity;
+}
+
+.task-menu-page .coin-flight {
+    z-index: 1001;
 }
 
 .profile-details {
@@ -454,7 +462,8 @@ html.graphical-advanced body.question-page .question-background {
     gap: 16px;
 }
 
-.data-settings .options-dropdown-content > p {
+.data-settings .options-dropdown-content > p,
+.data-settings form > p {
     margin: 0;
     font-size: clamp(14px, 1.5vw, 18px);
     text-align: center;
@@ -476,6 +485,16 @@ html.graphical-advanced body.question-page .question-background {
 }
 
 .data-delete-button:hover {
+    filter: brightness(1.12);
+}
+
+.data-reset-button {
+    border-color: rgba(255,255,255,.9);
+    background: linear-gradient(180deg, #c98942, #94602c);
+    white-space: normal;
+}
+
+.data-reset-button:hover {
     filter: brightness(1.12);
 }
 
@@ -1607,7 +1626,7 @@ a.element-action:hover {
 .task-regeneration-status {
     margin: 0;
     color: #8b1724;
-    font: 16px "Hydration", sans-serif;
+    font-size: 16px;
 }
 
 .task-regeneration-dialog {
@@ -1618,12 +1637,85 @@ a.element-action:hover {
     background: linear-gradient(145deg, #fff5fc, #e6faff);
     box-shadow: 0 16px 48px rgba(34, 20, 54, .4), inset 0 3px 0 #fff;
     color: #4b315e;
-    font-family: "Hydration", sans-serif;
+    font-family: inherit;
+    animation: task-regeneration-enter .38s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.task-regeneration-coin-layer {
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.task-regeneration-coin-layer .coin-flight {
+    position: absolute;
+    z-index: 20;
+}
+
+.task-regeneration-backdrop {
+    position: absolute;
+    z-index: 999;
+    inset: 0;
+    background: rgba(31, 19, 42, .65);
+    backdrop-filter: blur(4px);
+    animation: task-regeneration-backdrop-in .28s ease-out both;
+}
+
+.task-regeneration-backdrop[hidden] {
+    display: none;
 }
 
 .task-regeneration-dialog::backdrop {
-    background: rgba(31, 19, 42, .65);
-    backdrop-filter: blur(4px);
+    background: transparent;
+    backdrop-filter: none;
+}
+
+.task-regeneration-backdrop.is-closing {
+    animation: task-regeneration-backdrop-out .18s ease-in both;
+}
+
+.task-regeneration-dialog.is-closing {
+    animation: task-regeneration-exit .18s ease-in both;
+}
+
+@keyframes task-regeneration-enter {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes task-regeneration-exit {
+    to {
+        opacity: 0;
+        transform: translateY(6px) scale(.88);
+    }
+}
+
+@keyframes task-regeneration-backdrop-in {
+    from {
+        background: rgba(31, 19, 42, 0);
+        backdrop-filter: blur(0);
+    }
+
+    to {
+        background: rgba(31, 19, 42, .65);
+        backdrop-filter: blur(4px);
+    }
+}
+
+@keyframes task-regeneration-backdrop-out {
+    to {
+        background: rgba(31, 19, 42, 0);
+        backdrop-filter: blur(0);
+    }
 }
 
 .task-regeneration-dialog h2 {
@@ -1651,6 +1743,7 @@ a.element-action:hover {
     background: linear-gradient(135deg, #fff, #e6faff);
     font: inherit;
     cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
 }
 
 .task-regeneration-choice {
@@ -1661,14 +1754,73 @@ a.element-action:hover {
     font-size: 20px;
 }
 
+.task-regeneration-dialog[open] .task-regeneration-choice {
+    animation: task-regeneration-choice-in .34s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.task-regeneration-dialog[open] .task-regeneration-choice:nth-child(2) {
+    animation-delay: .05s;
+}
+
+.task-regeneration-dialog[open] .task-regeneration-choice:nth-child(3) {
+    animation-delay: .1s;
+}
+
+@keyframes task-regeneration-choice-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .task-regeneration-choice-cost {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     white-space: nowrap;
     font-size: 16px;
 }
 
+.task-regeneration-choice-cost [data-regeneration-cost] {
+    color: transparent;
+    background: var(--text-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: "Hydration", sans-serif;
+    font-size: 28px;
+    font-weight: 1000;
+    line-height: 1;
+    filter: drop-shadow(3px 4px 1px #3a2d34) drop-shadow(-1px -1px 1px #2e2630);
+}
+
+.task-regeneration-choice-cost img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
 .task-regeneration-choice:hover:not(:disabled),
 .task-regeneration-cancel:hover:not(:disabled) {
-    filter: brightness(.96);
+    filter: brightness(1.04);
+    box-shadow: 0 5px 12px rgba(90, 58, 112, .18);
+    transform: translateY(-2px);
+}
+
+.task-regeneration-choice:active:not(:disabled),
+.task-regeneration-cancel:active:not(:disabled) {
+    transform: translateY(0) scale(.99);
+}
+
+.task-regeneration-choice:focus-visible,
+.task-regeneration-cancel:focus-visible {
+    outline: 3px solid rgba(104, 168, 219, .8);
+    outline-offset: 3px;
 }
 
 .task-regeneration-choice:disabled,
@@ -1685,6 +1837,25 @@ a.element-action:hover {
     display: block;
     min-width: 100px;
     margin: 16px 0 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task-regeneration-dialog,
+    .task-regeneration-dialog::backdrop,
+    .task-regeneration-backdrop,
+    .task-regeneration-dialog[open] .task-regeneration-choice {
+        animation: none;
+    }
+
+    .task-regeneration-dialog.is-closing,
+    .task-regeneration-backdrop.is-closing {
+        animation: none;
+    }
+
+    .task-regeneration-choice,
+    .task-regeneration-cancel {
+        transition: none;
+    }
 }
 
 .element-action span {

@@ -21,4 +21,6 @@ public class Item {
     public int Price { get; set; }
 
     public string GridSpace { get; set; }
+
+    public bool IsFloating { get; set; }
 }

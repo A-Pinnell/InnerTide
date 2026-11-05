@@ -37,6 +37,7 @@ function animateCoinReward(taskRow, amount) {
         const angle = (index / amount) * Math.PI * 2;
         const startX = sourceX + Math.cos(angle) * spread;
         const startY = sourceY + Math.sin(angle) * spread;
+        const { delay, duration } = getCoinFlightTiming(index, amount, 28, 300);
         const coin = document.createElement("img");
 
         coin.className = "coin-flight";
@@ -46,16 +47,15 @@ function animateCoinReward(taskRow, amount) {
         coin.style.top = `${startY}px`;
         document.body.append(coin);
 
-        const animation = coin.animate([
-            { transform: "translate(0, 0) scale(.7)", opacity: 0 },
-            { transform: "translate(0, 0) scale(1)", opacity: 1, offset: .16 },
-            { transform: `translate(${targetX - startX}px, ${targetY - startY}px) scale(.45)`, opacity: .15 }
-        ], {
-            duration: 650,
-            delay: index * 90,
-            easing: "cubic-bezier(.22,.75,.35,1)",
-            fill: "both"
-        });
+        const animation = coin.animate(
+            getCoinFlightKeyframes(startX, startY, targetX, targetY, .7, .45, .15),
+            {
+                duration,
+                delay,
+                easing: "linear",
+                fill: "both"
+            }
+        );
 
         return animation.finished.then(() => {
             coin.remove();
@@ -327,6 +327,11 @@ if (gameShell) {
     });
     document.querySelector("#deleteUserDataForm")?.addEventListener("submit", event => {
         if (!window.confirm("This permanently deletes your account and all its saved data. This cannot be undone. Continue?")) {
+            event.preventDefault();
+        }
+    });
+    document.querySelector("#clearUserDataForm")?.addEventListener("submit", event => {
+        if (!window.confirm("This permanently clears your aquariums, quiz results, tasks, journals, coins, and progress. Your account will remain, and you will start over. Continue?")) {
             event.preventDefault();
         }
     });

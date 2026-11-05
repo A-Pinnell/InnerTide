@@ -86,9 +86,10 @@ namespace Inner_Tide.Migrations
 
                     b.HasKey("AquariumItemGridCellId");
 
-                    b.HasIndex("AquariumId");
-
                     b.HasIndex("UserItemId");
+
+                    b.HasIndex("AquariumId", "SandLayer", "GridX", "GridY")
+                        .IsUnique();
 
                     b.ToTable("AquariumItemGridCells");
                 });
@@ -750,10 +751,6 @@ namespace Inner_Tide.Migrations
 
             modelBuilder.Entity("Inner_Tide.Models.UserItem", b =>
                 {
-                    b.HasOne("Inner_Tide.Models.Aquarium", "Aquarium")
-                        .WithMany()
-                        .HasForeignKey("AquariumId");
-
                     b.HasOne("Inner_Tide.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")

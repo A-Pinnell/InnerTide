@@ -4,12 +4,16 @@ using Inner_Tide.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Channels;
 
 namespace Inner_Tide.Controllers {
     public class AquariumController : Controller {
+        private const int AquariumObjectGridColumns = 28;
+        private const int AquariumObjectGridRows = 4;
+
         private readonly SignInManager<User> signInManager;
         private readonly UserManager<User> userManager;
         private readonly HttpClient _httpClient;
@@ -221,7 +225,8 @@ namespace Inner_Tide.Controllers {
                             res.Name,
                             res.Description,
                             res.Price,
-                            res.GridSpace
+                            res.GridSpace,
+                            res.IsFloating
                         });
                     }
                 }//end foreach
@@ -469,6 +474,240 @@ namespace Inner_Tide.Controllers {
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAquariumObjects(int aquariumId) {
+            try {
+                var user = await userManager.GetUserAsync(User);
+                if (user == null) {
+                    return Unauthorized();
+                }
+
+                var aquarium = await _context.Aquariums
+                    .FirstOrDefaultAsync(a => a.UserId == user.Id && a.AquariumId == aquariumId);
+                if (aquarium == null) {
+                    return NotFound("Aquarium was not found.");
+                }
+
+                var placedItems = await _context.UserItems
+                    .Where(item => item.UserId == user.Id
+                        && item.IsInAquarium
+                        && item.AquariumId == aquariumId
+                        && item.SandLayer != null
+                        && item.GridX != null
+                        && item.GridY != null)
+                    .ToListAsync();
+
+                var itemList = new List<object>();
+                foreach (var placedItem in placedItems) {
+                    var item = await _httpClient.GetFromJsonAsync<Item>(
+                        $"https://innertideapi.vercel.app/api/v1/item/{Uri.EscapeDataString(placedItem.ItemId)}");
+                    if (item == null) {
+                        throw new InvalidOperationException($"The item catalog returned no data for item {placedItem.ItemId}.");
+                    }
+
+                    itemList.Add(new {
+                        userItemId = placedItem.UserItemId,
+                        item.ItemId,
+                        item.Sprite,
+                        item.Name,
+                        item.GridSpace,
+                        item.IsFloating,
+                        sandLayer = placedItem.SandLayer,
+                        gridX = placedItem.GridX,
+                        gridY = placedItem.GridY
+                    });
+                }
+
+                return Json(itemList);
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Could not load objects placed in the aquarium.");
+                return StatusCode(500, ex.GetBaseException().Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PlaceAquariumObject([FromBody] AquariumObjectRequest request) {
+            if (request == null
+                || request.UserItemId <= 0
+                || request.AquariumId <= 0
+                || request.SandLayer < 0
+                || request.SandLayer > 5
+                || request.GridX < 0
+                || request.GridY < 0) {
+                return BadRequest("The object placement is invalid.");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var userItem = await _context.UserItems
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.UserId == user.Id && item.UserItemId == request.UserItemId);
+            if (userItem == null || (userItem.IsInAquarium && userItem.AquariumId != request.AquariumId)) {
+                return BadRequest("The item is not available for this aquarium.");
+            }
+
+            var aquariumExists = await _context.Aquariums
+                .AnyAsync(aquarium => aquarium.UserId == user.Id && aquarium.AquariumId == request.AquariumId);
+            if (!aquariumExists) {
+                return NotFound("Aquarium was not found.");
+            }
+
+            Item? catalogItem;
+            try {
+                catalogItem = await _httpClient.GetFromJsonAsync<Item>(
+                    $"https://innertideapi.vercel.app/api/v1/item/{Uri.EscapeDataString(userItem.ItemId)}");
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Could not load catalog data for item {ItemId}.", userItem.ItemId);
+                return Problem(
+                    detail: "The item catalog is temporarily unavailable. Please try again.",
+                    statusCode: StatusCodes.Status502BadGateway);
+            }
+
+            if (catalogItem == null || !TryParseGridSpace(catalogItem.GridSpace, out var itemWidth, out var itemHeight)) {
+                _logger.LogWarning("Item {ItemId} has invalid grid dimensions {GridSpace}.", userItem.ItemId, catalogItem?.GridSpace);
+                return Problem(
+                    detail: "This item has invalid placement dimensions and cannot be placed.",
+                    statusCode: StatusCodes.Status422UnprocessableEntity);
+            }
+
+            if (catalogItem.IsFloating != (request.SandLayer >= 3)) {
+                return BadRequest(catalogItem.IsFloating
+                    ? "Floating objects can only be placed in water layers."
+                    : "Non-floating objects can only be placed in sand layers.");
+            }
+
+            if (request.GridX >= AquariumObjectGridColumns
+                || request.GridY >= AquariumObjectGridRows
+                || itemWidth > AquariumObjectGridColumns
+                || itemHeight > AquariumObjectGridRows
+                || request.GridX + itemWidth > AquariumObjectGridColumns
+                || request.GridY + itemHeight > AquariumObjectGridRows) {
+                return BadRequest("The item does not fit in the selected layer grid.");
+            }
+
+            try {
+                await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+                var aquarium = await _context.Aquariums
+                    .FirstOrDefaultAsync(a => a.UserId == user.Id && a.AquariumId == request.AquariumId);
+                userItem = await _context.UserItems
+                    .FirstOrDefaultAsync(item => item.UserId == user.Id && item.UserItemId == request.UserItemId);
+
+                if (aquarium == null || userItem == null
+                    || (userItem.IsInAquarium && userItem.AquariumId != aquarium.AquariumId)) {
+                    return BadRequest("The item is not available for this aquarium.");
+                }
+
+                var isAlreadyPlaced = userItem.IsInAquarium;
+                if (!isAlreadyPlaced && aquarium.CurrentObjects >= aquarium.MaxObjects) {
+                    return Conflict("This aquarium is full.");
+                }
+
+                var overlaps = await _context.AquariumItemGridCells.AnyAsync(cell =>
+                    cell.AquariumId == aquarium.AquariumId
+                    && cell.SandLayer == request.SandLayer
+                    && cell.UserItemId != userItem.UserItemId
+                    && cell.GridX >= request.GridX
+                    && cell.GridX < request.GridX + itemWidth
+                    && cell.GridY >= request.GridY
+                    && cell.GridY < request.GridY + itemHeight);
+                if (overlaps) {
+                    return Conflict("That object would overlap another object.");
+                }
+
+                if (isAlreadyPlaced) {
+                    var existingCells = await _context.AquariumItemGridCells
+                        .Where(cell => cell.AquariumId == aquarium.AquariumId && cell.UserItemId == userItem.UserItemId)
+                        .ToListAsync();
+                    _context.AquariumItemGridCells.RemoveRange(existingCells);
+                    await _context.SaveChangesAsync();
+                } else {
+                    aquarium.CurrentObjects++;
+                }
+
+                userItem.IsInAquarium = true;
+                userItem.AquariumId = aquarium.AquariumId;
+                userItem.SandLayer = request.SandLayer;
+                userItem.GridX = request.GridX;
+                userItem.GridY = request.GridY;
+
+                for (var x = request.GridX; x < request.GridX + itemWidth; x++) {
+                    for (var y = request.GridY; y < request.GridY + itemHeight; y++) {
+                        _context.AquariumItemGridCells.Add(new AquariumItemGridCell {
+                            AquariumId = aquarium.AquariumId,
+                            UserItemId = userItem.UserItemId,
+                            SandLayer = request.SandLayer,
+                            GridX = x,
+                            GridY = y
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok(new { success = true });
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Could not place object {UserItemId} in aquarium {AquariumId}.", request.UserItemId, request.AquariumId);
+                return StatusCode(500, ex.GetBaseException().Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveAquariumObject([FromBody] AquariumObjectRequest request) {
+            if (request == null || request.UserItemId <= 0 || request.AquariumId <= 0) {
+                return BadRequest("The object return request is invalid.");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            try {
+                await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+                var aquarium = await _context.Aquariums
+                    .FirstOrDefaultAsync(a => a.UserId == user.Id && a.AquariumId == request.AquariumId);
+                var userItem = await _context.UserItems
+                    .FirstOrDefaultAsync(item => item.UserId == user.Id
+                        && item.UserItemId == request.UserItemId
+                        && item.IsInAquarium
+                        && item.AquariumId == request.AquariumId);
+                if (aquarium == null || userItem == null) {
+                    return NotFound("The placed object was not found.");
+                }
+
+                var occupiedCells = await _context.AquariumItemGridCells
+                    .Where(cell => cell.AquariumId == aquarium.AquariumId && cell.UserItemId == userItem.UserItemId)
+                    .ToListAsync();
+                _context.AquariumItemGridCells.RemoveRange(occupiedCells);
+                userItem.IsInAquarium = false;
+                userItem.AquariumId = null;
+                userItem.SandLayer = null;
+                userItem.GridX = null;
+                userItem.GridY = null;
+                aquarium.CurrentObjects = Math.Max(0, aquarium.CurrentObjects - 1);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok(new { success = true });
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Could not return object {UserItemId} from aquarium {AquariumId}.", request.UserItemId, request.AquariumId);
+                return StatusCode(500, ex.GetBaseException().Message);
+            }
+        }
+
+        private static bool TryParseGridSpace(string? gridSpace, out int width, out int height) {
+            width = 0;
+            height = 0;
+            var dimensions = gridSpace?.ToLowerInvariant().Split('x', StringSplitOptions.TrimEntries);
+            return dimensions is { Length: 2 }
+                && int.TryParse(dimensions[0], out width)
+                && int.TryParse(dimensions[1], out height)
+                && width > 0
+                && height > 0;
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddFishToAquarium( [FromBody] AquariumFishRequest request) {
             try {
@@ -525,6 +764,40 @@ namespace Inner_Tide.Controllers {
             } catch (Exception e) {
                 _logger.LogError(e, "Could not place a fish in the aquarium.");
                 return StatusCode(500, e.GetBaseException().Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> MoveAquariumFish([FromBody] AquariumFishRequest request) {
+            if (request == null || request.UserFishId <= 0 || request.AquariumId <= 0
+                || request.X < 0 || request.Y < 0) {
+                return BadRequest("The fish move request is invalid.");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var aquarium = await _context.Aquariums
+                .FirstOrDefaultAsync(item => item.UserId == user.Id && item.AquariumId == request.AquariumId);
+            var userFish = await _context.UserFish
+                .FirstOrDefaultAsync(item => item.UserId == user.Id
+                    && item.UserFishId == request.UserFishId
+                    && item.IsInAquarium
+                    && item.AquariumId == request.AquariumId);
+            if (aquarium == null || userFish == null) {
+                return NotFound("The fish was not found in this aquarium.");
+            }
+
+            userFish.xCord = request.X;
+            userFish.yCord = request.Y;
+            try {
+                await _context.SaveChangesAsync();
+                return Ok(new { success = true });
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Could not move fish {UserFishId} in aquarium {AquariumId}.", request.UserFishId, request.AquariumId);
+                return StatusCode(500, ex.GetBaseException().Message);
             }
         }
 

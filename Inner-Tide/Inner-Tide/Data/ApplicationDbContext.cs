@@ -37,6 +37,8 @@ namespace Inner_Tide.Data {
 
         public DbSet<Inner_Tide.Models.UserItem> UserItems { get; set; } = default!;
 
+        public DbSet<Inner_Tide.Models.AquariumItemGridCell> AquariumItemGridCells { get; set; } = default!;
+
         public DbSet<Inner_Tide.Models.UserTask> UserTasks { get; set; } = default!;
 
         public DbSet<Inner_Tide.Models.Quiz> Quizzes { get; set; } = default!;
