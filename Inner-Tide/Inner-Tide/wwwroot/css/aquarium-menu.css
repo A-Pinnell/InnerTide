@@ -16,6 +16,69 @@
     transition: transform .25s ease, filter .25s ease;
 }
 
+.fish-food-pellet {
+    position: absolute;
+    z-index: 0;
+    border: 2px solid rgba(89, 49, 26, .72);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 27%, #bb8750, #80502b 66%, #4f321f);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,.28), 1px 2px 3px rgba(35, 24, 16, .45);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: pellet-drop-in .22s ease-out both;
+}
+
+.fish-food-pellet.small {
+    width: 10px;
+    height: 10px;
+}
+
+.fish-food-pellet.large {
+    width: 18px;
+    height: 18px;
+}
+
+@keyframes pellet-drop-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(.3);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.fish-love-heart {
+    position: absolute;
+    z-index: 8;
+    color: #ff3f83;
+    font-size: clamp(42px, 5vw, 64px);
+    line-height: 1;
+    -webkit-text-stroke: 1px rgba(255, 255, 255, .9);
+    text-shadow: 0 2px 3px rgba(80, 14, 47, .8), 0 0 12px rgba(255, 172, 210, .95), 0 0 24px rgba(255, 79, 145, .7);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: fish-heart-rise 1.3s ease-out both;
+}
+
+@keyframes fish-heart-rise {
+    from {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% + 8px)) scale(.5);
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% - 64px)) scale(1.3);
+    }
+}
+
 .aquarium-icon-frame {
     position: relative;
     display: flex;
@@ -521,6 +584,35 @@ html.reduced-motion .editor-inventory-priority.is-visible.is-new-purchase {
     border: 0;
     background: transparent;
     cursor: pointer;
+}
+
+.tank-store-panel .pellet-store-item {
+    font: inherit;
+    text-align: left;
+}
+
+.store-pellet-preview {
+    display: block;
+    flex: 0 0 auto;
+    border: 2px solid rgba(89, 49, 26, .72);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 27%, #bb8750, #80502b 66%, #4f321f);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,.28), 1px 2px 3px rgba(35, 24, 16, .45);
+}
+
+.store-pellet-preview.small {
+    width: 18px;
+    height: 18px;
+}
+
+.store-pellet-preview.large {
+    width: 34px;
+    height: 34px;
+}
+
+.pellet-store-item .store-item-image {
+    display: grid;
+    place-items: center;
 }
 
 .aquarium-fish-info-close img {
@@ -1790,6 +1882,7 @@ object-fit: cover;
 
 .aquarium-page.editor-mode .task-tab,
 .aquarium-page.aquarium-hide-mode .task-tab,
+.aquarium-page.aquarium-feeding-mode .task-tab,
 .aquarium-page.is-fish-focused .task-tab {
     opacity: 0;
     transform: translateX(-110%);
@@ -1801,6 +1894,7 @@ object-fit: cover;
 
 .aquarium-page.editor-mode .menu-buttons,
 .aquarium-page.aquarium-hide-mode .menu-buttons,
+.aquarium-page.aquarium-feeding-mode .menu-buttons,
 .aquarium-page.is-fish-focused .menu-buttons,
 .aquarium-page:not(.aquarium-ready) .menu-buttons {
     transform: translateX(calc(-13.5vw + 8px));
@@ -1814,6 +1908,7 @@ object-fit: cover;
 
 .aquarium-page.editor-mode #journalButton,
 .aquarium-page.aquarium-hide-mode #journalButton,
+.aquarium-page.aquarium-feeding-mode #journalButton,
 .aquarium-page.is-fish-focused #journalButton {
     pointer-events: none;
     transform: translate(-50%, calc(100% + 80px));
@@ -1821,6 +1916,7 @@ object-fit: cover;
 
 .aquarium-page.editor-mode #storeCoinDiv,
 .aquarium-page.aquarium-hide-mode #storeCoinDiv,
+.aquarium-page.aquarium-feeding-mode #storeCoinDiv,
 .aquarium-page.is-fish-focused #storeCoinDiv {
     pointer-events: none;
     transform: translateX(calc(100% + 4vw));
@@ -1858,6 +1954,7 @@ object-fit: cover;
 
 .aquarium-page.editor-mode .aquarium-hide-button,
 .aquarium-page.aquarium-hide-mode .aquarium-hide-button,
+.aquarium-page.aquarium-feeding-mode .aquarium-hide-button,
 .aquarium-page.is-fish-focused .aquarium-hide-button {
     pointer-events: none;
     transform: translateX(calc(100% + 4vw));
@@ -1938,10 +2035,15 @@ html.reduced-motion .aquarium-page .aquarium-hide-button {
 }
 
 .aquarium-page.aquarium-hide-mode .task-tab,
+.aquarium-page.aquarium-feeding-mode .task-tab,
 .aquarium-page.aquarium-hide-mode #storeCoinDiv,
+.aquarium-page.aquarium-feeding-mode #storeCoinDiv,
 .aquarium-page.aquarium-hide-mode .menu-buttons,
+.aquarium-page.aquarium-feeding-mode .menu-buttons,
 .aquarium-page.aquarium-hide-mode .aquarium-hide-button,
+.aquarium-page.aquarium-feeding-mode .aquarium-hide-button,
 .aquarium-page.aquarium-hide-mode #journalButton,
+.aquarium-page.aquarium-feeding-mode #journalButton,
 .aquarium-page.is-fish-focused .task-tab,
 .aquarium-page.is-fish-focused #storeCoinDiv,
 .aquarium-page.is-fish-focused .menu-buttons,
@@ -1954,14 +2056,18 @@ html.reduced-motion .aquarium-page .aquarium-hide-button {
 
 .aquarium-page.aquarium-hide-mode .task-tab,
 .aquarium-page.is-fish-focused .task-tab,
+.aquarium-page.aquarium-feeding-mode .task-tab,
 .aquarium-page.aquarium-hide-mode .menu-buttons,
+.aquarium-page.aquarium-feeding-mode .menu-buttons,
 .aquarium-page.is-fish-focused .menu-buttons {
     transition: transform .75s cubic-bezier(.22, 1, .36, 1), opacity .45s ease, visibility 0s linear .75s;
 }
 
 .aquarium-page.aquarium-hide-mode #storeCoinDiv,
 .aquarium-page.is-fish-focused #storeCoinDiv,
+.aquarium-page.aquarium-feeding-mode #storeCoinDiv,
 .aquarium-page.aquarium-hide-mode #journalButton,
+.aquarium-page.aquarium-feeding-mode #journalButton,
 .aquarium-page.is-fish-focused #journalButton {
     transition: transform .65s cubic-bezier(.22, 1, .36, 1), opacity .4s ease, visibility 0s linear .65s;
 }
@@ -1983,6 +2089,223 @@ html.reduced-motion .aquarium-page .aquarium-hide-button {
 .aquarium-page.aquarium-hide-mode .aquarium-hide-exit {
     opacity: 1;
     visibility: visible;
+}
+
+.aquarium-page.aquarium-feeding-mode .aquarium-hide-exit {
+    top: 16px;
+    right: 16px;
+    bottom: auto;
+    left: auto;
+    z-index: 33;
+    width: 52px;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.aquarium-page.aquarium-feeding-mode .aquarium-hide-exit .aquarium-icon-frame {
+    width: 46px;
+    height: 46px;
+}
+
+.aquarium-page.aquarium-feeding-mode .aquarium-hide-exit .aquarium-menu-label {
+    display: none;
+}
+
+.feeding-controls {
+    position: fixed;
+    z-index: 32;
+    bottom: 0;
+    left: 8px;
+    display: flex;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    transform: translateY(115%);
+    transition: transform .6s cubic-bezier(.22, 1, .36, 1);
+}
+
+.feeding-controls[hidden] {
+    display: none;
+}
+
+.feeding-controls.is-visible {
+    transform: translateY(calc(100% - 290px));
+}
+
+.feeding-bag-button {
+    display: block;
+    width: clamp(260px, 34vw, 430px);
+    height: clamp(260px, 34vw, 430px);
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    filter: drop-shadow(0 5px 7px rgba(0, 20, 35, .48));
+    transition: transform .2s ease, filter .2s ease;
+}
+
+.feeding-bag-button:hover {
+    filter: brightness(1.12);
+    transform: translateY(-4px) scale(1.04);
+}
+
+.feeding-bag-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.feeding-bag-button:focus-visible,
+.aquarium-page.aquarium-feeding-mode .aquarium-hide-exit:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+}
+
+.feeding-pellet-picker {
+    position: absolute;
+    top: auto;
+    bottom: calc(100% - 90px);
+    left: calc(100% + 12px);
+    display: grid;
+    width: min(250px, calc(100vw - 270px));
+    min-width: 150px;
+    gap: 8px;
+    padding: 10px;
+    border: 2px solid rgba(201, 248, 255, .86);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(17, 119, 158, .97), rgba(6, 55, 91, .98));
+    box-shadow: 0 8px 26px rgba(0, 17, 31, .48);
+}
+
+.feeding-pellet-picker[hidden] {
+    display: none;
+}
+
+.feeding-pellet-choice {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 10px;
+    border: 1px solid rgba(220, 250, 255, .38);
+    border-radius: 10px;
+    color: #fff;
+    background: rgba(255, 255, 255, .1);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.feeding-pellet-choice:hover:not(:disabled) {
+    background: rgba(255, 255, 255, .22);
+}
+
+.feeding-pellet-choice:disabled {
+    opacity: .48;
+    cursor: not-allowed;
+}
+
+.feeding-pellet-choice [data-pellet-count] {
+    margin-left: auto;
+    font-weight: 700;
+}
+
+.feeding-pellet-preview {
+    flex: 0 0 auto;
+    border: 2px solid rgba(89, 49, 26, .72);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 27%, #bb8750, #80502b 66%, #4f321f);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,.28), 1px 2px 3px rgba(35, 24, 16, .45);
+}
+
+.feeding-pellet-preview.small {
+    width: 12px;
+    height: 12px;
+}
+
+.feeding-pellet-preview.large {
+    width: 20px;
+    height: 20px;
+}
+
+.feeding-status {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    width: max-content;
+    max-width: min(82vw, 420px);
+    padding: 7px 12px;
+    border: 1px solid rgba(216, 248, 255, .55);
+    border-radius: 12px;
+    color: #fff;
+    background: rgba(0, 43, 69, .82);
+    box-shadow: 0 3px 12px rgba(0, 15, 29, .3);
+    font-size: 13px;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+    pointer-events: none;
+}
+
+.feeding-status:empty {
+    display: none;
+}
+
+.held-pellet-preview {
+    position: fixed;
+    z-index: 31;
+    border: 2px solid rgba(89, 49, 26, .72);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 27%, #bb8750, #80502b 66%, #4f321f);
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,.28), 1px 2px 3px rgba(35, 24, 16, .45);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+.held-pellet-preview[hidden] {
+    display: none;
+}
+
+.held-pellet-preview.small {
+    width: 10px;
+    height: 10px;
+}
+
+.held-pellet-preview.large {
+    width: 18px;
+    height: 18px;
+}
+
+.aquarium-page.aquarium-feeding-mode #fishContainer {
+    cursor: crosshair;
+}
+
+html.reduced-motion .feeding-controls,
+html.reduced-motion .feeding-bag-button,
+html.reduced-motion .fish-food-pellet,
+html.reduced-motion .fish-love-heart {
+    transition: none;
+    animation: none;
+}
+
+@media (max-width: 560px) {
+    .feeding-controls {
+        gap: 8px;
+    }
+
+    .feeding-bag-button {
+        width: clamp(150px, 42vw, 220px);
+        height: clamp(150px, 42vw, 220px);
+    }
+
+    .feeding-pellet-picker {
+        left: calc(100% + 8px);
+        width: min(250px, calc(100vw - 174px));
+        min-width: 0;
+    }
 }
 
 

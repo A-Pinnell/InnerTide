@@ -26,6 +26,9 @@
     <audio id="aquarium-music" autoplay preload="auto"></audio>
     <main>
         <div id="aquarium">
+            <form id="pelletActionToken" hidden>
+                @Html.AntiForgeryToken()
+            </form>
             <div class="fish-loading-indicator" id="fishLoadingIndicator">
                 <img src="../img/loading.gif" alt="">
             </div>
@@ -56,6 +59,25 @@
             <button class="help-button" type="button">
                 <img src="../img/help_icon.png" alt="">
             </button>
+            <div class="feeding-controls" id="feedingControls" hidden>
+                <div class="feeding-pellet-picker" id="feedingPelletPicker" hidden>
+                    <button class="feeding-pellet-choice" type="button" data-pellet-type="small">
+                        <span class="feeding-pellet-preview small"></span>
+                        <span>Small pellet</span>
+                        <span data-pellet-count="small">0</span>
+                    </button>
+                    <button class="feeding-pellet-choice" type="button" data-pellet-type="large">
+                        <span class="feeding-pellet-preview large"></span>
+                        <span>Large pellet</span>
+                        <span data-pellet-count="large">0</span>
+                    </button>
+                </div>
+                <button class="feeding-bag-button" id="feedingBagButton" type="button" aria-expanded="false" aria-controls="feedingPelletPicker" aria-label="Choose a fish pellet">
+                    <img src="../img/bag.png" alt="">
+                </button>
+                <span class="feeding-status" id="feedingStatus" role="status" aria-live="polite"></span>
+            </div>
+            <div class="held-pellet-preview" id="heldPelletPreview" hidden></div>
 
             <div class="aquarium-scene">
                 <div class="aquarium-bubbles">
@@ -184,6 +206,7 @@
                 <div class="store-tabs">
                     <button class="store-tab" id="storeObjectsTab" type="button" data-category="objects">Objects</button>
                     <button class="store-tab active" id="storeFishTab" type="button" data-category="fish">Fish</button>
+                    <button class="store-tab" id="storeMiscTab" type="button" data-category="misc">Misc</button>
                 </div>
                 <div class="store-catalog" id="storeFish">
                     <div class="store-items">
@@ -195,6 +218,24 @@
                         <div class="store-item"><span class="store-product object-product"></span><span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">25</span></span></div>
                     </div>
                 </div>
+                <div class="store-catalog" id="storeMisc" hidden>
+                    <div class="store-items">
+                        <button class="store-item pellet-store-item" type="button" data-pellet-type="small">
+                            <span class="store-item-image"><span class="store-pellet-preview small"></span></span>
+                            <span class="store-item-details">
+                                <span class="store-product-name">Small Pellet</span>
+                                <span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">1</span></span>
+                            </span>
+                        </button>
+                        <button class="store-item pellet-store-item" type="button" data-pellet-type="large">
+                            <span class="store-item-image"><span class="store-pellet-preview large"></span></span>
+                            <span class="store-item-details">
+                                <span class="store-product-name">Large Pellet</span>
+                                <span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">3</span></span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <div class="inventory-fish-limit-message" id="inventoryFishLimitMessage" hidden>
@@ -204,7 +245,7 @@
             <div id="journalButton">
                 <a class="journalText" asp-area="" asp-controller="Journals" asp-action="Index"> <span> Journals </span> <b> ˅ </b> </a>
             </div>
-            <button class="aquariumMenuBtn aquarium-hide-exit" id="aquariumHideExit" type="button" hidden>
+            <button class="aquariumMenuBtn aquarium-hide-exit" id="aquariumHideExit" type="button" aria-label="Show aquarium menu" hidden>
                 <span class="aquarium-icon-frame">
                     <img src="../img/open_crab.png" alt="">
                 </span>

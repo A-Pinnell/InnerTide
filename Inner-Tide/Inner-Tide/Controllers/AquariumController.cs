@@ -100,6 +100,15 @@ namespace Inner_Tide.Controllers {
             return aquariums;
         }
 
+        private static bool TryGetPelletPrice(string type, out int price) {
+            price = type switch {
+                "small" => 1,
+                "large" => 3,
+                _ => 0
+            };
+            return price > 0;
+        }
+
         private static int GetAquariumCompletionPercentage(Aquarium aquarium) {
             if (aquarium.MaxFish <= 0) {
                 return 0;
@@ -237,6 +246,104 @@ namespace Inner_Tide.Controllers {
                 _logger.LogError(ex, "Could not load items from the user's inventory.");
                 return StatusCode(500, ex.GetBaseException().Message);
             }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPelletInventory() {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            return Json(new {
+                small = user.SmallPelletCount,
+                large = user.LargePelletCount
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PurchasePellet([FromForm] string type) {
+            if (!TryGetPelletPrice(type, out var price)) {
+                return BadRequest("Choose a valid pellet.");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            if (user.CoinCount < price) {
+                return Conflict($"You need {price} coins to buy a {type} pellet.");
+            }
+
+            if (type == "small" && user.SmallPelletCount == int.MaxValue ||
+                type == "large" && user.LargePelletCount == int.MaxValue) {
+                return Conflict("Your pellet bag is full.");
+            }
+
+            user.CoinCount -= price;
+            if (type == "small") {
+                user.SmallPelletCount++;
+            } else {
+                user.LargePelletCount++;
+            }
+
+            try {
+                await _context.SaveChangesAsync();
+            } catch (DbUpdateException ex) {
+                _logger.LogError(ex, "Unable to purchase a {PelletType} pellet for user {UserId}.", type, user.Id);
+                return Problem(
+                    detail: "The pellet purchase could not be saved. Please try again.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(new {
+                type,
+                coinsSpent = price,
+                remainingCoins = user.CoinCount,
+                small = user.SmallPelletCount,
+                large = user.LargePelletCount
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UsePellet([FromForm] string type) {
+            if (type != "small" && type != "large") {
+                return BadRequest("Choose a valid pellet.");
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            if (type == "small") {
+                if (user.SmallPelletCount <= 0) {
+                    return Conflict("You do not have any small pellets.");
+                }
+                user.SmallPelletCount--;
+            } else {
+                if (user.LargePelletCount <= 0) {
+                    return Conflict("You do not have any large pellets.");
+                }
+                user.LargePelletCount--;
+            }
+
+            try {
+                await _context.SaveChangesAsync();
+            } catch (DbUpdateException ex) {
+                _logger.LogError(ex, "Unable to use a {PelletType} pellet for user {UserId}.", type, user.Id);
+                return Problem(
+                    detail: "The pellet could not be used. Please try again.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(new {
+                small = user.SmallPelletCount,
+                large = user.LargePelletCount
+            });
         }
 
         [HttpPost]

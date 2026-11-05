@@ -796,6 +796,8 @@ namespace Inner_Tide.Controllers {
             user.AccountLevel = 1;
             user.XPForNextLevel = 100;
             user.CoinCount = 0;
+            user.SmallPelletCount = 0;
+            user.LargePelletCount = 0;
             user.DailyTaskRegenerationCount = 0;
             user.WeeklyTaskRegenerationCount = 0;
             user.MonthlyTaskRegenerationCount = 0;

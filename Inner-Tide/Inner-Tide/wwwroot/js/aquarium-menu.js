@@ -1,5 +1,8 @@
 const taskMenuLink = document.querySelector(".task-tab a");
 let fishList = [];
+let aquariumFoodPellets = [];
+let heldFeedingPelletType = null;
+let dropFeedingPellet = null;
 let aquariumAnimationRunning = false;
 let aquariumFishReady = Promise.resolve();
 let aquariumObjectsReady = Promise.resolve();
@@ -16,6 +19,7 @@ const aquariumObjectGridColumns = 28;
 const aquariumObjectGridRows = 4;
 const aquariumObjectGridVisualRows = 16;
 const aquariumObjectGridSandRowOffset = aquariumObjectGridVisualRows - aquariumObjectGridRows;
+let pelletInventory = { small: 0, large: 0 };
 
 function parseItemGridSpace(gridSpace) {
     const dimensions = typeof gridSpace === "string" ? gridSpace.toLowerCase().split("x") : [];
@@ -440,6 +444,52 @@ async function renderStoreItems() {
     }
 }
 
+function updatePelletInventory(inventory) {
+    for (const type of ["small", "large"]) {
+        const count = inventory[type];
+        if (!Number.isSafeInteger(count) || count < 0) {
+            throw new TypeError(`The ${type} pellet inventory count is invalid.`);
+        }
+        pelletInventory[type] = count;
+        const countLabel = document.querySelector(`[data-pellet-count="${type}"]`);
+        if (countLabel) countLabel.textContent = String(count);
+        const choice = document.querySelector(`.feeding-pellet-choice[data-pellet-type="${type}"]`);
+        if (choice) choice.disabled = count === 0;
+    }
+}
+
+async function loadPelletInventory() {
+    const response = await fetch("/Aquarium/GetPelletInventory");
+    if (!response.ok) {
+        throw new Error(`Could not load pellet inventory (${response.status}).`);
+    }
+    updatePelletInventory(await response.json());
+}
+
+async function purchasePellet(type, storeItem) {
+    const token = document.querySelector("#pelletActionToken input[name='__RequestVerificationToken']")?.value;
+    if (!token) {
+        throw new Error("Cannot purchase a pellet because the verification token is missing.");
+    }
+
+    const response = await fetch("/Aquarium/PurchasePellet", {
+        method: "POST",
+        body: new URLSearchParams({
+            type,
+            __RequestVerificationToken: token
+        })
+    });
+    if (!response.ok) {
+        const message = (await response.text()).trim();
+        throw new Error(message || `Pellet purchase failed (${response.status}).`);
+    }
+
+    const result = await response.json();
+    coinBalance = result.remainingCoins;
+    updatePelletInventory(result);
+    await animateCoinSpend(result.coinsSpent, storeItem, result.remainingCoins);
+}
+
 async function renderStoreFish() {
     try {
 
@@ -625,10 +675,22 @@ if (document.body.classList.contains("aquarium-page")) {
     renderInventoryItems();
     renderStoreFish();
     renderStoreItems();
+    void loadPelletInventory().catch(error => {
+        console.error("Could not load the pellet inventory.", error);
+    });
     const hideButton = document.querySelector("#aquariumHideButton");
     const hideExitButton = document.querySelector("#aquariumHideExit");
+    const actionsButton = document.querySelector("#actionsBtn");
     const hideModeTime = document.querySelector("#hideModeTime");
     const hideModeDate = document.querySelector("#hideModeDate");
+    const feedingControls = document.querySelector("#feedingControls");
+    const feedingBagButton = document.querySelector("#feedingBagButton");
+    const feedingPelletPicker = document.querySelector("#feedingPelletPicker");
+    const feedingStatus = document.querySelector("#feedingStatus");
+    const heldPelletPreview = document.querySelector("#heldPelletPreview");
+    let pelletDropPending = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
     let hideModeClockInterval;
 
     const updateHideModeClock = () => {
@@ -645,6 +707,119 @@ if (document.body.classList.contains("aquarium-page")) {
             day: "numeric",
             year: "numeric"
         }).format(now);
+    };
+
+    function updateHeldPelletPreview() {
+        if (!heldPelletPreview || !heldFeedingPelletType) return;
+        const fishContainer = document.querySelector("#fishContainer");
+        const bounds = fishContainer?.getBoundingClientRect();
+        if (!bounds) return;
+        heldPelletPreview.style.left = `${lastPointerX}px`;
+        heldPelletPreview.style.top = `${lastPointerY}px`;
+    }
+
+    function exitFeedingMode() {
+        document.body.classList.remove("aquarium-feeding-mode");
+        heldFeedingPelletType = null;
+        dropFeedingPellet = null;
+        if (heldPelletPreview) heldPelletPreview.hidden = true;
+        if (feedingPelletPicker) feedingPelletPicker.hidden = true;
+        feedingBagButton?.setAttribute("aria-expanded", "false");
+        if (feedingControls) {
+            feedingControls.hidden = true;
+            feedingControls.classList.remove("is-visible");
+        }
+        if (hideExitButton) {
+            hideExitButton.hidden = true;
+            const icon = hideExitButton.querySelector(".aquarium-icon-frame img");
+            if (icon) icon.src = "../img/open_crab.png";
+            hideExitButton.querySelector(".aquarium-menu-label").textContent = "Show";
+            hideExitButton.setAttribute("aria-label", "Show aquarium menu");
+        }
+        fishList.forEach(fish => {
+            fish.foodTarget = null;
+            fish.feedingBoostMultiplier = 1;
+            fish.pauseUntil = 0;
+            fish.speed = fish.cruiseSpeed;
+            if (fish.heartTimeoutId) {
+                window.clearTimeout(fish.heartTimeoutId);
+                fish.heartTimeoutId = 0;
+            }
+            const bounds = getFishSwimBounds(fish.element.parentElement, fish.element);
+            fish.targetX = randomRange(0, bounds.maxX);
+            fish.targetY = randomRange(0, bounds.maxY);
+        });
+        document.querySelectorAll("#fishContainer .fish-love-heart").forEach(heart => heart.remove());
+        if (feedingStatus) feedingStatus.textContent = "";
+        startAquariumAnimation();
+    }
+
+    dropFeedingPellet = async event => {
+        if (!heldFeedingPelletType || pelletDropPending) return;
+        pelletDropPending = true;
+        try {
+            const fishContainer = document.querySelector("#fishContainer");
+            const bounds = fishContainer?.getBoundingClientRect();
+            const token = document.querySelector("#pelletActionToken input[name='__RequestVerificationToken']")?.value;
+            if (!fishContainer || !bounds || !token) {
+                throw new Error("Cannot drop a pellet because the aquarium or verification token is unavailable.");
+            }
+
+            const x = event.clientX - bounds.left;
+            const y = event.clientY - bounds.top;
+            if (x < 0 || x > bounds.width || y < 0 || y > bounds.height) return;
+            if (fishList.length === 0) {
+                if (feedingStatus) feedingStatus.textContent = "Add a fish to your aquarium before feeding.";
+                return;
+            }
+            const reachable = fishList.some(fish => {
+                const swimBounds = getFishSwimBounds(fishContainer, fish.element);
+                return x >= fish.element.offsetWidth / 2
+                    && x <= swimBounds.maxX + fish.element.offsetWidth / 2;
+            });
+            if (!reachable) {
+                if (feedingStatus) feedingStatus.textContent = "Drop the pellet within the aquarium.";
+                return;
+            }
+
+            if (feedingStatus) feedingStatus.textContent = "Dropping pellet...";
+            const response = await fetch("/Aquarium/UsePellet", {
+                method: "POST",
+                body: new URLSearchParams({
+                    type: heldFeedingPelletType,
+                    __RequestVerificationToken: token
+                })
+            });
+            if (!response.ok) {
+                const message = (await response.text()).trim();
+                throw new Error(message || `Could not drop pellet (${response.status}).`);
+            }
+
+            const type = heldFeedingPelletType;
+            updatePelletInventory(await response.json());
+            const pelletRadius = type === "small" ? 5 : 9;
+            const sandSurfaceY = sand2.offsetTop - fishContainer.offsetTop + sand2.offsetHeight * .18;
+            const restY = Math.min(bounds.height - pelletRadius, sandSurfaceY);
+            const startY = Math.min(y, restY);
+            const pelletElement = document.createElement("span");
+            pelletElement.className = `fish-food-pellet ${type}`;
+            pelletElement.setAttribute("aria-hidden", "true");
+            pelletElement.style.left = `${x}px`;
+            pelletElement.style.top = `${startY}px`;
+            fishContainer.appendChild(pelletElement);
+            aquariumFoodPellets.push({ type, x, y: startY, restY, element: pelletElement });
+            heldFeedingPelletType = null;
+            if (heldPelletPreview) heldPelletPreview.hidden = true;
+            if (feedingStatus) feedingStatus.textContent = "Pellet dropped. Waiting for a fish to notice it.";
+            startAquariumAnimation();
+        } catch (error) {
+            console.error("Could not drop a fish pellet.", error);
+            if (feedingStatus) {
+                feedingStatus.textContent = error instanceof Error ? error.message : "Could not drop pellet.";
+            }
+        } finally {
+            pelletDropPending = false;
+        }
     };
 
     if (hideButton && hideExitButton && hideModeTime && hideModeDate) {
@@ -669,6 +844,12 @@ if (document.body.classList.contains("aquarium-page")) {
         });
 
         hideExitButton.addEventListener("click", () => {
+            if (pelletDropPending) return;
+            if (document.body.classList.contains("aquarium-feeding-mode")) {
+                exitFeedingMode();
+                actionsButton?.focus();
+                return;
+            }
             window.clearInterval(hideModeClockInterval);
             document.body.classList.remove("aquarium-hide-mode");
             hideButton.focus();
@@ -676,7 +857,52 @@ if (document.body.classList.contains("aquarium-page")) {
                 hideExitButton.hidden = true;
             }, 400);
         });
+
+        actionsButton?.addEventListener("click", () => {
+            if (document.body.classList.contains("editor-mode") || !feedingControls) return;
+            if (document.body.classList.contains("aquarium-feeding-mode")) return;
+            closeActiveAquariumMenu?.();
+            document.body.classList.add("aquarium-feeding-mode");
+            hideExitButton.hidden = false;
+            const icon = hideExitButton.querySelector(".aquarium-icon-frame img");
+            if (icon) icon.src = "../img/close_icon.png";
+            hideExitButton.querySelector(".aquarium-menu-label").textContent = "";
+            hideExitButton.setAttribute("aria-label", "Close Actions");
+            feedingControls.hidden = false;
+            window.requestAnimationFrame(() => feedingControls.classList.add("is-visible"));
+        });
     }
+
+    feedingBagButton?.addEventListener("click", () => {
+        if (!feedingPelletPicker) return;
+        feedingPelletPicker.hidden = !feedingPelletPicker.hidden;
+        feedingBagButton.setAttribute("aria-expanded", String(!feedingPelletPicker.hidden));
+    });
+
+    feedingPelletPicker?.addEventListener("click", event => {
+        const choice = event.target instanceof Element
+            ? event.target.closest(".feeding-pellet-choice")
+            : null;
+        const type = choice?.dataset.pelletType;
+        if (type !== "small" && type !== "large") return;
+        if (pelletInventory[type] < 1) return;
+
+        heldFeedingPelletType = type;
+        if (heldPelletPreview) {
+            heldPelletPreview.className = `held-pellet-preview ${type}`;
+            heldPelletPreview.hidden = false;
+            updateHeldPelletPreview();
+        }
+        feedingPelletPicker.hidden = true;
+        feedingBagButton?.setAttribute("aria-expanded", "false");
+        if (feedingStatus) feedingStatus.textContent = `Holding a ${type} pellet. Click in the tank to drop it.`;
+    });
+
+    document.addEventListener("pointermove", event => {
+        lastPointerX = event.clientX;
+        lastPointerY = event.clientY;
+        if (heldFeedingPelletType) updateHeldPelletPreview();
+    });
 
     if (isReducedMotionEnabled()) {
         document.body.classList.remove("aquarium-enter");
@@ -701,10 +927,16 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
 
     function setCategory(category) {
         const tabsInPanel = [...tabs.querySelectorAll(".store-tab")];
+        const selectedIndex = tabsInPanel.findIndex(tab => tab.dataset.category === category);
+        if (selectedIndex < 0) return;
         tabsInPanel.forEach(tab => {
             const selected = tab.dataset.category === category;
             tab.classList.toggle("active", selected);
-            tab.dataset.position = selected ? "center" : category === "fish" ? "right" : "left";
+            tab.dataset.position = selected
+                ? "center"
+                : (tabsInPanel.indexOf(tab) + tabsInPanel.length - selectedIndex) % tabsInPanel.length === 1
+                    ? "right"
+                    : "left";
         });
 
         panel.querySelectorAll(".store-catalog").forEach(catalog => {
@@ -772,7 +1004,7 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
 
         const category = tab.dataset.category;
 
-        if (category !== "fish" && category !== "objects") return;
+        if (!tabs.querySelector(`.store-tab[data-category="${category}"]`)) return;
 
         if (!tab.classList.contains("active")) {
             playSideNavigationSound(tab.dataset.position);
@@ -786,6 +1018,14 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
 }
 
 initializeAquariumMenu(storeBtn, storePanel, storeBackdrop, "store");
+document.querySelectorAll(".pellet-store-item").forEach(item => {
+    item.addEventListener("click", () => {
+        void purchasePellet(item.dataset.pelletType, item).catch(error => {
+            console.error("Could not purchase a fish pellet.", error);
+            window.alert(error instanceof Error ? error.message : "Could not purchase pellet.");
+        });
+    });
+});
 
 const editorInventoryHeading = document.querySelector("#editorInventoryHeading");
 const editorLayerMenu = document.querySelector("#editorLayerMenu");
@@ -1145,15 +1385,60 @@ function appendAquariumFish(f, x, y, startMoving = false) {
 
     var speed = randomRange(60, 90);
 
-    if (f.species === "Paddlefish") {
-        img.style.width = "270px";
+    let size = "medium";
+
+    switch (f.species) {
+        case "Clownfish":
+            size = "tiny";
+            break;
+        case "Australian Prowfish":
+        case "Jewelfish":
+        case "Beardfish":
+        case "Boxfish":
+            size = "small";
+            break;
+        
+        case "Brook Trout":
+        case "Northern Searobin":
+        case "Starry Flounder":
+        case "Pink Salmon":
+            size = "medium";
+            break;
+
+        case "Pelican Eel":
+        case "Paddlefish":
+        case "Butterfly Ray":
+        case "Yellowtail Amberjack":
+        case "Gombessa":
+            size = "large";
+            break;
+        default:
+            size = "medium";
+            break;
     }
 
-    if (f.species === "Butterfly Ray") {
-        img.style.width = "350px";
-        speed = randomRange(30, 60);
+    switch (size) {
+        case "tiny":
+            img.style.width = "120px";
+            speed = randomRange(150, 200);
+            break;
+        case "small":
+            img.style.width = "150px";
+            speed = randomRange(70, 100);
+            break;
+
+        case "medium":
+            img.style.width = "250px";
+            speed = randomRange(40, 70);
+            break;
+
+        case "large":
+            img.style.width = "400px";
+            speed = randomRange(20, 40);
+            break;
     }
 
+    img.style.height = "auto";
 
     item.style.position = "absolute";
     item.style.left = `${x}px`;
@@ -1192,6 +1477,12 @@ function appendAquariumFish(f, x, y, startMoving = false) {
         targetY: randomRange(0, swimBounds.maxY),
         speed: speed,
         cruiseSpeed: speed,
+        facingX: null,
+        facingY: null,
+        foodTarget: null,
+        feedingBoostMultiplier: 1,
+        pauseUntil: 0,
+        heartTimeoutId: 0,
         tapSpeedBoosted: false,
         nextBubbleAt: 0,
         moving: startMoving
@@ -1402,6 +1693,71 @@ function emitFishBubble(fish, direction) {
     window.setTimeout(() => bubble.remove(), 2200);
 }
 
+function isFishFacingPellet(fish, pellet) {
+    if (fish.facingX === null || fish.facingY === null) return false;
+    const dx = pellet.x - (fish.x + fish.element.offsetWidth / 2);
+    const dy = pellet.y - (fish.y + fish.element.offsetHeight / 2);
+    const distance = Math.hypot(dx, dy);
+    if (distance < 1) return true;
+    return (fish.facingX * dx + fish.facingY * dy) / distance >= .5;
+}
+
+function canFishReachPellet(fish, pellet, fishContainer) {
+    const bounds = getFishSwimBounds(fishContainer, fish.element);
+    const halfWidth = fish.element.offsetWidth / 2;
+    const halfHeight = fish.element.offsetHeight / 2;
+    return pellet.x >= halfWidth
+        && pellet.x <= bounds.maxX + halfWidth
+        && pellet.y >= halfHeight - 14
+        && pellet.y <= bounds.maxY + halfHeight + halfHeight;
+}
+
+function emitFishLoveHearts(fish, count) {
+    const fishContainer = fish.element.parentElement;
+    if (!fishContainer) return;
+    for (let index = 0; index < count; index++) {
+        const heart = document.createElement("span");
+        heart.className = "fish-love-heart";
+        heart.textContent = "\u2665";
+        heart.style.left = `${fish.x + fish.element.offsetWidth / 2 + (index - (count - 1) / 2) * 22}px`;
+        heart.style.top = `${fish.y + fish.element.offsetHeight / 2}px`;
+        fishContainer.appendChild(heart);
+        window.setTimeout(() => heart.remove(), 1400);
+    }
+}
+
+function eatFishPellet(fish, now) {
+    const pellet = fish.foodTarget;
+    if (!pellet) return;
+
+    pellet.element.remove();
+    aquariumFoodPellets = aquariumFoodPellets.filter(item => item !== pellet);
+    fishList.forEach(otherFish => {
+        if (otherFish.foodTarget !== pellet) return;
+        otherFish.foodTarget = null;
+        if (otherFish !== fish) {
+            const bounds = getFishSwimBounds(otherFish.element.parentElement, otherFish.element);
+            otherFish.targetX = randomRange(0, bounds.maxX);
+            otherFish.targetY = randomRange(0, bounds.maxY);
+        }
+    });
+    const pauseDuration = pellet.type === "small" ? 1800 : 3200;
+    fish.pauseUntil = now + pauseDuration;
+    fish.feedingBoostMultiplier = pellet.type === "small" ? 1.35 : 2.2;
+    fish.speed = 0;
+    fish.targetX = fish.x;
+    fish.targetY = fish.y;
+    if (Math.random() < 0.35) {
+        const heartCount = pellet.type === "small" ? 1 : Math.floor(randomRange(1, 4));
+        fish.heartTimeoutId = window.setTimeout(() => {
+            fish.heartTimeoutId = 0;
+            if (document.body.classList.contains("aquarium-feeding-mode") && fish.element.isConnected) {
+                emitFishLoveHearts(fish, heartCount);
+            }
+        }, randomRange(500, pauseDuration));
+    }
+}
+
 function animate(now) {
     const fishContainer = document.querySelector("#fishContainer");
     if (!fishContainer) return;
@@ -1409,13 +1765,40 @@ function animate(now) {
     const elapsedSeconds = Math.min((now - (animate.lastFrameTime ?? now)) / 1000, 0.05);
     animate.lastFrameTime = now;
 
+    aquariumFoodPellets.forEach(pellet => {
+        if (pellet.y >= pellet.restY) return;
+        pellet.y = Math.min(pellet.restY, pellet.y + 110 * elapsedSeconds);
+        pellet.element.style.top = `${pellet.y}px`;
+    });
 
     fishList.forEach(fish => {
         if (!fish.moving || !fish.element.isConnected) return;
-
+        if (fish.pauseUntil > now) return;
         const { maxX, maxY } = getFishSwimBounds(fishContainer, fish.element);
         fish.x = Math.max(0, Math.min(fish.x, maxX));
         fish.y = Math.max(0, Math.min(fish.y, maxY));
+        if (fish.pauseUntil > 0) {
+            fish.pauseUntil = 0;
+            fish.speed = fish.cruiseSpeed * fish.feedingBoostMultiplier;
+            fish.targetX = randomRange(0, maxX);
+            fish.targetY = randomRange(0, maxY);
+        }
+        if (!fish.foodTarget && document.body.classList.contains("aquarium-feeding-mode")) {
+            const pellet = aquariumFoodPellets.find(item =>
+                canFishReachPellet(fish, item, fishContainer)
+                    && isFishFacingPellet(fish, item));
+            if (pellet) {
+                fish.foodTarget = pellet;
+                fish.speed = fish.cruiseSpeed * 2.5;
+            }
+        }
+        if (fish.foodTarget) {
+            fish.targetX = fish.foodTarget.x - fish.element.offsetWidth / 2;
+            fish.targetY = fish.foodTarget.y - fish.element.offsetHeight / 2;
+            fish.speed = fish.cruiseSpeed * 2.5;
+        } else {
+            fish.speed = fish.cruiseSpeed * fish.feedingBoostMultiplier;
+        }
         fish.targetX = Math.max(0, Math.min(fish.targetX, maxX));
         fish.targetY = Math.max(0, Math.min(fish.targetY, maxY));
 
@@ -1423,6 +1806,16 @@ function animate(now) {
         let dy = fish.targetY - fish.y;
 
         const distance = Math.hypot(dx, dy);
+
+        if (fish.foodTarget) {
+            const dxToFood = fish.foodTarget.x - (fish.x + fish.element.offsetWidth / 2);
+            const dyToFood = fish.foodTarget.y - (fish.y + fish.element.offsetHeight / 2);
+            const foodDistance = Math.hypot(dxToFood, dyToFood);
+            if (foodDistance <= Math.max(14, fish.element.offsetHeight / 2)) {
+                eatFishPellet(fish, now);
+                return;
+            }
+        }
 
         if (distance < 3) {
             if (fish.tapSpeedBoosted) {
@@ -1435,6 +1828,8 @@ function animate(now) {
         }
 
         const step = Math.min(distance, fish.speed * elapsedSeconds);
+        fish.facingX = dx / distance;
+        fish.facingY = dy / distance;
         fish.x += (dx / distance) * step;
         fish.y += (dy / distance) * step;
 
@@ -1824,6 +2219,10 @@ if (aquariumFishContainer) {
     });
     aquariumFishContainer.addEventListener("keydown", event => {
         if (event.key !== "Enter" && event.key !== " ") return;
+        if (document.body.classList.contains("aquarium-feeding-mode")) {
+            event.preventDefault();
+            return;
+        }
         const target = event.target instanceof Element ? event.target.closest(".aquariumGrabbable") : null;
         const fish = target && fishList.find(item => item.element === target);
         if (!fish || document.body.classList.contains("editor-mode")) return;
@@ -1833,6 +2232,30 @@ if (aquariumFishContainer) {
         });
     });
 }
+
+const aquariumRoot = document.querySelector("#aquarium");
+aquariumRoot?.addEventListener("click", event => {
+    if (!document.body.classList.contains("aquarium-feeding-mode")
+        || event.button !== 0
+        || event.detail === 0) {
+        return;
+    }
+
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("#feedingControls, #aquariumHideExit, #aquariumFishInfo, .tank-store-panel")) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (heldFeedingPelletType && dropFeedingPellet) {
+        void dropFeedingPellet(event).catch(error => {
+            console.error("Could not drop a fish pellet.", error);
+            const status = document.querySelector("#feedingStatus");
+            if (status) status.textContent = error instanceof Error ? error.message : "Could not drop pellet.";
+        });
+    }
+}, true);
 
 aquariumFishInfoClose?.addEventListener("click", () => closeAquariumFishInfo(true));
 aquariumFishInfoBackdrop?.addEventListener("click", () => closeAquariumFishInfo(true));
