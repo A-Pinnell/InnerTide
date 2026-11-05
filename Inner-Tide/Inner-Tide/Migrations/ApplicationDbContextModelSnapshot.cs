@@ -61,6 +61,38 @@ namespace Inner_Tide.Migrations
                     b.ToTable("Aquariums");
                 });
 
+            modelBuilder.Entity("Inner_Tide.Models.AquariumItemGridCell", b =>
+                {
+                    b.Property<int>("AquariumItemGridCellId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AquariumItemGridCellId"));
+
+                    b.Property<int>("AquariumId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridX")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridY")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SandLayer")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserItemId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AquariumItemGridCellId");
+
+                    b.HasIndex("AquariumId");
+
+                    b.HasIndex("UserItemId");
+
+                    b.ToTable("AquariumItemGridCells");
+                });
+
             modelBuilder.Entity("Inner_Tide.Models.Journal", b =>
                 {
                     b.Property<int>("JournalId")
@@ -229,6 +261,9 @@ namespace Inner_Tide.Migrations
                     b.Property<bool>("FirstTimeLogin")
                         .HasColumnType("bit");
 
+                    b.Property<int>("LargePelletCount")
+                        .HasColumnType("int");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -260,6 +295,9 @@ namespace Inner_Tide.Migrations
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SmallPelletCount")
+                        .HasColumnType("int");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
@@ -403,6 +441,15 @@ namespace Inner_Tide.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserItemId"));
 
+                    b.Property<int?>("AquariumId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GridX")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GridY")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsInAquarium")
                         .HasColumnType("bit");
 
@@ -410,11 +457,19 @@ namespace Inner_Tide.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SandLayer")
+                        .HasColumnType("int");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("isFloating")
+                        .HasColumnType("bit");
+
                     b.HasKey("UserItemId");
+
+                    b.HasIndex("AquariumId");
 
                     b.HasIndex("UserId");
 
@@ -608,6 +663,25 @@ namespace Inner_Tide.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Inner_Tide.Models.AquariumItemGridCell", b =>
+                {
+                    b.HasOne("Inner_Tide.Models.Aquarium", "Aquarium")
+                        .WithMany()
+                        .HasForeignKey("AquariumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Inner_Tide.Models.UserItem", "UserItem")
+                        .WithMany("AquariumItemGridCells")
+                        .HasForeignKey("UserItemId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Aquarium");
+
+                    b.Navigation("UserItem");
+                });
+
             modelBuilder.Entity("Inner_Tide.Models.Journal", b =>
                 {
                     b.HasOne("Inner_Tide.Models.User", "User")
@@ -671,18 +745,22 @@ namespace Inner_Tide.Migrations
 
                     b.Navigation("Aquarium");
 
-                    b.Navigation("FirstPlacedInAquariums");
-
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("Inner_Tide.Models.UserItem", b =>
                 {
+                    b.HasOne("Inner_Tide.Models.Aquarium", "Aquarium")
+                        .WithMany()
+                        .HasForeignKey("AquariumId");
+
                     b.HasOne("Inner_Tide.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Aquarium");
 
                     b.Navigation("User");
                 });
@@ -760,6 +838,11 @@ namespace Inner_Tide.Migrations
             modelBuilder.Entity("Inner_Tide.Models.UserFish", b =>
                 {
                     b.Navigation("FirstPlacedInAquariums");
+                });
+
+            modelBuilder.Entity("Inner_Tide.Models.UserItem", b =>
+                {
+                    b.Navigation("AquariumItemGridCells");
                 });
 #pragma warning restore 612, 618
         }

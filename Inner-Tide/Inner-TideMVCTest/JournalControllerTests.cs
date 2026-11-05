@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 namespace Inner_TideMVCTest {
     [TestClass]
     public class JournalControllerTests {
-        private JournalController controller;
+        private JournalsController controller;
 
         [TestInitialize]
         public void TestInitialize() {
-            controller = new JournalController();
+            controller = new JournalsController();
 
             controller.ControllerContext = new ControllerContext {
                 HttpContext = new DefaultHttpContext {

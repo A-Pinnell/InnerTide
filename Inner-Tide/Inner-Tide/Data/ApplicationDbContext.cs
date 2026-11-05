@@ -13,6 +13,12 @@ namespace Inner_Tide.Data {
                 .WithMany(fish => fish.FirstPlacedInAquariums)
                 .HasForeignKey(a => a.FirstPlacedUserFishId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<AquariumItemGridCell>()
+                .HasOne(gridCell => gridCell.UserItem)
+                .WithMany(item => item.AquariumItemGridCells)
+                .HasForeignKey(gridCell => gridCell.UserItemId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -40,5 +46,7 @@ namespace Inner_Tide.Data {
         public DbSet<Inner_Tide.Models.QuizQuestion> QuizQuestions { get; set; } = default!;
 
         public DbSet<Inner_Tide.Models.UserCategoryValues> UserCategoryValues { get; set; } = default!;
+
+        public DbSet<Inner_Tide.Models.AquariumItemGridCell> AquariumItemGridCells { get; set; } = default!;
     }
 }

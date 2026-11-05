@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Inner_Tide.Models {
     public class UserItem {
@@ -7,12 +8,29 @@ namespace Inner_Tide.Models {
         [Required]
         public bool IsInAquarium { get; set; }
 
-        //Foreign Key
+        public int? GridX { get; set; }
+
+        public int? GridY { get; set; }
+
+        public int? SandLayer { get; set; }
+
+        public bool isFloating { get; set; }    
+
+        // Foreign Key
         [Required]
         public string UserId { get; set; }
+
         public User? User { get; set; }
 
         [Required]
         public required string ItemId { get; set; }
+
+        public int? AquariumId { get; set; }
+
+        public Aquarium? Aquarium { get; set; }
+
+
+        // Navigation Property
+        public ICollection<AquariumItemGridCell> AquariumItemGridCells { get; set; } = new List<AquariumItemGridCell>();
     }
 }

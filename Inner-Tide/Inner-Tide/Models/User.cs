@@ -34,6 +34,12 @@ namespace Inner_Tide.Models {
         public DateTime? MonthlyLastFreeTaskRefreshAt { get; set; }
 
         [Required]
+        public int SmallPelletCount { get; set; }
+
+        [Required]
+        public int LargePelletCount { get; set; }
+
+        [Required]
         public bool FirstTimeLogin { get; set; }
     }
 }

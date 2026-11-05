@@ -2,27 +2,44 @@
 @model VerifyEmailViewModel;
 
 @{
-    ViewData["Title"] = "Verify Email Page";
-    ViewData["PageStylesheets"] = new[] { "task-menu.css" };
+    ViewData["Title"] = "Verify Email";
+    ViewData["PageStylesheets"] = new[] { "users-menu.css" };
+    ViewData["PageScripts"] = new[] { "users-menu.js" };
 }
 
-<body class="task-menu-page">
-    <main>
-        <form asp-action="VerifyEmail" method="post">
-            <fieldset>
-                <div class="mb-3">
-                    <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
-                </div>
+<body class="users-page">
+    <main class="users-shell">
+        <section class="users-promo">
+            <img src="~/img/login_promo.png" alt="Inner Tide">
+        </section>
 
-                <input type="submit" value="Submit" class="btn btn-success w-100 p-2" />
-                <div class="text-center mt-2">
-                    <a asp-controller="Users" asp-action="Index" class="text-decoration-none mt-3"> Back </a>
-                </div>
+        <section class="auth-panel">
+            <div class="auth-view">
+                <h1> Verify Email </h1>
+                <form asp-action="VerifyEmail" method="post">
+                    <fieldset>
+                        <div class="auth-field">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" type="email" autocomplete="email" placeholder="you@email.com" />
+                            <span asp-validation-for="Email" class="auth-error"></span>
+                        </div>
 
-            </fieldset>
-        </form>
+                        <div class="auth-actions">
+                            <button type="submit" class="auth-submit"> Confirm Email </button>
+                            <a asp-controller="Users" asp-action="Index" class="auth-switch"> Back </a>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </section>
 
+        <footer class="users-footer">
+            <span>Dive In.</span>
+            <img src="~/img/innertide_logo.png" alt="InnerTide">
+        </footer>
+
+        <button class="users-help" type="button">
+            <img src="~/img/help_icon.png" alt="">
+        </button>
     </main>
 </body>
