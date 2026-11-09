@@ -459,6 +459,82 @@ html.reduced-motion .editor-inventory-priority.is-visible.is-new-purchase {
     transform: scale(3.3);
 }
 
+.aquarium-object.is-anchor img,
+.aquarium-object-drag-preview.is-anchor img {
+    transform: scale(2);
+}
+
+.aquarium-object.is-diver img,
+.aquarium-object-drag-preview.is-diver img {
+  transform: scale(4.8);
+}
+
+.aquarium-object.is-diver:not(.is-moving) img {
+    animation: scuba-diver-float 2.4s ease-in-out infinite;
+}
+
+.scuba-diver-bubble {
+    z-index: 2;
+    bottom: auto;
+    --bubble-duration: 3.2s;
+    pointer-events: none;
+}
+
+.scuba-diver-bubble.bubble-one {
+    top: 28%;
+    left: 34%;
+}
+
+.scuba-diver-bubble.bubble-two {
+    top: 46%;
+    left: 72%;
+    --bubble-delay: -1s;
+}
+
+.scuba-diver-bubble.bubble-three {
+    top: 64%;
+    left: 27%;
+    --bubble-delay: -2s;
+}
+
+.aquarium-object.is-moving .scuba-diver-bubble {
+    display: none;
+}
+
+@keyframes scuba-diver-float {
+    0%, 100% {
+        translate: 0 0;
+        rotate: -2deg;
+    }
+
+    50% {
+        translate: 0 -4px;
+        rotate: 2deg;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aquarium-object.is-diver img {
+        animation: none;
+    }
+
+    .scuba-diver-bubble {
+        display: none;
+    }
+}
+
+html.reduced-motion .aquarium-object.is-diver img {
+    animation: none;
+}
+
+html.reduced-motion .scuba-diver-bubble {
+    display: none;
+}
+
+.inventoryObjectGrabbable.is-anchor .item-preview {
+    transform: scale(.65);
+}
+
 .aquarium-object.is-moving {
     opacity: .2;
 }

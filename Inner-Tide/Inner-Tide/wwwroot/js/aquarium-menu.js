@@ -21,6 +21,10 @@ const aquariumObjectGridVisualRows = 16;
 const aquariumObjectGridSandRowOffset = aquariumObjectGridVisualRows - aquariumObjectGridRows;
 let pelletInventory = { small: 0, large: 0 };
 
+function isLittleScubaDiver(name) {
+    return typeof name === "string" && name.trim().toLowerCase() === "little scuba diver man";
+}
+
 function parseItemGridSpace(gridSpace) {
     const dimensions = typeof gridSpace === "string" ? gridSpace.toLowerCase().split("x") : [];
     if (dimensions.length !== 2) return null;
@@ -567,6 +571,7 @@ function renderEditorInventoryItems() {
         item.dataset.gridSpace = i.gridSpace;
         item.dataset.name = i.name;
         item.dataset.isFloating = String(i.isFloating === true);
+        item.classList.toggle("is-anchor", /\banchor\b/i.test(i.name));
         item.classList.add("inventoryObjectGrabbable");
 
         item.innerHTML = `
@@ -737,19 +742,21 @@ if (document.body.classList.contains("aquarium-page")) {
             hideExitButton.setAttribute("aria-label", "Show aquarium menu");
         }
         fishList.forEach(fish => {
-            fish.foodTarget = null;
-            fish.feedingBoostMultiplier = 1;
-            fish.pauseUntil = 0;
-            fish.speed = fish.cruiseSpeed;
-            if (fish.heartTimeoutId) {
-                window.clearTimeout(fish.heartTimeoutId);
-                fish.heartTimeoutId = 0;
+            const isFinishingPellet = fish.pauseUntil > performance.now();
+            if (!isFinishingPellet) {
+                fish.foodTarget = null;
+                fish.feedingBoostMultiplier = 1;
+                fish.pauseUntil = 0;
+                fish.speed = fish.cruiseSpeed;
+                if (fish.heartTimeoutId) {
+                    window.clearTimeout(fish.heartTimeoutId);
+                    fish.heartTimeoutId = 0;
+                }
+                const bounds = getFishSwimBounds(fish.element.parentElement, fish.element);
+                fish.targetX = randomRange(0, bounds.maxX);
+                fish.targetY = randomRange(0, bounds.maxY);
             }
-            const bounds = getFishSwimBounds(fish.element.parentElement, fish.element);
-            fish.targetX = randomRange(0, bounds.maxX);
-            fish.targetY = randomRange(0, bounds.maxY);
         });
-        document.querySelectorAll("#fishContainer .fish-love-heart").forEach(heart => heart.remove());
         if (feedingStatus) feedingStatus.textContent = "";
         startAquariumAnimation();
     }
@@ -1433,7 +1440,7 @@ function appendAquariumFish(f, x, y, startMoving = false) {
             break;
 
         case "large":
-            img.style.width = "400px";
+            img.style.width = "300px";
             speed = randomRange(20, 40);
             break;
     }
@@ -1632,6 +1639,8 @@ function createAquariumObjectElement(object, dimensions = parseItemGridSpace(obj
     const placedObject = document.createElement("button");
     placedObject.type = "button";
     placedObject.className = "aquarium-object";
+    placedObject.classList.toggle("is-anchor", /\banchor\b/i.test(object.name));
+    placedObject.classList.toggle("is-diver", isLittleScubaDiver(object.name));
     placedObject.dataset.userItemId = String(object.userItemId);
     placedObject.dataset.itemId = object.itemId;
     placedObject.dataset.sprite = object.sprite;
@@ -1661,6 +1670,13 @@ function createAquariumObjectElement(object, dimensions = parseItemGridSpace(obj
         revealObject();
     }, { once: true });
     placedObject.appendChild(image);
+    if (isLittleScubaDiver(object.name)) {
+        for (let bubbleIndex = 0; bubbleIndex < 3; bubbleIndex++) {
+            const bubble = document.createElement("span");
+            bubble.className = `aquarium-bubble bubble-${["one", "two", "three"][bubbleIndex]} scuba-diver-bubble`;
+            placedObject.appendChild(bubble);
+        }
+    }
     if (image.complete) {
         if (image.naturalWidth > 0) {
             revealObject();
@@ -1747,15 +1763,13 @@ function eatFishPellet(fish, now) {
     fish.speed = 0;
     fish.targetX = fish.x;
     fish.targetY = fish.y;
-    if (Math.random() < 0.35) {
-        const heartCount = pellet.type === "small" ? 1 : Math.floor(randomRange(1, 4));
-        fish.heartTimeoutId = window.setTimeout(() => {
-            fish.heartTimeoutId = 0;
-            if (document.body.classList.contains("aquarium-feeding-mode") && fish.element.isConnected) {
-                emitFishLoveHearts(fish, heartCount);
-            }
-        }, randomRange(500, pauseDuration));
-    }
+    const heartCount = pellet.type === "small" ? 1 : Math.floor(randomRange(1, 4));
+    fish.heartTimeoutId = window.setTimeout(() => {
+        fish.heartTimeoutId = 0;
+        if (fish.element.isConnected) {
+            emitFishLoveHearts(fish, heartCount);
+        }
+    }, randomRange(500, pauseDuration));
 }
 
 function animate(now) {
@@ -2644,6 +2658,7 @@ function startObjectDrag(event, source, isPlaced) {
     const gridRect = grid.getBoundingClientRect();
     const preview = document.createElement("div");
     preview.className = "aquarium-object-drag-preview";
+    preview.classList.toggle("is-anchor", /\banchor\b/i.test(source.dataset.name || ""));
     preview.style.width = `${gridRect.width / aquariumObjectGridColumns * dimensions.width}px`;
     preview.style.height = `${gridRect.height / aquariumObjectGridVisualRows * dimensions.height}px`;
     preview.style.setProperty("--object-grid-cell-width", `${100 / dimensions.width}%`);
