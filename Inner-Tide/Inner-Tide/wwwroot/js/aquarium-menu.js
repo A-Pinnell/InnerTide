@@ -25,6 +25,10 @@ function isLittleScubaDiver(name) {
     return typeof name === "string" && name.trim().toLowerCase() === "little scuba diver man";
 }
 
+function isSandCastle(name) {
+    return typeof name === "string" && /sand[\s-]*castle/i.test(name);
+}
+
 function parseItemGridSpace(gridSpace) {
     const dimensions = typeof gridSpace === "string" ? gridSpace.toLowerCase().split("x") : [];
     if (dimensions.length !== 2) return null;
@@ -1640,7 +1644,14 @@ function createAquariumObjectElement(object, dimensions = parseItemGridSpace(obj
     placedObject.type = "button";
     placedObject.className = "aquarium-object";
     placedObject.classList.toggle("is-anchor", /\banchor\b/i.test(object.name));
+    placedObject.classList.toggle("is-sand-castle", isSandCastle(object.name));
     placedObject.classList.toggle("is-diver", isLittleScubaDiver(object.name));
+    if (placedObject.classList.contains("is-sand-castle")) {
+        placedObject.style.setProperty("--sand-castle-sprite", `url("${object.sprite}")`);
+        const multiplyTint = document.createElement("span");
+        multiplyTint.className = "sand-castle-multiply-tint";
+        placedObject.appendChild(multiplyTint);
+    }
     placedObject.dataset.userItemId = String(object.userItemId);
     placedObject.dataset.itemId = object.itemId;
     placedObject.dataset.sprite = object.sprite;
@@ -2659,6 +2670,14 @@ function startObjectDrag(event, source, isPlaced) {
     const preview = document.createElement("div");
     preview.className = "aquarium-object-drag-preview";
     preview.classList.toggle("is-anchor", /\banchor\b/i.test(source.dataset.name || ""));
+    preview.classList.toggle("is-sand-castle", isSandCastle(source.dataset.name));
+    if (preview.classList.contains("is-sand-castle")) {
+        preview.style.setProperty("--sand-castle-sprite", `url("${sprite}")`);
+        preview.dataset.sandLayer = String(grid.dataset.sandLayer);
+        const multiplyTint = document.createElement("span");
+        multiplyTint.className = "sand-castle-multiply-tint";
+        preview.appendChild(multiplyTint);
+    }
     preview.style.width = `${gridRect.width / aquariumObjectGridColumns * dimensions.width}px`;
     preview.style.height = `${gridRect.height / aquariumObjectGridVisualRows * dimensions.height}px`;
     preview.style.setProperty("--object-grid-cell-width", `${100 / dimensions.width}%`);

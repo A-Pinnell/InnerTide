@@ -464,6 +464,57 @@ html.reduced-motion .editor-inventory-priority.is-visible.is-new-purchase {
     transform: scale(2);
 }
 
+.aquarium-object.is-sand-castle img,
+.aquarium-object-drag-preview.is-sand-castle img {
+    transform: translateY(-98px) scale(2.8);
+}
+
+.aquarium-object.is-sand-castle::after,
+.aquarium-object-drag-preview.is-sand-castle::after {
+    position: absolute;
+    z-index: 2;
+    inset: 3px;
+    background-color: var(--sand-castle-color);
+    content: "";
+    mask-image: var(--sand-castle-sprite);
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    mix-blend-mode: color;
+    opacity: 1;
+    pointer-events: none;
+    transform: translateY(-98px) scale(2.8);
+}
+
+.sand-castle-multiply-tint {
+    position: absolute;
+    z-index: 3;
+    inset: 3px;
+    background-color: var(--sand-castle-color);
+    mask-image: var(--sand-castle-sprite);
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    transform: translateY(-98px) scale(2.8);
+}
+
+.sand-object-grid[data-sand-layer="0"] .aquarium-object.is-sand-castle,
+.aquarium-object-drag-preview.is-sand-castle[data-sand-layer="0"] {
+    --sand-castle-color: var(--aquarium-sand-front, #dcae20);
+}
+
+.sand-object-grid[data-sand-layer="1"] .aquarium-object.is-sand-castle,
+.aquarium-object-drag-preview.is-sand-castle[data-sand-layer="1"] {
+    --sand-castle-color: var(--aquarium-sand-middle, #edc833);
+}
+
+.sand-object-grid[data-sand-layer="2"] .aquarium-object.is-sand-castle,
+.aquarium-object-drag-preview.is-sand-castle[data-sand-layer="2"] {
+    --sand-castle-color: var(--aquarium-sand-back, #edc833);
+}
+
 .aquarium-object.is-diver img,
 .aquarium-object-drag-preview.is-diver img {
   transform: scale(4.8);
@@ -1623,7 +1674,7 @@ object-fit: cover;
 .editor-toolbar.is-fish-drop-target,
 .editor-toolbar.is-object-drop-target {
     top: 50%;
-    height: min(68vh, 560px);
+    height: min(58vh, 480px);
     padding-block: 12px;
     transform: translateX(0) translateY(-50%);
     filter: brightness(1.12);
