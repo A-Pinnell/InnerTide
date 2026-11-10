@@ -1,5 +1,31 @@
 body {
-    background: #8E772F !important;
+    --journal-background: color-mix(in srgb, var(--journal-sand-back) 65%, #000);
+    background-color: var(--journal-background);
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--journal-background) 85%, #000), color-mix(in srgb, var(--journal-background) 85%, #000)),
+        linear-gradient(var(--journal-background), var(--journal-background)),
+        url("../backgrounds/JournalBackground.png");
+    background-blend-mode: multiply, color, normal;
+    background-position: 0 0, 0 0, 0 0;
+    background-repeat: repeat, repeat, repeat;
+    background-size: 1080px 1080px, 1080px 1080px, 1080px 1080px;
+    animation: journal-background-scroll 30s linear infinite paused;
+}
+
+body.journal-menu-page.journal-background-moving {
+    animation-play-state: running;
+}
+
+@keyframes journal-background-scroll {
+    to {
+        background-position: -1080px 0, -1080px 0, -1080px 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body {
+        animation: none;
+    }
 }
 
 a {
@@ -11,15 +37,25 @@ a {
     overflow: visible !important;
     width: 100%;
     position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2147483647;
 }
 
 #journalH1 {
     position: absolute;
-    top: -0.5%;
-    left: 35%;
+    top: 4vh;
+    left: 0;
+    width: 100%;
     z-index: 9999;
-    font-size: 5.5rem;
-    color: #B18E00;
+    margin: 0;
+    color: #edffff;
+    font-family: "Ipanema", "Neuropolx", sans-serif;
+    font-size: 11vh;
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+    text-shadow: 1px 2px 1px rgba(75, 101, 167, .35);
 }
 
 #backToAquariumButtonContainer {
@@ -38,7 +74,7 @@ a {
 }
 
 #backToAquariumButton {
-    background: rgba(83, 167, 159, 0.8);
+    background: var(--journal-aquarium-button);
     border-radius: 50%;
     width: 80%;
     height: 80%;
@@ -59,7 +95,7 @@ a#backArrow {
 
 #aquariumBtnText {
     font-size: 1.6rem;
-    color: #B18E00; 
+    color: var(--journal-heading);
     width: auto;
     text-align: center;
     margin: 0;
@@ -69,12 +105,12 @@ a#backArrow {
 #sand {
     position: absolute;
     top: -45%;
-    left: -10%;
+    left: -5vw;
     z-index: 3;
-    width: 120%;
+    width: 110vw;
     height: 120px;
-    background: #FFEF67;
-    clip-path: url("#sand-base-shape");
+    background: var(--journal-sand-back);
+    clip-path: url("#sand-front-shape");
     transform: rotate(180deg);
 }
 
@@ -82,11 +118,11 @@ a#backArrow {
 #sand-layer {
     position: absolute;
     top: 2%;
-    left: -10%;
+    left: -5vw;
     z-index: 2;
-    width: 120%;
+    width: 110vw;
     height: 225px;
-    background: #FAD347; 
+    background: var(--journal-sand-middle);
     clip-path: url("#sand-middle-shape");
     transform: rotate(180deg);
 }
@@ -95,25 +131,26 @@ a#backArrow {
 #sand2 {
     position: absolute;
     top: -1px;
-    left: -20%;
+    left: -5vw;
     z-index: 1;
-    width: 120%;
+    width: 110vw;
     height: 300px;
-    background: #FFEF67;
-    clip-path: url("#sand-front-shape");
+    background: var(--journal-sand-front);
+    clip-path: url("#sand-base-shape");
     transform: rotate(180deg);
 }
 
 /* Journal History Section */
 #JournalHistoryContainer {
-    overflow: scroll;
+    overflow-x: hidden;
+    overflow-y: auto;
     scrollbar-color: #FFFFFF #DF34AB ;
     direction: rtl;
     position: absolute;
     top: 20%;
+    bottom: 0;
     width: 43%;
-    height: 75%;
-    border: 3px white solid;
+    border: 0;
 }
 
 .journalContainer {
@@ -128,9 +165,10 @@ a#backArrow {
     background-image: url("../img/journal-entry-background.png");
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 45vw auto;
+    background-size: 100% auto;
     background-origin: border-box;
-    transition: left 1s ease-in-out;
+    transform: translateX(0);
+    transition: transform .75s cubic-bezier(.22, 1, .36, 1);
 }
 
 .journalContainer h3 {
@@ -140,8 +178,7 @@ a#backArrow {
 }
 
 .isSelected {
-    position: relative;
-    left: 5%;
+    transform: translateX(5%);
 }
 
 /* Journal Text Container */
@@ -155,9 +192,11 @@ a#backArrow {
 }
 
 #journalTextBackground {
-    background: #C3A64A;
+    background: var(--journal-sand-middle);
     border-top-left-radius: 35%;
     border-bottom-left-radius: 35%;
+    transform: translateX(100%);
+    transition: transform .8s cubic-bezier(.22, 1, .36, 1);
 
     display: flex;
     flex-direction: column;
@@ -168,9 +207,12 @@ a#backArrow {
     height: 100%;
 }
 
+body.journal-menu-page.journal-menu-revealed #journalTextBackground {
+    transform: translateX(0);
+}
+
 #journalEntryText {
     width: 85%;
-    
     border: 3px white solid;
     border-radius: 15%;
     padding: 25px;
@@ -197,5 +239,3 @@ a#backArrow {
     color: white;
     font-size: 2rem;
 }
-
-

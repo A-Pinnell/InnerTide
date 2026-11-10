@@ -1,27 +1,29 @@
 ﻿@{
     ViewData["Title"] = "Journal Menu";
+    ViewData["BodyClass"] = "journal-menu-page";
     ViewData["PageStylesheets"] = new[] { "journals-menu.css" };
     ViewData["PageScripts"] = new[] { "journal-menu.js" };
 }
 
+<script>
+    document.body.classList.add("journal-menu-page");
+</script>
 
-    <body>
-        <main id="journalMain">
-            <section id="upperSandHeader">
-                <h1 id="journalH1"> Journals </h1>
-                <div id="sand"></div>
-                <div id="sand-layer"></div>
-                <div id="sand2"></div>
+        <section id="upperSandHeader">
+            <h1 id="journalH1"> Journals </h1>
+            <div id="sand"></div>
+            <div id="sand-layer"></div>
+            <div id="sand2"></div>
 
-                <div id="backToAquariumButtonContainer">
-                    <div id="backToAquariumButton">
-                    <a asp-area="" asp-controller="Aquarium" asp-controller="Index" id="backArrow"></a>
-                    </div>
-                    <p id="aquariumBtnText"> Aquarium </p>
+            <div id="backToAquariumButtonContainer">
+                <div id="backToAquariumButton">
+                    <a asp-area="" asp-controller="Aquarium" asp-action="Index" id="backArrow"></a>
                 </div>
+                <p id="aquariumBtnText"> Aquarium </p>
+            </div>
+        </section>
 
-            </section>
-
+        <main id="journalMain">
             <section id="JournalHistoryContainer">
                 <div class="journalContainer">
                     <h3> 2018-05-24 </h3>
@@ -134,4 +136,3 @@
             </svg>
 
         </main>
-    </body>

@@ -1,4 +1,4 @@
-﻿document.addEventListener("click", async event => {
+document.addEventListener("click", async event => {
     const target = event.target.closest(".journalContainer");
 
     console.log("click worked");

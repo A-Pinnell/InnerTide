@@ -44,6 +44,7 @@ window.fetch = async (...args) => {
 };
 
 const selectedAquariumStorageKey = `innerTide.selectedAquarium.${document.body.dataset.accountId}`;
+const selectedAquariumNumberStorageKey = "innerTide.selectedAquariumNumber";
 
 function getAquariumBackgroundNumber(aquariumNumber) {
     return aquariumNumber <= 5 ? aquariumNumber : ((aquariumNumber - 6) % 5) + 1;
@@ -57,10 +58,24 @@ const aquariumScene = document.querySelector(".aquarium-scene");
 if (aquariumScene) {
     const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
     localStorage.setItem(selectedAquariumStorageKey, String(aquariumNumber));
+    localStorage.setItem(selectedAquariumNumberStorageKey, String(aquariumNumber));
     const backgroundNumber = Number(document.body.dataset.aquariumBackgroundNumber) || getAquariumBackgroundNumber(aquariumNumber);
     const backgroundUrl = new URL(`../backgrounds/Aquarium_${backgroundNumber}.png`, document.baseURI);
     aquariumScene.style.setProperty("--aquarium-background-image", `url("${backgroundUrl.href}")`);
     window.aquariumColors.apply(document.body, aquariumScene, aquariumNumber);
+} else if (document.body.classList.contains("journal-menu-page")) {
+    const storedAquariumNumber = Number(localStorage.getItem(selectedAquariumNumberStorageKey));
+    const aquariumNumber = isValidAquariumNumber(storedAquariumNumber) ? storedAquariumNumber : 1;
+    const colors = window.aquariumColors.get(aquariumNumber);
+    document.body.style.setProperty("--journal-sand-back", colors.sandBack);
+    document.body.style.setProperty("--journal-sand-middle", colors.sandMiddle);
+    document.body.style.setProperty("--journal-sand-front", colors.sandFront);
+    const aquariumLink = document.querySelector("#backArrow");
+    if (aquariumLink) {
+        const destination = new URL(aquariumLink.href, window.location.href);
+        destination.searchParams.set("aquarium", String(aquariumNumber));
+        aquariumLink.href = destination.href;
+    }
 }
 
 function revealPageAfterAssetsLoad() {
@@ -160,6 +175,58 @@ function revealPageAfterAssetsLoad() {
 }
 
 revealPageAfterAssetsLoad();
+
+if (document.body.classList.contains("journal-menu-page")) {
+    window.addEventListener("page-assets-ready", () => {
+        const journalTextBackground = document.querySelector("#journalTextBackground");
+        if (!(journalTextBackground instanceof HTMLElement)) {
+            throw new Error("The Journal menu requires its text background panel.");
+        }
+
+        if (isReducedMotionEnabled()) {
+            document.body.classList.add("journal-menu-revealed", "journal-background-moving");
+            return;
+        }
+
+        journalTextBackground.addEventListener("transitionend", event => {
+            if (event.target === journalTextBackground && event.propertyName === "transform") {
+                document.body.classList.add("journal-background-moving");
+            }
+        }, { once: true });
+        document.body.classList.add("journal-menu-revealed");
+    }, { once: true });
+}
+
+if (document.documentElement.classList.contains("aquarium-journal-transition-pending")) {
+    const revealJournalAfterAssetsReady = () => {
+        window.requestAnimationFrame(() => {
+            document.documentElement.classList.remove("aquarium-journal-transition-pending");
+        });
+        window.removeEventListener("page-assets-ready", revealJournalAfterAssetsReady);
+    };
+    window.addEventListener("page-assets-ready", revealJournalAfterAssetsReady, { once: true });
+}
+
+if (document.documentElement.classList.contains("journal-aquarium-transition-pending")) {
+    const aquariumMain = document.querySelector("body.aquarium-page > main");
+    const finishJournalAquariumTransition = event => {
+        if (event.target !== aquariumMain || event.propertyName !== "transform") return;
+        document.body.classList.remove("journal-aquarium-returning");
+    };
+
+    if (isReducedMotionEnabled()) {
+        document.body.classList.remove("journal-aquarium-returning");
+    } else if (aquariumMain) {
+        aquariumMain.addEventListener("transitionend", finishJournalAquariumTransition);
+    }
+
+    window.addEventListener("page-assets-ready", () => {
+        window.requestAnimationFrame(() => {
+            document.documentElement.classList.remove("journal-aquarium-transition-pending");
+            document.body.classList.remove("journal-button-offset");
+        });
+    }, { once: true });
+}
 
 // Task Menu Variables
 const bedIcon = '<svg viewBox="0 0 64 48"><path d="M5 8h8v17h46v17h-6v-6H11v6H5V8Zm9 17v-9h15a8 8 0 0 1 8 9H14Z"/></svg>';
@@ -1078,6 +1145,34 @@ document.addEventListener("click", event => {
         playSideNavigationSound("left");
     }
 
+    if (document.body.classList.contains("journal-menu-page") && link.closest("#backArrow")) {
+        event.preventDefault();
+        destination.searchParams.set("from", "journal");
+        if (isReducedMotionEnabled()) {
+            navigateWithReducedMotion(destination.href);
+            return;
+        }
+
+        if (document.body.classList.contains("journal-aquarium-exiting")) return;
+        const journalBackgroundPosition = getComputedStyle(document.body).backgroundPosition;
+        document.body.style.animation = "none";
+        document.body.style.backgroundPosition = journalBackgroundPosition;
+        document.body.offsetWidth;
+        document.body.style.transition = "background-position .85s cubic-bezier(.76, 0, .24, 1)";
+        document.body.classList.add("journal-aquarium-exiting");
+        window.requestAnimationFrame(() => {
+            document.body.style.backgroundPosition = journalBackgroundPosition
+                .split(",")
+                .map(position => {
+                    const [x, y] = position.trim().split(/\s+/).map(parseFloat);
+                    return `${Math.round(x / 1080) * 1080}px ${Math.round(y / 1080) * 1080}px`;
+                })
+                .join(", ");
+        });
+        window.setTimeout(() => window.location.assign(destination.href), 850);
+        return;
+    }
+
     if (document.body.classList.contains("aquarium-page") && link.closest(".task-tab")) {
         event.preventDefault();
         destination.searchParams.set("from", "aquarium");
@@ -1093,6 +1188,20 @@ document.addEventListener("click", event => {
             fadeOutAquariumMusic(duration),
             new Promise(resolve => window.setTimeout(resolve, duration))
         ]).then(() => window.location.assign(destination.href));
+        return;
+    }
+    if (document.body.classList.contains("aquarium-page") && link.closest("#journalButton")) {
+        event.preventDefault();
+        if (document.body.classList.contains("aquarium-journal-exiting")) return;
+
+        destination.searchParams.set("from", "aquarium-journal");
+        if (isReducedMotionEnabled()) {
+            navigateWithReducedMotion(destination.href);
+            return;
+        }
+
+        document.body.classList.add("aquarium-journal-exiting");
+        window.setTimeout(() => window.location.assign(destination.href), 850);
         return;
     }
     if (document.body.classList.contains("question-page") && link.closest(".question-actions")) {

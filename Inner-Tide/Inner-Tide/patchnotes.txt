@@ -17,4 +17,5 @@ P3 - Version 2.0
 - It is now possible to wipe your data without wiping your account from the databases in the Data Settings tab contained in the options
 - Sound Effects have been added to places where it wasn't prior
 - Transitions have been made smoother and improved
+- More fish, more objects!
 - Various bug fixes

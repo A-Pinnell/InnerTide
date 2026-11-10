@@ -1,5 +1,6 @@
-﻿@using Inner_Tide.Models
+@using Inner_Tide.Models
 @using Microsoft.AspNetCore.Identity
+@using System.Globalization
 @inject UserManager<User> UserManager
 
 @{
@@ -12,6 +13,41 @@
     var aquariumNumber = (int)ViewData["AquariumNumber"]!;
     var aquariumId = (int)ViewData["AquariumId"]!;
     var aquariumBackgroundNumber = (int)ViewData["AquariumBackgroundNumber"]!;
+    var sandBack = "#dcae20";
+    var sandMiddle = "#edc833";
+    var sandFront = "#ffeb70";
+
+    switch (aquariumNumber) {
+        case 2:
+            sandBack = "#71834a";
+            sandMiddle = "#8fa85a";
+            sandFront = "#b7c87a";
+            break;
+        case 3:
+            sandBack = "#762323";
+            sandMiddle = "#a83b3b";
+            sandFront = "#d86666";
+            break;
+        case 4:
+            sandBack = "#1d2114";
+            sandMiddle = "#353d23";
+            sandFront = "#525b34";
+            break;
+        case 5:
+            sandBack = "#28280a";
+            sandMiddle = "#4b4b12";
+            sandFront = "#7e7414";
+            break;
+        default:
+            if (aquariumNumber > 5) {
+                var hue = (aquariumNumber * 137.50776405003785) % 360;
+                var hueText = hue.ToString("R", CultureInfo.InvariantCulture);
+                sandBack = $"hsl({hueText} 42% 34%)";
+                sandMiddle = $"hsl({hueText} 48% 48%)";
+                sandFront = $"hsl({hueText} 54% 64%)";
+            }
+            break;
+    }
 
     if (User.Identity?.IsAuthenticated == true) {
         var currentUser = await UserManager.GetUserAsync(User);
@@ -22,7 +58,14 @@
     }
 }
 
-<body id="aquariumBody" class="aquarium-page aquarium-enter" data-account-id="@accountId" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber">
+<body id="aquariumBody" class="aquarium-page aquarium-enter" data-account-id="@accountId" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber" style="--aquarium-sand-back: @sandBack; --aquarium-sand-middle: @sandMiddle; --aquarium-sand-front: @sandFront">
+    <script>
+        if (new URLSearchParams(window.location.search).get("from") === "journal") {
+            document.documentElement.classList.add("journal-aquarium-transition-pending");
+            document.body.classList.add("journal-aquarium-returning", "journal-button-offset");
+            document.body.classList.remove("aquarium-enter");
+        }
+    </script>
     <audio id="aquarium-music" autoplay preload="auto"></audio>
     <main>
         <div id="aquarium">
@@ -251,6 +294,11 @@
                 </span>
                 <span class="aquarium-menu-label">Show</span>
             </button>
+        </div>
+        <div class="aquarium-journal-sand-continuation" aria-hidden="true">
+            <span class="aquarium-journal-sand-front"></span>
+            <span class="aquarium-journal-sand-middle"></span>
+            <span class="aquarium-journal-sand-back"></span>
         </div>
         <svg focusable="false" width="0" height="0">
             <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">
