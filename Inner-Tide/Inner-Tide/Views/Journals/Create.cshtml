@@ -1,0 +1,31 @@
+﻿@model Inner_Tide.Models.Journal;
+
+@{
+    ViewData["Title"] = "Journal Creation Menu";
+    ViewData["PageStylesheets"] = new[] { "journals-menu.css" };
+}
+
+<body>
+    <main id="journalCreationMain">
+        <form asp-controller="Journals" asp-action="Create" method="post" id="journalCreationForm">
+            <fieldset>
+                <div class="auth-field">
+                    <label asp-for="JournalTitle"> Journal Title </label>
+                    <input asp-for="JournalTitle" placeholder="Enter the Title of Your Journal Here">
+                    <span asp-validation-for="JournalTitle" class="auth-error"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label asp-for="JournalContent"> Journal Content </label>
+                    <textarea asp-for="JournalContent" placeholder="Enter the Contents of Your Journal Here"></textarea>
+                    <span asp-validation-for="JournalContent" class="auth-error"></span>
+                </div>
+
+                <div class="auth-actions">
+                    <button class="auth-submit" type="submit"> Save Journal </button>
+                </div>
+            </fieldset>
+        </form>
+
+    </main>
+</body>

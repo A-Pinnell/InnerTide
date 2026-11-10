@@ -1,4 +1,5 @@
 ﻿using Inner_Tide.Models;
+using Inner_Tide.Models.YourNamespace.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -48,5 +49,7 @@ namespace Inner_Tide.Data {
         public DbSet<Inner_Tide.Models.QuizQuestion> QuizQuestions { get; set; } = default!;
 
         public DbSet<Inner_Tide.Models.UserCategoryValues> UserCategoryValues { get; set; } = default!;
+
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
     }
 }
