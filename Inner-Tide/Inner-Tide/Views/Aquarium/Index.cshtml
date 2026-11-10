@@ -99,9 +99,6 @@
                 <a asp-area="" asp-controller="Home" asp-action="Index"> <span> Task Menu </span> <b> ‹ </b> </a>
             </aside>
 
-            <button class="help-button" type="button">
-                <img src="../img/help_icon.png" alt="">
-            </button>
             <div class="feeding-controls" id="feedingControls" hidden>
                 <div class="feeding-pellet-picker" id="feedingPelletPicker" hidden>
                     <button class="feeding-pellet-choice" type="button" data-pellet-type="small">
@@ -318,6 +315,9 @@
             </clipPath>
         </svg>
         @await Html.PartialAsync("_DeveloperTools")
-        @await Html.PartialAsync("_HelpPopup")
     </main>
+    <button class="help-button" type="button">
+        <img src="../img/help_icon.png" alt="">
+    </button>
+    @await Html.PartialAsync("_HelpPopup")
 </body>

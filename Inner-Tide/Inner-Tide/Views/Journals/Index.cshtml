@@ -16,10 +16,19 @@
             <div id="sand2"></div>
 
             <div id="backToAquariumButtonContainer">
-                <div id="backToAquariumButton">
+                <div id="backToAquariumButton" class="journalMenuBubble">
                     <a asp-area="" asp-controller="Aquarium" asp-action="Index" id="backArrow"></a>
                 </div>
                 <p id="aquariumBtnText"> Aquarium </p>
+            </div>
+
+            <div id="createJournalButtonContainer">
+                <button id="createJournalButton" class="journalMenuBubble" type="button" aria-label="Create journal entry" title="Create journal entry">
+                    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                        <path d="M8 32.5V40h7.5L37.6 17.9l-7.5-7.5L8 32.5Zm35.4-21.2a2 2 0 0 0 0-2.8l-3.9-3.9a2 2 0 0 0-2.8 0l-3.7 3.7 7.5 7.5 2.9-4.5Z" />
+                    </svg>
+                </button>
+                <p id="createJournalButtonText">Create</p>
             </div>
         </section>
 
