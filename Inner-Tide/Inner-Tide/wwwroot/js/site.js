@@ -397,6 +397,7 @@ Object.values(sideNavigationSounds).forEach(sound => registerAudioPlayer(sound, 
 Object.values(elementsBarSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 Object.values(quizArrowSounds).forEach(sound => registerAudioPlayer(sound, "sfx"));
 registerAudioPlayer(document.querySelector("#aquarium-music"), "music");
+const journalMusicPlayer = registerAudioPlayer(document.querySelector("#journal-music"), "music");
 registerAudioPlayer(document.querySelector("#login-music"), "music");
 registerAudioPlayer(document.querySelector("#welcome-music"), "music");
 
@@ -1015,28 +1016,32 @@ function playElementsTransitionSound(direction) {
     });
 }
 
-function fadeOutAquariumMusic(duration) {
-    if (!aquariumMusicPlayer || aquariumMusicPlayer.paused) return Promise.resolve();
+function fadeOutAudioPlayer(player, duration) {
+    if (!player || player.paused) return Promise.resolve();
 
-    const startingVolume = aquariumMusicPlayer.volume;
+    const startingVolume = player.volume;
     const startTime = performance.now();
 
     return new Promise(resolve => {
         function updateVolume(now) {
             const progress = Math.min(1, (now - startTime) / duration);
-            aquariumMusicPlayer.volume = startingVolume * (1 - progress);
+            player.volume = startingVolume * (1 - progress);
             if (progress < 1) {
                 window.requestAnimationFrame(updateVolume);
                 return;
             }
 
-            aquariumMusicPlayer.pause();
-            aquariumMusicPlayer.volume = startingVolume;
+            player.pause();
+            player.volume = startingVolume;
             resolve();
         }
 
         window.requestAnimationFrame(updateVolume);
     });
+}
+
+function fadeOutAquariumMusic(duration) {
+    return fadeOutAudioPlayer(aquariumMusicPlayer, duration);
 }
 
 function playAquariumMenuSound(opening) {
@@ -1139,7 +1144,7 @@ document.addEventListener("click", event => {
 
     const destination = new URL(link.href, window.location.href);
     if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
-    if (link.closest(".aquarium-tab")) {
+    if (link.closest(".aquarium-tab") || link.closest("#journalButton")) {
         playSideNavigationSound("right");
     } else if (link.closest(".task-tab")) {
         playSideNavigationSound("left");
@@ -1148,28 +1153,32 @@ document.addEventListener("click", event => {
     if (document.body.classList.contains("journal-menu-page") && link.closest("#backArrow")) {
         event.preventDefault();
         destination.searchParams.set("from", "journal");
-        if (isReducedMotionEnabled()) {
-            navigateWithReducedMotion(destination.href);
-            return;
-        }
-
         if (document.body.classList.contains("journal-aquarium-exiting")) return;
-        const journalBackgroundPosition = getComputedStyle(document.body).backgroundPosition;
-        document.body.style.animation = "none";
-        document.body.style.backgroundPosition = journalBackgroundPosition;
-        document.body.offsetWidth;
-        document.body.style.transition = "background-position .85s cubic-bezier(.76, 0, .24, 1)";
-        document.body.classList.add("journal-aquarium-exiting");
-        window.requestAnimationFrame(() => {
-            document.body.style.backgroundPosition = journalBackgroundPosition
-                .split(",")
-                .map(position => {
-                    const [x, y] = position.trim().split(/\s+/).map(parseFloat);
-                    return `${Math.round(x / 1080) * 1080}px ${Math.round(y / 1080) * 1080}px`;
-                })
-                .join(", ");
-        });
-        window.setTimeout(() => window.location.assign(destination.href), 850);
+        const reducedMotion = isReducedMotionEnabled();
+        const duration = reducedMotion ? 180 : 850;
+        if (reducedMotion) {
+            document.documentElement.classList.add("reduced-motion-transitioning");
+        } else {
+            const journalBackgroundPosition = getComputedStyle(document.body).backgroundPosition;
+            document.body.style.animation = "none";
+            document.body.style.backgroundPosition = journalBackgroundPosition;
+            document.body.offsetWidth;
+            document.body.style.transition = "background-position .85s cubic-bezier(.76, 0, .24, 1)";
+            document.body.classList.add("journal-aquarium-exiting");
+            window.requestAnimationFrame(() => {
+                document.body.style.backgroundPosition = journalBackgroundPosition
+                    .split(",")
+                    .map(position => {
+                        const [x, y] = position.trim().split(/\s+/).map(parseFloat);
+                        return `${Math.round(x / 1080) * 1080}px ${Math.round(y / 1080) * 1080}px`;
+                    })
+                    .join(", ");
+            });
+        }
+        Promise.all([
+            fadeOutAudioPlayer(journalMusicPlayer, duration),
+            new Promise(resolve => window.setTimeout(resolve, duration))
+        ]).then(() => window.location.assign(destination.href));
         return;
     }
 
@@ -1195,13 +1204,18 @@ document.addEventListener("click", event => {
         if (document.body.classList.contains("aquarium-journal-exiting")) return;
 
         destination.searchParams.set("from", "aquarium-journal");
-        if (isReducedMotionEnabled()) {
-            navigateWithReducedMotion(destination.href);
-            return;
+        const reducedMotion = isReducedMotionEnabled();
+        const duration = reducedMotion ? 180 : 850;
+        if (reducedMotion) {
+            document.documentElement.classList.add("reduced-motion-transitioning");
+        } else {
+            document.body.classList.add("aquarium-journal-exiting");
         }
 
-        document.body.classList.add("aquarium-journal-exiting");
-        window.setTimeout(() => window.location.assign(destination.href), 850);
+        Promise.all([
+            fadeOutAquariumMusic(duration),
+            new Promise(resolve => window.setTimeout(resolve, duration))
+        ]).then(() => window.location.assign(destination.href));
         return;
     }
     if (document.body.classList.contains("question-page") && link.closest(".question-actions")) {

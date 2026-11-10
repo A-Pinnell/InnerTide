@@ -364,6 +364,7 @@ FodyWeavers.xsd
 /Inner-Tide/.github/copilot-instructions.md
 
 /Inner-Tide/InnerTide.Desktop
+/Inner-Tide/InnerTideAndroid
 /Inner-Tide/InnerTideCompiled
 build.bat
 /Compiled Build
