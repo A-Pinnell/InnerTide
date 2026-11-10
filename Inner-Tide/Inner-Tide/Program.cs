@@ -2,6 +2,7 @@ using Inner_Tide.Data;
 using Inner_Tide.Models;
 using Inner_Tide.Services;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+builder.Services.AddDataProtection()
+    .SetApplicationName("InnerTide")
+    .PersistKeysToDbContext<ApplicationDbContext>();
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<AquariumProgressLimitSettings>();
