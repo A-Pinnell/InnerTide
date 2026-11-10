@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnerTide.Desktop", "InnerT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inner-TideMVCTest", "Inner-TideMVCTest\Inner-TideMVCTest.csproj", "{5A7CA344-4465-45DA-8D73-86F32D91D462}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnerTideAndroid", "InnerTideAndroid\InnerTide.Android.csproj", "{70D0163E-F070-45D0-B071-A04A260AC30E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5A7CA344-4465-45DA-8D73-86F32D91D462}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A7CA344-4465-45DA-8D73-86F32D91D462}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A7CA344-4465-45DA-8D73-86F32D91D462}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70D0163E-F070-45D0-B071-A04A260AC30E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70D0163E-F070-45D0-B071-A04A260AC30E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70D0163E-F070-45D0-B071-A04A260AC30E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70D0163E-F070-45D0-B071-A04A260AC30E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

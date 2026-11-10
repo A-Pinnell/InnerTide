@@ -86,6 +86,91 @@ html.page-assets-ready:has(body.aquarium-page)::before {
     background: #0086B6;
 }
 
+html.page-assets-loading:has(body.journal-menu-page)::before,
+html.page-assets-ready:has(body.journal-menu-page)::before {
+    background: var(--journal-background);
+}
+
+html.page-assets-loading.aquarium-journal-transition-pending:has(body.journal-menu-page)::before,
+html.page-assets-loading.aquarium-journal-transition-pending:has(body.journal-menu-page)::after {
+    z-index: 2147483645;
+}
+
+html.page-assets-loading.journal-aquarium-transition-pending:has(body.aquarium-page)::before,
+html.page-assets-loading.journal-aquarium-transition-pending:has(body.aquarium-page)::after {
+    z-index: 2147483645;
+}
+
+html.page-assets-loading.journal-aquarium-transition-pending:has(body.aquarium-page)::before,
+html.page-assets-ready.journal-aquarium-transition-pending:has(body.aquarium-page)::before {
+    background: transparent;
+}
+
+html.page-assets-loading:has(body.journal-menu-page)::before,
+html.page-assets-loading:has(body.journal-menu-page)::after,
+html.page-assets-ready:has(body.journal-menu-page)::before {
+    display: none;
+}
+
+body.journal-menu-page #journalMain {
+    opacity: 0;
+    transition: opacity .85s ease;
+}
+
+body.journal-menu-page.journal-menu-revealed #journalMain {
+    animation: journal-menu-fade-in 1s ease-out both;
+}
+
+@keyframes journal-menu-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+html.reduced-motion body.journal-menu-page #journalMain {
+    opacity: 1;
+    animation: none;
+}
+
+html.journal-aquarium-transition-pending:has(body.aquarium-page) body,
+body.aquarium-page.journal-aquarium-returning {
+    --journal-background: color-mix(in srgb, var(--aquarium-sand-back, #dcae20) 65%, #000);
+    background-color: var(--journal-background);
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--journal-background) 85%, #000), color-mix(in srgb, var(--journal-background) 85%, #000)),
+        linear-gradient(var(--journal-background), var(--journal-background)),
+        url("../backgrounds/JournalBackground.png");
+    background-blend-mode: multiply, color, normal;
+    background-position: 0 0, 0 0, 0 0;
+    background-repeat: repeat, repeat, repeat;
+    background-size: 1080px 1080px, 1080px 1080px, 1080px 1080px;
+}
+
+html.journal-aquarium-transition-pending:has(body.aquarium-page) #journalButton,
+body.aquarium-page.journal-button-offset #journalButton {
+    transform: translate(-50%, calc(100% + 215px));
+    transition: none;
+}
+
+body.aquarium-page > main {
+    transition: transform .85s cubic-bezier(.76, 0, .24, 1);
+}
+
+html.journal-aquarium-transition-pending:has(body.aquarium-page) body > main {
+    position: relative;
+    z-index: 2147483647;
+    transform: translateY(-110vh);
+}
+
+body.journal-menu-page.journal-aquarium-exiting #journalMain {
+    animation: none;
+    opacity: 0;
+}
+
 html.page-assets-loading.aquarium-transition-return::before,
 html.page-assets-ready.aquarium-transition-return::before {
     background: linear-gradient(110deg, #ebb9e1, #dca5d7);
@@ -215,4 +300,212 @@ html.reduced-motion body.users-page .auth-submit:hover {
 
 [hidden] {
     display: none !important;
+}
+
+body.aquarium-page.aquarium-journal-exiting > main {
+    position: relative;
+    transform: translateY(-110vh);
+    transition: transform .85s cubic-bezier(.76, 0, .24, 1);
+}
+
+body.aquarium-page.aquarium-journal-exiting #aquarium,
+body.aquarium-page.journal-aquarium-returning #aquarium {
+    overflow: visible;
+}
+
+body.aquarium-page.aquarium-journal-exiting #journalButton,
+body.aquarium-page.journal-button-offset #journalButton {
+    transform: translate(-50%, calc(100% + 215px));
+    transition: transform .85s cubic-bezier(.76, 0, .24, 1);
+}
+
+body.aquarium-page.journal-aquarium-returning #journalButton {
+    transition: transform .85s cubic-bezier(.76, 0, .24, 1);
+}
+
+body.aquarium-page.aquarium-journal-exiting #journalButton b,
+body.aquarium-page.journal-aquarium-returning #journalButton b {
+    opacity: 0;
+    transition: opacity .3s ease;
+}
+
+body.aquarium-page.aquarium-journal-exiting,
+body.aquarium-page.journal-aquarium-returning {
+    --journal-background: color-mix(in srgb, var(--aquarium-sand-back, #dcae20) 65%, #000);
+    background-color: var(--journal-background);
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--journal-background) 85%, #000), color-mix(in srgb, var(--journal-background) 85%, #000)),
+        linear-gradient(var(--journal-background), var(--journal-background)),
+        url("../backgrounds/JournalBackground.png");
+    background-blend-mode: multiply, color, normal;
+    background-position: 0 0, 0 0, 0 0;
+    background-repeat: repeat, repeat, repeat;
+    background-size: 1080px 1080px, 1080px 1080px, 1080px 1080px;
+    animation: none;
+    transition: background-color .85s ease;
+}
+
+html.journal-aquarium-transition-pending:has(body.aquarium-page) body.aquarium-page.journal-aquarium-returning,
+body.aquarium-page.journal-aquarium-returning {
+    animation: none;
+}
+
+@keyframes journal-background-scroll {
+    to {
+        background-position: -1080px 0, -1080px 0, -1080px 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.aquarium-page.aquarium-journal-exiting {
+        animation: none;
+    }
+}
+
+.aquarium-journal-sand-continuation {
+    --continuation-offset: 98px;
+    position: absolute;
+    top: calc(100vh + var(--continuation-offset));
+    left: 0;
+    width: 100%;
+    height: 360px;
+    pointer-events: none;
+}
+
+.aquarium-journal-sand-continuation::before {
+    position: absolute;
+    top: calc(-1 * var(--continuation-offset));
+    right: 0;
+    left: 0;
+    height: var(--continuation-offset);
+    z-index: 0;
+    background: var(--aquarium-sand-back, #dcae20);
+    content: "";
+}
+
+.aquarium-journal-header-preview {
+    position: absolute;
+    top: 100vh;
+    left: 0;
+    z-index: 7;
+    width: 100%;
+    height: 340px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--aquarium-sand-back, #dcae20) 55%, #000);
+    pointer-events: none;
+}
+
+.aquarium-journal-header-sand-back,
+.aquarium-journal-header-sand-middle,
+.aquarium-journal-header-sand-front {
+    position: absolute;
+    left: -10%;
+    width: 120%;
+    transform: rotate(180deg);
+}
+
+.aquarium-journal-header-sand-back {
+    top: -45%;
+    z-index: 3;
+    height: 120px;
+    background: var(--journal-sand-back);
+    clip-path: url("#sand-base-shape");
+}
+
+.aquarium-journal-header-sand-middle {
+    top: 2%;
+    z-index: 2;
+    height: 225px;
+    background: var(--journal-sand-middle);
+    clip-path: url("#sand-middle-shape");
+}
+
+.aquarium-journal-header-sand-front {
+    top: -1px;
+    z-index: 1;
+    height: 300px;
+    background: var(--journal-sand-front);
+    clip-path: url("#sand-front-shape");
+}
+
+.aquarium-journal-header-preview h1 {
+    position: absolute;
+    top: 58px;
+    left: 35%;
+    z-index: 4;
+    margin: 0;
+    color: var(--journal-heading);
+    font-size: clamp(3rem, 5.5vw, 5.5rem);
+}
+
+.aquarium-journal-back {
+    position: absolute;
+    top: 28px;
+    left: 5%;
+    z-index: 4;
+    display: flex;
+    width: 150px;
+    height: 190px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--journal-heading);
+    font-size: 1.6rem;
+}
+
+.aquarium-journal-back-arrow {
+    display: block;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 4px;
+    border-radius: 50%;
+    background: var(--journal-aquarium-button);
+    box-shadow: 0 0 7px 5px #fff;
+}
+
+.aquarium-journal-back-arrow::before {
+    display: block;
+    width: 34px;
+    height: 34px;
+    margin: 49px auto 0;
+    border-top: 10px solid #fff;
+    border-left: 10px solid #fff;
+    content: "";
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.aquarium-journal-sand-continuation span {
+    position: absolute;
+    left: -12%;
+    width: 124%;
+    transform: rotate(180deg);
+}
+
+.aquarium-journal-sand-front {
+    top: -1px;
+    z-index: 1;
+    height: 360px;
+    background: var(--aquarium-sand-front, #ffeb70);
+    clip-path: url("#sand-base-shape");
+}
+
+.aquarium-journal-sand-middle {
+    top: 2%;
+    z-index: 2;
+    height: 270px;
+    background: var(--aquarium-sand-middle, #edc833);
+    clip-path: url("#sand-middle-shape");
+}
+
+.aquarium-journal-sand-back {
+    top: 0;
+    z-index: 3;
+    height: 180px;
+    background: var(--aquarium-sand-back, #dcae20);
+    clip-path: url("#sand-front-shape");
+}
+
+html.aquarium-journal-transition-pending #journalMain {
+    transform: translateY(-100vh);
+    transition: opacity .65s ease, transform .85s cubic-bezier(.76, 0, .24, 1);
 }

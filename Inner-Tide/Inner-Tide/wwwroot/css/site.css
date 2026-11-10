@@ -133,6 +133,14 @@ body.error-page {
     text-rendering: optimizeLegibility;
     --hot-pink: #d61998;
     --white: #fffafc;
+    --journal-sand-back: #ffef67;
+    --journal-sand-middle: #fad347;
+    --journal-sand-front: #dcae20;
+    --journal-background: color-mix(in srgb, var(--journal-sand-back) 55%, #000);
+    --journal-sand-layer-width: 120vw;
+    --journal-sand-layer-left: -10vw;
+    --journal-heading: #b18e00;
+    --journal-aquarium-button: rgba(83, 167, 159, .8);
     --text-gradient: linear-gradient(0deg, #808080 0%, #FFFFFF 48%, #C4C4C4 70%, #BBBBBB 80%, #626262 100%);
     --reward-gradient: linear-gradient(180deg, #fff36a 0%, #ffc629 52%, #e88516 100%);
 }
@@ -152,4 +160,3 @@ body {
 button {
     font: inherit;
 }
-

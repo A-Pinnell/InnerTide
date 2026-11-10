@@ -512,13 +512,13 @@ namespace Inner_Tide.Migrations
                     b.ToTable("UserTasks");
                 });
 
-            modelBuilder.Entity("Inner_Tide.Models.YourNamespace.Models.DataProtectionKey", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
                 {
-                    b.Property<int>("DataProtectionKeyId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DataProtectionKeyId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("FriendlyName")
                         .HasColumnType("nvarchar(max)");
@@ -526,7 +526,7 @@ namespace Inner_Tide.Migrations
                     b.Property<string>("Xml")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("DataProtectionKeyId");
+                    b.HasKey("Id");
 
                     b.ToTable("DataProtectionKeys");
                 });

@@ -227,6 +227,7 @@ namespace Inner_Tide.Controllers {
                     var res = await _httpClient.GetFromJsonAsync<Item>("https://innertideapi.vercel.app/api/v1/item/" + item.ItemId);
 
                     if (res != null) {
+                        ApplyCatalogOverrides(res);
                         itemList.Add(new {
                             userItemId = item.UserItemId,
                             itemId = res.ItemId,
@@ -439,6 +440,7 @@ namespace Inner_Tide.Controllers {
                     return NotFound("Item not Found");
                 }
 
+                ApplyCatalogOverrides(item);
                 var itemPrice = item.Price;
 
                 if (user.CoinCount >= itemPrice) {
@@ -612,6 +614,7 @@ namespace Inner_Tide.Controllers {
                         throw new InvalidOperationException($"The item catalog returned no data for item {placedItem.ItemId}.");
                     }
 
+                    ApplyCatalogOverrides(item);
                     itemList.Add(new {
                         userItemId = placedItem.UserItemId,
                         item.ItemId,
@@ -680,6 +683,7 @@ namespace Inner_Tide.Controllers {
                     statusCode: StatusCodes.Status422UnprocessableEntity);
             }
 
+            ApplyCatalogOverrides(catalogItem);
             if (catalogItem.IsFloating != (request.SandLayer >= 3)) {
                 return BadRequest(catalogItem.IsFloating
                     ? "Floating objects can only be placed in water layers."
@@ -813,6 +817,12 @@ namespace Inner_Tide.Controllers {
                 && int.TryParse(dimensions[1], out height)
                 && width > 0
                 && height > 0;
+        }
+
+        private static void ApplyCatalogOverrides(Item item) {
+            if (string.Equals(item.Name?.Trim(), "Little Scuba Diver Man", StringComparison.OrdinalIgnoreCase)) {
+                item.IsFloating = true;
+            }
         }
 
         [HttpPost]
