@@ -49,5 +49,7 @@ namespace Inner_Tide.Data {
         public DbSet<Inner_Tide.Models.QuizQuestion> QuizQuestions { get; set; } = default!;
 
         public DbSet<Inner_Tide.Models.UserCategoryValues> UserCategoryValues { get; set; } = default!;
+
+        public DbSet<DataProtectionKey> DataProtectionKeys => throw new NotImplementedException();
     }
 }

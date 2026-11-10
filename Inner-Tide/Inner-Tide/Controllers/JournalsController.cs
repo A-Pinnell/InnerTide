@@ -72,7 +72,7 @@ namespace Inner_Tide.Controllers {
                 return View("Create");
             }
 
-            await = _context.Journals.Remove(journal);
+            _context.Journals.Remove(journal);
             _context.SaveChanges();
 
             return RedirectToAction("Index", "Journals");
