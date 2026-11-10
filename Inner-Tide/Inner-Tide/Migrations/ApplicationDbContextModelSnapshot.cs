@@ -245,6 +245,9 @@ namespace Inner_Tide.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("CurrentXP")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DailyLastFreeTaskRefreshAt")
                         .HasColumnType("datetime2");
 

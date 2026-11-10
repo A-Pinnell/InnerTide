@@ -27,6 +27,32 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetAllJournalEntries() {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var journals = await _context.Journals
+                .Where(j => j.UserId == user.Id)
+                .ToListAsync();
+
+            return Json(journals);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetJournalEntry(int journalId) {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var journal = await _context.Journals.SingleOrDefaultAsync(j => j.JournalId == journalId && j.UserId == user.Id);
+
+            return Json(journal);
+        }
+
+        [HttpGet]
         public IActionResult Create() {
             return View("Create");
         }
