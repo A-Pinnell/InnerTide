@@ -19,3 +19,7 @@ P3 - Version 2.0
 - Transitions have been made smoother and improved
 - More fish, more objects!
 - Various bug fixes
+
+P4 - Version 3.0
+- The Journal menu now exists, allowing you to write and save journal entries to the database
+- Various visual improvements and bug fixes.
