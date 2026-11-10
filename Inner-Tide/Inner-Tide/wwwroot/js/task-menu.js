@@ -1,3 +1,8 @@
+const levelUpSound = registerAudioPlayer(
+    new Audio(new URL("/sfx/levelup.mp3", document.baseURI).pathname),
+    "sfx"
+);
+
 function setAquariumPercent(percent) {
     const numericPercent = Number(percent);
     if (!Number.isFinite(numericPercent)) {
@@ -17,6 +22,32 @@ function setAquariumPercent(percent) {
         : value >= 25
         ? "Your aquarium is growing!"
         : "Make your start!";
+}
+
+function showExperienceReward(amount) {
+    const profileCard = document.querySelector(".player-card");
+    if (!profileCard || !Number.isSafeInteger(amount) || amount <= 0) return;
+
+    document.querySelector("#experienceRewardPopup")?.remove();
+
+    const bounds = profileCard.getBoundingClientRect();
+    const popup = document.createElement("div");
+    popup.id = "experienceRewardPopup";
+    popup.className = "experience-reward-popup";
+    popup.setAttribute("role", "status");
+    popup.setAttribute("aria-label", `Plus ${amount} experience points`);
+    popup.style.left = `${bounds.left + bounds.width / 2}px`;
+    popup.style.top = `${bounds.bottom + 8}px`;
+
+    const value = document.createElement("span");
+    value.textContent = `+${amount}`;
+    const pearl = document.createElement("span");
+    pearl.className = "experience-reward-pearl";
+    pearl.setAttribute("aria-hidden", "true");
+    popup.append(value, pearl);
+    document.body.append(popup);
+
+    window.setTimeout(() => popup.remove(), 1500);
 }
 
 function animateCoinReward(taskRow, amount) {
@@ -167,6 +198,45 @@ function renderTasks(period, fadeIn = false) {
 
                 const result = await response.json();
                 task.completed = true;
+                showExperienceReward(result.experienceAwarded);
+                const playerLevel = document.querySelector(".player-level");
+                const previousLevel = Number(playerLevel?.textContent.match(/\d+/)?.[0]);
+                if (Number.isInteger(result.level) && Number.isInteger(previousLevel) && result.level > previousLevel) {
+                    levelUpSound.currentTime = 0;
+                    levelUpSound.play().catch(error => {
+                        console.error("Unable to play level-up sound.", error);
+                    });
+                }
+                if (playerLevel && Number.isInteger(result.level)) {
+                    playerLevel.textContent = `LEVEL ${result.level}`;
+                }
+                if (Number.isInteger(result.level) && Number.isInteger(result.currentXP) &&
+                    Number.isInteger(result.experienceForNextLevel)) {
+                    const maxLevel = result.level >= 99;
+                    const remaining = Math.max(0, result.experienceForNextLevel - result.currentXP);
+                    const progress = maxLevel
+                        ? 100
+                        : Math.min(100, Math.round(result.currentXP * 100 / Math.max(1, result.experienceForNextLevel)));
+                    const experienceLabel = document.querySelector(".player-copy small");
+                    const currentXPLabel = document.querySelector(".player-current-xp span");
+                    const experienceBar = document.querySelector(".xp-track-fill");
+                    const experienceBarLevel = document.querySelector(".xp-track-level");
+                    if (experienceLabel) {
+                        experienceLabel.textContent = maxLevel ? "Max level reached" : `${remaining} EXP needed to level up`;
+                    }
+                    if (currentXPLabel) {
+                        currentXPLabel.textContent = String(result.currentXP);
+                    }
+                    if (experienceBar) {
+                        experienceBar.style.width = `${progress}%`;
+                    }
+                    if (experienceBarLevel) {
+                        experienceBarLevel.textContent = `LEVEL ${result.level}`;
+                    }
+                    if (playerLevel) {
+                        playerLevel.style.setProperty("--level-progress", `${progress}%`);
+                    }
+                }
                 const coinChange = beginCoinChangeAnimation(result.coins);
                 const coinAnimation = animateCoinReward(row, result.reward);
                 await updateDisplayedCoinBalance(result.coins, coinAnimation, coinChange);

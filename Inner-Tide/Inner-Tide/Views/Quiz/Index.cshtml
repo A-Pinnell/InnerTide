@@ -11,17 +11,31 @@
     var cardColors = new[] { "quiz-card-orange", "quiz-card-green", "quiz-card-purple" };
 
     var coinCount = 0;
+    var currentLevel = 1;
+    var currentXP = 0;
+    var experienceForNextLevel = 100;
     var userName = "Chris Concept";
 
     if (User.Identity?.IsAuthenticated == true) {
         var currentUser = await UserManager.GetUserAsync(User);
 
-        coinCount = currentUser.CoinCount;
-        userName = currentUser.UserName;
+        if (currentUser != null) {
+            coinCount = currentUser.CoinCount;
+            currentLevel = currentUser.AccountLevel;
+            currentXP = currentUser.CurrentXP;
+            experienceForNextLevel = currentUser.XPForNextLevel;
+            userName = currentUser.UserName ?? userName;
+        }
     } else {
         coinCount = 0;
 
     }
+}
+@{
+    var experienceProgress = currentLevel >= 99
+        ? 100
+        : Math.Clamp((int)Math.Round(currentXP * 100d / Math.Max(1, experienceForNextLevel)), 0, 100);
+    var experienceRemaining = Math.Max(0, experienceForNextLevel - currentXP);
 }
 
 <body class="quiz-menu-page">
@@ -46,13 +60,17 @@
             <div class="profile-details" id="profile-details">
                 <div class="player-copy">
                     <strong> @userName </strong>
-                    <small>30 More Pearls needed to level up!</small>
+                    <small>@(currentLevel >= 99 ? "Max level reached" : $"{experienceRemaining} EXP needed to level up")</small>
                 </div>
-                <div class="xp-track"><span></span></div>
+                <span class="player-current-xp"><span>@currentXP</span></span>
+                <div class="xp-track">
+                    <span class="xp-track-fill" style="width: @experienceProgress%"></span>
+                    <strong class="xp-track-level">LEVEL @currentLevel</strong>
+                </div>
             </div>
             <button class="avatar" type="button">
                 <img src="~/img/placeholder.webp" alt="">
-                <span class="player-level">DEMO ACCOUNT</span>
+                <span class="player-level" style="--level-progress: @experienceProgress%">LEVEL @currentLevel</span>
             </button>
             <div class="coin-counter" id="coinCounterTask">
                 <img src="~/img/coin.png" alt="">

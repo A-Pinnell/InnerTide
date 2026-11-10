@@ -720,6 +720,11 @@ body.quiz-menu-page .player-card.profile-open .xp-track {
     left: 39%;
 }
 
+body.quiz-menu-page .player-current-xp {
+    right: 7%;
+    left: 39%;
+}
+
 body.quiz-menu-page .nav-link {
     border: 2px solid transparent;
     box-shadow: inset 0 4px 0 rgba(255, 255, 255, .28), 0 3px 10px rgba(8, 19, 66, .22);
