@@ -11,6 +11,10 @@ namespace Inner_Tide.Models {
         [Required]
         public int XPForNextLevel { get; set; }
 
+        [Range(0, int.MaxValue)]
+        [Required]
+        public int CurrentXP { get; set; }
+
         [Range(0, 999)]
         [Required]
         public int CoinCount { get; set; }

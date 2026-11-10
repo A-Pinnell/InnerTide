@@ -102,6 +102,15 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     width: 48%;
 }
 
+.player-card.profile-open .player-level {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.player-level {
+    transition: opacity .2s ease, visibility .2s ease;
+}
+
 .coin-counter {
     z-index: 9999;
     top: 50%;
@@ -206,6 +215,31 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     transition: opacity .4s ease .14s, transform .56s cubic-bezier(.16, 1, .3, 1) .08s, visibility 0s;
 }
 
+.player-current-xp {
+    position: absolute;
+    right: 10%;
+    bottom: 27%;
+    left: 5%;
+    color: #fff;
+    font: 700 clamp(20px, 2.2vw, 30px)/1 "Hydration", sans-serif;
+    text-align: left;
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+
+.player-current-xp,
+.xp-track-level {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity .3s ease, visibility 0s linear .3s;
+}
+
+.profile-open .player-current-xp,
+.profile-open .xp-track-level {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: .14s, 0s;
+}
+
 .player-copy {
     position: absolute;
     display: grid;
@@ -237,7 +271,14 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     padding: 2px 1px;
     border: 1px solid rgba(255,255,255,.85);
     border-radius: 3px;
-    background: linear-gradient(180deg, #69d66a, #279b42);
+    background: linear-gradient(
+        to right,
+        #69d66a 0%,
+        #279b42 var(--level-progress, 0%),
+        rgba(31, 82, 48, .82) var(--level-progress, 0%),
+        rgba(31, 82, 48, .82) 100%
+    );
+    transition: background .35s ease;
     box-shadow: 0 1px 3px rgba(18,67,34,.55);
     color: #fff;
     font-size: clamp(7px, .65vw, 10px);
@@ -279,9 +320,84 @@ html.graphical-advanced body.question-page .question-background {
 
 .xp-track span {
     display: block;
-    width: 57%;
+    width: 0%;
     height: 100%;
-    background: #4168eb;
+    background: #45ca62;
+    transition: width .45s cubic-bezier(.16, 1, .3, 1);
+}
+
+.xp-track {
+    isolation: isolate;
+}
+
+.xp-track-level {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    padding-left: clamp(6px, .7vw, 10px);
+    color: #fff;
+    font: 700 clamp(10px, 1vw, 14px)/1 "Neuropolx", sans-serif;
+    text-shadow: 0 1px 3px rgba(0,0,0,.7);
+    transform: skewX(-27deg);
+    pointer-events: none;
+}
+
+.experience-reward-popup {
+    position: fixed;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border: 2px solid rgba(255,255,255,.92);
+    border-radius: 999px;
+    background: #247d4c;
+    box-shadow: 0 4px 12px rgba(22,48,35,.38);
+    color: #fff;
+    font: 900 18px/1 Arial, sans-serif;
+    pointer-events: none;
+    transform: translate(-50%, 0);
+    animation: experience-reward-popup 1.35s ease-out both;
+}
+
+.experience-reward-pearl {
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(255,255,255,.95);
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, #fff 0 12%, #f7f4ff 28%, #d2d7f0 63%, #8fa4c5 100%);
+    box-shadow: inset -2px -2px 4px rgba(73,85,130,.32), 0 1px 3px rgba(0,0,0,.25);
+}
+
+@keyframes experience-reward-popup {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 8px) scale(.8);
+    }
+
+    14%, 72% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -10px) scale(.94);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .experience-reward-popup {
+        animation-duration: .7s;
+    }
+
+    .xp-track span {
+        transition-duration: 0s;
+    }
 }
 
 .avatar {

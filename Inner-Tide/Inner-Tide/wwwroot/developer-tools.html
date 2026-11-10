@@ -11,55 +11,110 @@
             <h2>Developer Tools</h2>
             <button class="developer-tools-close" id="developerToolsClose" type="button">Close</button>
         </div>
+        <nav class="developer-tool-categories" aria-label="Developer tool categories" role="tablist">
+            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="general">General</button>
+            <button class="developer-tool-category active" type="button" role="tab" aria-selected="true" data-dev-category="tasks">Tasks</button>
+            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="aquarium">Aquarium</button>
+            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="quizzes">Quizzes</button>
+            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="journals">Journals</button>
+            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="levelling">Levelling System</button>
+        </nav>
         <p class="developer-tools-status" id="developerToolsStatus"></p>
 
-        <section class="developer-tool-section">
-            <h3>Tasks and Coins</h3>
-            <button class="developer-tool-action" id="developerResetTasks" type="button">Reset Current Tasks</button>
-            <form id="developerCoinsForm">
-                <label for="developerCoinAmount">Coin amount (0-999)</label>
-                <div class="developer-tools-inline">
-                    <input id="developerCoinAmount" type="number" min="0" max="999" step="1" required>
-                    <button class="developer-tool-action" type="submit">Set Coins</button>
+        <div class="developer-tool-category-content" data-dev-category-content="general" hidden>
+            <section class="developer-tool-section">
+                <h3>Coins</h3>
+                <form id="developerCoinsForm">
+                    <label for="developerCoinAmount">Coin amount (0-999)</label>
+                    <div class="developer-tools-inline">
+                        <input id="developerCoinAmount" type="number" min="0" max="999" step="1" required>
+                        <button class="developer-tool-action" type="submit">Set Coins</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <div class="developer-tool-category-content" data-dev-category-content="tasks">
+            <section class="developer-tool-section">
+                <h3>Tasks</h3>
+                <button class="developer-tool-action" id="developerResetTasks" type="button">Reset Current Tasks</button>
+            </section>
+        </div>
+
+        <div class="developer-tool-category-content" data-dev-category-content="aquarium" hidden>
+            <section class="developer-tool-section">
+                <h3>Aquarium Progress</h3>
+                <label class="developer-progress-limit-toggle">
+                    <input id="developerDisableProgressLimit" type="checkbox">
+                    <span>Disable the 100% progress limit for creating another aquarium</span>
+                </label>
+            </section>
+
+            <section class="developer-tool-section">
+                <h3>Aquarium Inventory</h3>
+                <div class="developer-inventory-tabs">
+                    <button class="developer-inventory-tab active" type="button" data-inventory-category="fish">Fish</button>
+                    <button class="developer-inventory-tab" type="button" data-inventory-category="items">Objects</button>
+                    <button class="developer-inventory-tab" type="button" data-inventory-category="misc">Misc</button>
                 </div>
-            </form>
-        </section>
+                <div class="developer-inventory-list" id="developerInventoryList"></div>
+                <button class="developer-tool-action" id="developerSaveInventory" type="button">Save Inventory</button>
+            </section>
 
-        <section class="developer-tool-section" id="developerAdditionalQuizTools">
-            <h3>Additional Quizzes</h3>
-            <button class="developer-tool-action" id="developerResetAdditionalQuizQuestions" type="button">Reset All Additional Quiz Questions</button>
-        </section>
+            <section class="developer-tool-section">
+                <h3>Items in Aquariums</h3>
+                <div class="developer-aquarium-navigation">
+                    <button class="developer-tool-action" id="developerPreviousAquarium" type="button" aria-label="Previous aquarium">Previous</button>
+                    <label>
+                        Aquarium
+                        <select id="developerAquariumSelect"></select>
+                    </label>
+                    <button class="developer-tool-action" id="developerNextAquarium" type="button" aria-label="Next aquarium">Next</button>
+                </div>
+                <div class="developer-inventory-tabs">
+                    <button class="developer-inventory-tab active" type="button" data-aquarium-category="fish">Fish</button>
+                    <button class="developer-inventory-tab" type="button" data-aquarium-category="objects">Objects</button>
+                </div>
+                <div class="developer-inventory-list" id="developerAquariumItemsList"></div>
+                <div class="developer-aquarium-actions">
+                    <button class="developer-tool-action" type="button" data-clear-aquarium-category="fish">Remove All Fish</button>
+                    <button class="developer-tool-action" type="button" data-clear-aquarium-category="objects">Remove All Objects</button>
+                    <button class="developer-tool-action" type="button" data-clear-aquarium-category="all">Remove Everything</button>
+                </div>
+            </section>
+        </div>
 
-        <section class="developer-tool-section" id="developerSetupQuizTools" hidden>
-            <h3>Setup Quiz</h3>
-            <form id="developerSkipSetupQuizForm" method="post" action="/Users/SkipSetupQuiz">
-                <button class="developer-tool-action" type="submit">Skip with Random Answers</button>
-            </form>
-        </section>
+        <div class="developer-tool-category-content" data-dev-category-content="quizzes" hidden>
+            <section class="developer-tool-section" id="developerAdditionalQuizTools">
+                <h3>Additional Quizzes</h3>
+                <button class="developer-tool-action" id="developerResetAdditionalQuizQuestions" type="button">Reset All Additional Quiz Questions</button>
+            </section>
 
-        <section class="developer-tool-section">
-            <h3>Aquarium Progress</h3>
-            <label class="developer-progress-limit-toggle">
-                <input id="developerDisableProgressLimit" type="checkbox">
-                <span>Disable the 100% progress limit for creating another aquarium</span>
-            </label>
-        </section>
+            <section class="developer-tool-section" id="developerSetupQuizTools" hidden>
+                <h3>Setup Quiz</h3>
+                <form id="developerSkipSetupQuizForm" method="post" action="/Users/SkipSetupQuiz">
+                    <button class="developer-tool-action" type="submit">Skip with Random Answers</button>
+                </form>
+            </section>
+        </div>
 
-        <section class="developer-tool-section">
-            <h3>Aquarium Inventory</h3>
-            <div class="developer-inventory-tabs">
-                <button class="developer-inventory-tab active" type="button" data-inventory-category="fish">Fish</button>
-                <button class="developer-inventory-tab" type="button" data-inventory-category="items">Objects</button>
-            </div>
-            <div class="developer-inventory-list" id="developerInventoryList"></div>
-            <button class="developer-tool-action" id="developerSaveInventory" type="button">Save Inventory</button>
-        </section>
+        <div class="developer-tool-category-content" data-dev-category-content="journals" hidden>
+            <section class="developer-tool-section">
+                <h3>Journals</h3>
+                <p>No journal developer tools are available yet.</p>
+            </section>
+        </div>
 
-        <section class="developer-tool-section">
-            <h3>Fish in Aquariums</h3>
-            <div class="developer-inventory-list" id="developerAquariumFishList"></div>
-            <button class="developer-tool-action" id="developerClearAquariumFish" type="button">Remove All Fish from Aquariums</button>
-        </section>
+        <div class="developer-tool-category-content" data-dev-category-content="levelling" hidden>
+            <section class="developer-tool-section">
+                <h3>Levelling System</h3>
+                <dl class="developer-level-stats">
+                    <div><dt>Current level</dt><dd id="developerCurrentLevel">Loading...</dd></div>
+                    <div><dt>Current XP</dt><dd id="developerCurrentXP">Loading...</dd></div>
+                    <div><dt>EXP to next level</dt><dd id="developerExperienceRemaining">Loading...</dd></div>
+                </dl>
+            </section>
+        </div>
     </section>
 </div>
 
@@ -77,37 +132,115 @@
         padding: 18px;
         background: rgba(5, 24, 46, .72);
         backdrop-filter: blur(5px);
+        font-family: Arial, sans-serif;
     }
 
     .developer-tools-panel {
         display: flex;
-        width: min(680px, 100%);
+        width: min(820px, 100%);
         max-height: min(88vh, 860px);
         flex-direction: column;
         gap: 16px;
         overflow-x: hidden;
         overflow-y: auto;
         padding: clamp(18px, 4vw, 32px);
-        border: 5px solid rgba(195, 250, 255, .96);
-        border-radius: 28px;
-        background: linear-gradient(145deg, #16385f, #087b9f);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, .45), inset 0 0 18px rgba(255,255,255,.16);
+        background: #126080;
         color: #fff;
     }
 
     .developer-tools-heading,
     .developer-tools-inline,
-    .developer-inventory-tabs {
+    .developer-inventory-tabs,
+    .developer-aquarium-navigation,
+    .developer-aquarium-actions,
+    .developer-tool-categories {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
     }
 
+    .developer-tool-categories {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        flex: 0 0 auto;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        overflow: visible;
+        padding: 4px 0;
+        background: #126080;
+    }
+
+    .developer-tool-category {
+        flex: 0 0 auto;
+        min-height: 42px;
+        padding: 8px 14px;
+        background: rgba(0, 30, 58, .24);
+        color: #fff;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .developer-tool-category.active {
+        background: #1688c0;
+    }
+
+    .developer-tool-category-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .developer-tool-category-content[hidden] {
+        display: none;
+    }
+
+    .developer-aquarium-navigation label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .developer-aquarium-navigation select {
+        min-height: 42px;
+        max-width: 180px;
+        padding: 6px 10px;
+        background: rgba(255,255,255,1);
+        color: #16385f;
+        font: inherit;
+    }
+
+    .developer-aquarium-actions {
+        flex-wrap: wrap;
+    }
+
+    .developer-level-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin: 0;
+    }
+
+    .developer-level-stats div {
+        padding: 12px;
+        background: rgba(0, 30, 58, .24);
+    }
+
+    .developer-level-stats dt {
+        color: rgba(255,255,255,.82);
+        font-size: 14px;
+    }
+
+    .developer-level-stats dd {
+        margin: 6px 0 0;
+        font-size: 22px;
+        font-weight: 700;
+    }
+
     .developer-tools-heading h2,
     .developer-tool-section h3 {
         margin: 0;
-        font-family: "Aquino", "Neuropolx", sans-serif;
     }
 
     .developer-tools-heading h2 {
@@ -119,9 +252,7 @@
     .developer-inventory-tab {
         min-height: 42px;
         padding: 8px 14px;
-        border: 2px solid rgba(255,255,255,.82);
-        border-radius: 12px;
-        background: linear-gradient(180deg, #20bce4, #087daf);
+        background: #087daf;
         color: #fff;
         font: inherit;
         cursor: pointer;
@@ -142,8 +273,6 @@
         flex-direction: column;
         gap: 12px;
         padding: 16px;
-        border: 2px solid rgba(255,255,255,.42);
-        border-radius: 18px;
         background: rgba(255,255,255,.1);
     }
 
@@ -155,8 +284,6 @@
         width: 110px;
         min-height: 42px;
         padding: 6px 10px;
-        border: 2px solid rgba(255,255,255,.75);
-        border-radius: 10px;
         background: rgba(255,255,255,.94);
         color: #16385f;
         font: inherit;
@@ -177,7 +304,7 @@
     }
 
     .developer-inventory-tab.active {
-        background: linear-gradient(180deg, #69d7f0, #1688c0);
+        background: #1688c0;
         box-shadow: inset 0 0 0 2px rgba(255,255,255,.4);
     }
 
@@ -197,8 +324,6 @@
         align-items: center;
         gap: 10px;
         padding: 6px 10px;
-        border: 1px solid rgba(255,255,255,.4);
-        border-radius: 12px;
         background: rgba(0, 30, 58, .24);
         cursor: pointer;
     }
@@ -215,32 +340,43 @@
         object-fit: contain;
     }
 
-    .developer-aquarium-fish-entry {
+    .developer-inventory-list > label:not(.developer-inventory-entry) {
+        display: grid;
+        gap: 6px;
+    }
+
+    .developer-inventory-list > label input {
+        min-height: 40px;
+        padding: 6px 10px;
+        background: rgba(255,255,255,.94);
+        color: #16385f;
+        font: inherit;
+    }
+
+    .developer-aquarium-item-entry {
         display: flex;
         min-width: 0;
         min-height: 54px;
         align-items: center;
         gap: 10px;
         padding: 6px 10px;
-        border: 1px solid rgba(255,255,255,.4);
-        border-radius: 12px;
         background: rgba(0, 30, 58, .24);
     }
 
-    .developer-aquarium-fish-entry img {
+    .developer-aquarium-item-entry img {
         width: 42px;
         height: 42px;
         flex: 0 0 42px;
         object-fit: contain;
     }
 
-    .developer-aquarium-fish-copy {
+    .developer-aquarium-item-copy {
         display: grid;
         min-width: 0;
         gap: 3px;
     }
 
-    .developer-aquarium-fish-copy small {
+    .developer-aquarium-item-copy small {
         color: rgba(255,255,255,.8);
         font: 12px/1.3 Arial, sans-serif;
     }
@@ -261,10 +397,17 @@
         const status = document.querySelector("#developerToolsStatus");
         const inventoryList = document.querySelector("#developerInventoryList");
         const saveInventoryButton = document.querySelector("#developerSaveInventory");
-        const aquariumFishList = document.querySelector("#developerAquariumFishList");
-        const clearAquariumFishButton = document.querySelector("#developerClearAquariumFish");
+        const aquariumItemsList = document.querySelector("#developerAquariumItemsList");
+        const aquariumSelect = document.querySelector("#developerAquariumSelect");
+        const aquariumTabs = [...panel.querySelectorAll("[data-aquarium-category]")];
+        const clearAquariumButtons = [...panel.querySelectorAll("[data-clear-aquarium-category]")];
         const resetAdditionalQuizQuestionsButton = document.querySelector("#developerResetAdditionalQuizQuestions");
         const progressLimitToggle = document.querySelector("#developerDisableProgressLimit");
+        const currentLevelDisplay = document.querySelector("#developerCurrentLevel");
+        const currentXPDisplay = document.querySelector("#developerCurrentXP");
+        const experienceRemainingDisplay = document.querySelector("#developerExperienceRemaining");
+        const categoryTabs = [...panel.querySelectorAll("[data-dev-category]")];
+        const categoryContents = [...panel.querySelectorAll("[data-dev-category-content]")];
         const inventoryTabs = [...panel.querySelectorAll("[data-inventory-category]")];
         const csrfToken = document.querySelector('#developerToolsHost input[name="__RequestVerificationToken"]')?.value;
         const setupQuizTools = document.querySelector("#developerSetupQuizTools");
@@ -291,15 +434,33 @@
         }
         const inventoryData = {
             fish: { catalog: [], owned: [], endpoint: "/DeveloperTools/SetFish" },
-            items: { catalog: [], owned: [], endpoint: "/DeveloperTools/SetItems" }
+            items: { catalog: [], owned: [], endpoint: "/DeveloperTools/SetItems" },
+            misc: { small: 0, large: 0, endpoint: "/DeveloperTools/SetPelletInventory" }
         };
         let activeInventoryCategory = "fish";
+        let activeAquariumCategory = "fish";
+        let aquariumItems = { fish: [], objects: [] };
+        let aquariums = [];
         let inventoryLoaded = false;
         let typedCharacters = "";
         function setDeveloperStatus(message, isError = false) {
             status.textContent = message;
             status.classList.toggle("has-error", isError);
         }
+
+        categoryTabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                const category = tab.dataset.devCategory;
+                categoryTabs.forEach(item => {
+                    const selected = item === tab;
+                    item.classList.toggle("active", selected);
+                    item.setAttribute("aria-selected", String(selected));
+                });
+                categoryContents.forEach(content => {
+                    content.hidden = content.dataset.devCategoryContent !== category;
+                });
+            });
+        });
 
         function closeDeveloperTools() {
             panel.hidden = true;
@@ -326,6 +487,26 @@
             const inventory = inventoryData[activeInventoryCategory];
             inventoryList.replaceChildren();
 
+            if (activeInventoryCategory === "misc") {
+                for (const [type, labelText] of [["small", "Small Pellets"], ["large", "Large Pellets"]]) {
+                    const label = document.createElement("label");
+                    label.textContent = labelText;
+                    const input = document.createElement("input");
+                    input.type = "number";
+                    input.min = "0";
+                    input.max = "999";
+                    input.step = "1";
+                    input.required = true;
+                    input.dataset.pelletType = type;
+                    input.value = String(inventory[type]);
+                    label.append(input);
+                    inventoryList.append(label);
+                }
+                saveInventoryButton.textContent = "Save Misc Inventory";
+                return;
+            }
+
+            saveInventoryButton.textContent = "Save Inventory";
             if (inventory.catalog.length === 0) {
                 inventoryList.textContent = "No catalog entries found.";
                 return;
@@ -357,42 +538,38 @@
                 fetch("/Aquarium/GetAllFish"),
                 fetch("/Aquarium/GetUserFish"),
                 fetch("/Aquarium/GetAllItems"),
-                fetch("/Aquarium/GetUserItems")
+                fetch("/Aquarium/GetUserItems"),
+                fetch("/DeveloperTools/GetPelletInventory")
             ]);
             if (responses.some(response => !response.ok)) {
                 throw new Error("Unable to load Aquarium catalogs or current inventory.");
             }
 
-            const [fishCatalog, ownedFish, itemCatalog, ownedItems] = await Promise.all(
+            const [fishCatalog, ownedFish, itemCatalog, ownedItems, pelletInventory] = await Promise.all(
                 responses.map(response => response.json())
             );
             inventoryData.fish.catalog = fishCatalog;
             inventoryData.fish.owned = ownedFish.map(fish => fish._id || fish.fishId);
             inventoryData.items.catalog = itemCatalog;
             inventoryData.items.owned = ownedItems.map(item => item._id || item.itemId);
+            inventoryData.misc.small = pelletInventory.small;
+            inventoryData.misc.large = pelletInventory.large;
             inventoryLoaded = true;
             renderDeveloperInventory();
             setDeveloperStatus("Inventory loaded.");
         }
 
-        async function loadDeveloperAquariumFish() {
-            aquariumFishList.textContent = "Loading fish in aquariums...";
-            const response = await fetch("/DeveloperTools/GetAquariumFish");
-            if (!response.ok) {
-                const details = await response.text();
-                throw new Error(details || `Unable to load aquarium fish (${response.status}).`);
-            }
-
-            const fish = await response.json();
-            aquariumFishList.replaceChildren();
-            if (fish.length === 0) {
-                aquariumFishList.textContent = "No fish are currently in your aquariums.";
+        function renderDeveloperAquariumItems() {
+            const entries = aquariumItems[activeAquariumCategory];
+            aquariumItemsList.replaceChildren();
+            if (entries.length === 0) {
+                aquariumItemsList.textContent = `No ${activeAquariumCategory === "fish" ? "fish" : "objects"} are in this aquarium.`;
                 return;
             }
 
-            fish.forEach(entry => {
+            entries.forEach(entry => {
                 const row = document.createElement("div");
-                row.className = "developer-aquarium-fish-entry";
+                row.className = "developer-aquarium-item-entry";
                 if (entry.sprite) {
                     const image = document.createElement("img");
                     image.src = entry.sprite;
@@ -402,15 +579,58 @@
                 }
 
                 const copy = document.createElement("span");
-                copy.className = "developer-aquarium-fish-copy";
-                const species = document.createElement("strong");
-                species.textContent = entry.species;
-                const location = document.createElement("small");
-                location.textContent = `Aquarium ${entry.aquariumNumber || "unknown"}`;
-                copy.append(species, location);
+                copy.className = "developer-aquarium-item-copy";
+                const name = document.createElement("strong");
+                name.textContent = activeAquariumCategory === "fish" ? entry.species : entry.name;
+                copy.append(name);
                 row.append(copy);
-                aquariumFishList.append(row);
+                aquariumItemsList.append(row);
             });
+        }
+
+        async function loadDeveloperAquariums() {
+            aquariumSelect.replaceChildren();
+            aquariumItemsList.textContent = "Loading aquariums...";
+            const response = await fetch("/DeveloperTools/GetDeveloperAquariums");
+            if (!response.ok) {
+                const details = await response.text();
+                throw new Error(details || `Unable to load aquariums (${response.status}).`);
+            }
+
+            aquariums = await response.json();
+            aquariumSelect.replaceChildren();
+            aquariums.forEach(aquarium => {
+                const option = document.createElement("option");
+                option.value = String(aquarium.aquariumId);
+                option.textContent = `Aquarium ${aquarium.aquariumNumber}`;
+                aquariumSelect.append(option);
+            });
+            if (aquariums.length === 0) {
+                aquariumItems = { fish: [], objects: [] };
+                aquariumItemsList.textContent = "No aquariums found.";
+                return;
+            }
+
+            await loadDeveloperAquariumItems();
+        }
+
+        async function loadDeveloperAquariumItems() {
+            const aquariumId = Number(aquariumSelect.value);
+            if (!Number.isInteger(aquariumId) || aquariumId <= 0) {
+                aquariumItems = { fish: [], objects: [] };
+                renderDeveloperAquariumItems();
+                return;
+            }
+
+            aquariumItemsList.textContent = "Loading aquarium items...";
+            const response = await fetch(`/DeveloperTools/GetAquariumItems?aquariumId=${encodeURIComponent(aquariumId)}`);
+            if (!response.ok) {
+                const details = await response.text();
+                throw new Error(details || `Unable to load aquarium items (${response.status}).`);
+            }
+
+            aquariumItems = await response.json();
+            renderDeveloperAquariumItems();
         }
 
         async function loadAquariumProgressLimit() {
@@ -428,11 +648,29 @@
             progressLimitToggle.checked = setting.disabled;
         }
 
+        async function loadLevelProgress() {
+            const response = await fetch("/DeveloperTools/GetLevelProgress");
+            if (!response.ok) {
+                const details = await response.text();
+                throw new Error(details || `Unable to load level progress (${response.status}).`);
+            }
+
+            const progress = await response.json();
+            currentLevelDisplay.textContent = String(progress.level);
+            currentXPDisplay.textContent = progress.isMaxLevel
+                ? String(progress.currentXP)
+                : `${progress.currentXP} / ${progress.experienceForNextLevel}`;
+            experienceRemainingDisplay.textContent = progress.isMaxLevel
+                ? "Max level"
+                : String(progress.experienceRemaining);
+        }
+
         async function loadDeveloperToolsData() {
             await Promise.all([
                 loadDeveloperInventory(),
-                loadDeveloperAquariumFish(),
-                loadAquariumProgressLimit()
+                loadDeveloperAquariums(),
+                loadAquariumProgressLimit(),
+                loadLevelProgress()
             ]);
         }
 
@@ -547,49 +785,113 @@
             });
         });
 
+        aquariumTabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                activeAquariumCategory = tab.dataset.aquariumCategory;
+                aquariumTabs.forEach(item => item.classList.toggle("active", item === tab));
+                renderDeveloperAquariumItems();
+            });
+        });
+
+        aquariumSelect.addEventListener("change", () => {
+            loadDeveloperAquariumItems().catch(error => {
+                console.error(error);
+                setDeveloperStatus(error.message, true);
+            });
+        });
+
+        function navigateAquarium(direction) {
+            const currentIndex = aquariums.findIndex(
+                aquarium => aquarium.aquariumId === Number(aquariumSelect.value)
+            );
+            const nextIndex = currentIndex + direction;
+            if (nextIndex < 0 || nextIndex >= aquariums.length) return;
+            aquariumSelect.value = String(aquariums[nextIndex].aquariumId);
+            aquariumSelect.dispatchEvent(new Event("change"));
+        }
+
+        document.querySelector("#developerPreviousAquarium").addEventListener("click", () => navigateAquarium(-1));
+        document.querySelector("#developerNextAquarium").addEventListener("click", () => navigateAquarium(1));
+
         saveInventoryButton.addEventListener("click", async () => {
             if (!inventoryLoaded) {
                 setDeveloperStatus("Wait for the inventory to finish loading.", true);
                 return;
             }
 
-            const ids = [...inventoryList.querySelectorAll('input[type="checkbox"]:checked')]
-                .map(checkbox => checkbox.value);
             const inventory = inventoryData[activeInventoryCategory];
             try {
-                await postDeveloperAction(inventory.endpoint, { ids });
-                inventory.owned = ids;
-                if (document.body.classList.contains("aquarium-page")) {
-                    renderInventoryFish();
-                    renderInventoryItems();
+                if (activeInventoryCategory === "misc") {
+                    const small = Number(inventoryList.querySelector('[data-pellet-type="small"]').value);
+                    const large = Number(inventoryList.querySelector('[data-pellet-type="large"]').value);
+                    if (![small, large].every(amount => Number.isInteger(amount) && amount >= 0 && amount <= 999)) {
+                        setDeveloperStatus("Pellet counts must be whole numbers from 0 to 999.", true);
+                        return;
+                    }
+                    const response = await postDeveloperAction(inventory.endpoint, { small, large });
+                    const result = await response.json();
+                    inventory.small = result.small;
+                    inventory.large = result.large;
+                    if (document.body.classList.contains("aquarium-page")) {
+                        updatePelletInventory(result);
+                    }
+                    setDeveloperStatus("Misc inventory saved.");
+                } else {
+                    const ids = [...inventoryList.querySelectorAll('input[type="checkbox"]:checked')]
+                        .map(checkbox => checkbox.value);
+                    await postDeveloperAction(inventory.endpoint, { ids });
+                    inventory.owned = ids;
+                    if (document.body.classList.contains("aquarium-page")) {
+                        renderInventoryFish();
+                        renderInventoryItems();
+                    }
+                    setDeveloperStatus(`${activeInventoryCategory === "fish" ? "Fish" : "Objects"} inventory saved.`);
                 }
-                setDeveloperStatus(`${activeInventoryCategory === "fish" ? "Fish" : "Objects"} inventory saved.`);
             } catch (error) {
                 console.error(error);
                 setDeveloperStatus(error.message, true);
             }
         });
 
-        clearAquariumFishButton.addEventListener("click", async () => {
-            if (!window.confirm("Remove all fish from every aquarium? They will be returned to your fish inventory.")) {
-                return;
-            }
-
-            clearAquariumFishButton.disabled = true;
-            try {
-                const response = await postDeveloperAction("/DeveloperTools/ClearAquariumFish");
-                const result = await response.json();
-                await Promise.all([loadDeveloperInventory(), loadDeveloperAquariumFish()]);
-                if (document.body.classList.contains("aquarium-page") && typeof window.renderAquariumFish === "function") {
-                    await window.renderAquariumFish();
+        clearAquariumButtons.forEach(button => {
+            button.addEventListener("click", async () => {
+                const aquariumId = Number(aquariumSelect.value);
+                const aquarium = aquariums.find(entry => entry.aquariumId === aquariumId);
+                const category = button.dataset.clearAquariumCategory;
+                if (!aquarium || !category) {
+                    setDeveloperStatus("Select an aquarium first.", true);
+                    return;
                 }
-                setDeveloperStatus(`${result.removed} fish returned to inventory.`);
-            } catch (error) {
-                console.error(error);
-                setDeveloperStatus(error.message, true);
-            } finally {
-                clearAquariumFishButton.disabled = false;
-            }
+
+                const itemLabel = category === "all" ? "everything" : category;
+                if (!window.confirm(`Remove ${itemLabel} from Aquarium ${aquarium.aquariumNumber}? Items will be returned to inventory.`)) {
+                    return;
+                }
+
+                clearAquariumButtons.forEach(action => { action.disabled = true; });
+                try {
+                    const response = await postDeveloperAction("/DeveloperTools/ClearAquariumItems", {
+                        aquariumId,
+                        category
+                    });
+                    const result = await response.json();
+                    await Promise.all([loadDeveloperInventory(), loadDeveloperAquariumItems()]);
+                    if (document.body.classList.contains("aquarium-page")) {
+                        const refreshes = [];
+                        if (typeof window.renderAquariumFish === "function") refreshes.push(window.renderAquariumFish());
+                        if (typeof window.renderAquariumObjects === "function") refreshes.push(window.renderAquariumObjects());
+                        await Promise.all(refreshes);
+                    }
+                    setDeveloperStatus(
+                        `${result.removedFish} fish and ${result.removedObjects} objects returned from Aquarium ${aquarium.aquariumNumber}.`
+                    );
+                } catch (error) {
+                    console.error(error);
+                    setDeveloperStatus(error.message, true);
+                } finally {
+                    clearAquariumButtons.forEach(action => { action.disabled = false; });
+                }
+            });
         });
     })();
 </script>

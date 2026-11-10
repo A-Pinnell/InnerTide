@@ -38,6 +38,22 @@ namespace Inner_Tide.Controllers {
             });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetLevelProgress() {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            return Json(new {
+                level = user.AccountLevel,
+                currentXP = user.CurrentXP,
+                experienceForNextLevel = user.XPForNextLevel,
+                experienceRemaining = Math.Max(0, user.XPForNextLevel - user.CurrentXP),
+                isMaxLevel = user.AccountLevel >= 99
+            });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SetAquariumProgressLimit([FromBody] SetAquariumProgressLimitRequest request) {
@@ -165,7 +181,7 @@ namespace Inner_Tide.Controllers {
                 return NotFound();
             }
 
-            if (!ModelState.IsValid) {
+            if (request == null || !ModelState.IsValid) {
                 return ValidationProblem(ModelState);
             }
 
@@ -266,11 +282,47 @@ namespace Inner_Tide.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAquariumFish() {
+        public async Task<IActionResult> GetPelletInventory() {
             if (!IsDeveloperEnvironment()) {
                 return NotFound();
             }
 
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            return Json(new { small = user.SmallPelletCount, large = user.LargePelletCount });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetPelletInventory([FromBody] SetPelletInventoryRequest request) {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+
+            if (request == null || !ModelState.IsValid) {
+                return ValidationProblem(ModelState);
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            user.SmallPelletCount = request.Small;
+            user.LargePelletCount = request.Large;
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) {
+                return BadRequest(new { errors = result.Errors.Select(error => error.Description) });
+            }
+
+            return Ok(new { small = user.SmallPelletCount, large = user.LargePelletCount });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDeveloperAquariums() {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) {
                 return Unauthorized();
@@ -281,53 +333,76 @@ namespace Inner_Tide.Controllers {
                 .OrderBy(aquarium => aquarium.AquariumId)
                 .Select(aquarium => new { aquarium.AquariumId })
                 .ToListAsync();
-            var aquariumNumbers = aquariums
-                .Select((aquarium, index) => new { aquarium.AquariumId, AquariumNumber = index + 1 })
-                .ToDictionary(aquarium => aquarium.AquariumId, aquarium => aquarium.AquariumNumber);
+
+            return Json(aquariums.Select((aquarium, index) => new {
+                aquarium.AquariumId,
+                aquariumNumber = index + 1
+            }));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAquariumItems(int aquariumId) {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var aquarium = await _context.Aquariums
+                .FirstOrDefaultAsync(item => item.UserId == user.Id && item.AquariumId == aquariumId);
+            if (aquarium == null) {
+                return NotFound("Aquarium was not found.");
+            }
+
             var placedFish = await _context.UserFish
-                .Where(fish => fish.UserId == user.Id && fish.IsInAquarium && fish.AquariumId != null)
-                .Select(fish => new { fish.UserFishId, fish.FishId, AquariumId = fish.AquariumId!.Value })
+                .Where(fish => fish.UserId == user.Id && fish.IsInAquarium && fish.AquariumId == aquariumId)
+                .Select(fish => new { fish.UserFishId, fish.FishId })
+                .ToListAsync();
+            var placedObjects = await _context.UserItems
+                .Where(item => item.UserId == user.Id && item.IsInAquarium && item.AquariumId == aquariumId)
+                .Select(item => new { item.UserItemId, item.ItemId })
                 .ToListAsync();
 
-            if (placedFish.Count == 0) {
-                return Json(Array.Empty<object>());
+            var fishEntries = new List<object>();
+            if (placedFish.Count > 0) {
+                var catalog = await _httpClient.GetFromJsonAsync<List<Fish>>("https://innertideapi.vercel.app/api/v1/fish")
+                    ?? throw new InvalidOperationException("The fish catalog returned no data.");
+                var catalogById = catalog.ToDictionary(fish => fish.FishId, StringComparer.Ordinal);
+                fishEntries = placedFish.Select(fish => {
+                    catalogById.TryGetValue(fish.FishId, out var details);
+                    return (object)new {
+                        fish.UserFishId,
+                        fish.FishId,
+                        species = details?.Species ?? fish.FishId,
+                        sprite = details?.Sprite
+                    };
+                }).ToList();
             }
 
-            using var response = await _httpClient.GetAsync("https://innertideapi.vercel.app/api/v1/fish");
-            if (!response.IsSuccessStatusCode) {
-                return Problem(
-                    detail: "Unable to load the fish catalog to display aquarium fish.",
-                    statusCode: StatusCodes.Status502BadGateway);
+            var objectEntries = new List<object>();
+            if (placedObjects.Count > 0) {
+                var catalog = await _httpClient.GetFromJsonAsync<List<Item>>("https://innertideapi.vercel.app/api/v1/item")
+                    ?? throw new InvalidOperationException("The object catalog returned no data.");
+                var catalogById = catalog.ToDictionary(item => item.ItemId, StringComparer.Ordinal);
+                objectEntries = placedObjects.Select(placedItem => {
+                    catalogById.TryGetValue(placedItem.ItemId, out var details);
+                    return (object)new {
+                        placedItem.UserItemId,
+                        placedItem.ItemId,
+                        name = details?.Name ?? placedItem.ItemId,
+                        sprite = details?.Sprite
+                    };
+                }).ToList();
             }
 
-            var catalog = await response.Content.ReadFromJsonAsync<List<Fish>>();
-            if (catalog == null) {
-                return Problem(
-                    detail: "The fish catalog returned no data.",
-                    statusCode: StatusCodes.Status502BadGateway);
-            }
-
-            var catalogById = catalog.ToDictionary(fish => fish.FishId, StringComparer.Ordinal);
-            var result = placedFish.Select(fish => {
-                catalogById.TryGetValue(fish.FishId, out var details);
-                aquariumNumbers.TryGetValue(fish.AquariumId, out var aquariumNumber);
-                return new {
-                    fish.UserFishId,
-                    fish.FishId,
-                    aquariumNumber,
-                    species = details?.Species ?? fish.FishId,
-                    sprite = details?.Sprite
-                };
-            });
-
-            return Json(result);
+            return Json(new { fish = fishEntries, objects = objectEntries });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ClearAquariumFish() {
-            if (!IsDeveloperEnvironment()) {
-                return NotFound();
+        public async Task<IActionResult> ClearAquariumItems([FromBody] ClearAquariumItemsRequest request) {
+            if (request == null || !ModelState.IsValid ||
+                request.Category is not ("fish" or "objects" or "all")) {
+                return BadRequest("Choose fish, objects, or all aquarium items.");
             }
 
             var user = await _userManager.GetUserAsync(User);
@@ -335,25 +410,61 @@ namespace Inner_Tide.Controllers {
                 return Unauthorized();
             }
 
-            var aquariums = await _context.Aquariums
-                .Where(aquarium => aquarium.UserId == user.Id)
-                .ToListAsync();
-            var placedFish = await _context.UserFish
-                .Where(fish => fish.UserId == user.Id && fish.IsInAquarium)
-                .ToListAsync();
-
-            foreach (var fish in placedFish) {
-                fish.IsInAquarium = false;
-                fish.AquariumId = null;
+            var aquarium = await _context.Aquariums
+                .FirstOrDefaultAsync(item => item.UserId == user.Id && item.AquariumId == request.AquariumId);
+            if (aquarium == null) {
+                return NotFound("Aquarium was not found.");
             }
 
-            foreach (var aquarium in aquariums) {
-                aquarium.CurrentFish = 0;
-                aquarium.CompletionPercentage = 0;
+            var removedFish = 0;
+            if (request.Category is "fish" or "all") {
+                var fish = await _context.UserFish
+                    .Where(item => item.UserId == user.Id && item.AquariumId == aquarium.AquariumId && item.IsInAquarium)
+                    .ToListAsync();
+                foreach (var entry in fish) {
+                    entry.IsInAquarium = false;
+                    entry.AquariumId = null;
+                    entry.xCord = 0;
+                    entry.yCord = 0;
+                }
+
+                if (fish.Any(entry => aquarium.FirstPlacedUserFishId == entry.UserFishId)) {
+                    aquarium.FirstPlacedUserFishId = null;
+                }
+                removedFish = fish.Count;
             }
+
+            var removedObjects = 0;
+            if (request.Category is "objects" or "all") {
+                var objects = await _context.UserItems
+                    .Where(item => item.UserId == user.Id && item.AquariumId == aquarium.AquariumId && item.IsInAquarium)
+                    .ToListAsync();
+                var objectIds = objects.Select(item => item.UserItemId).ToHashSet();
+                var gridCells = await _context.AquariumItemGridCells
+                    .Where(cell => cell.AquariumId == aquarium.AquariumId && objectIds.Contains(cell.UserItemId))
+                    .ToListAsync();
+                _context.AquariumItemGridCells.RemoveRange(gridCells);
+                foreach (var entry in objects) {
+                    entry.IsInAquarium = false;
+                    entry.AquariumId = null;
+                    entry.GridX = null;
+                    entry.GridY = null;
+                    entry.SandLayer = null;
+                    entry.isFloating = false;
+                }
+                removedObjects = objects.Count;
+            }
+
+            aquarium.CurrentFish = Math.Max(0, await _context.UserFish
+                .CountAsync(item => item.UserId == user.Id && item.AquariumId == aquarium.AquariumId && item.IsInAquarium) - removedFish);
+            aquarium.CurrentObjects = Math.Max(0, await _context.UserItems
+                .CountAsync(item => item.UserId == user.Id && item.AquariumId == aquarium.AquariumId && item.IsInAquarium) - removedObjects);
+            aquarium.CompletionPercentage = aquarium.MaxFish <= 0
+                ? 0
+                : Math.Clamp((int)Math.Round(aquarium.CurrentFish * 100d / aquarium.MaxFish), 0, 100);
 
             await _context.SaveChangesAsync();
-            return Ok(new { removed = placedFish.Count });
+            return Ok(new { removedFish, removedObjects });
         }
 
         private bool IsDeveloperEnvironment() => _environment.IsDevelopment();
@@ -372,5 +483,21 @@ namespace Inner_Tide.Controllers {
     public class SetAquariumProgressLimitRequest {
         [Required]
         public bool? Disabled { get; set; }
+    }
+
+    public class SetPelletInventoryRequest {
+        [Range(0, 999)]
+        public int Small { get; set; }
+
+        [Range(0, 999)]
+        public int Large { get; set; }
+    }
+
+    public class ClearAquariumItemsRequest {
+        [Range(1, int.MaxValue)]
+        public int AquariumId { get; set; }
+
+        [Required]
+        public string Category { get; set; } = string.Empty;
     }
 }

@@ -69,6 +69,7 @@ namespace Inner_Tide.Controllers {
                 CoinCount = 0,
                 AccountLevel = 1,
                 XPForNextLevel = 100,
+                CurrentXP = 0,
                 FirstTimeLogin = false
             };
 
@@ -633,6 +634,7 @@ namespace Inner_Tide.Controllers {
                     user.Email,
                     user.PhoneNumber,
                     user.AccountLevel,
+                    user.CurrentXP,
                     user.XPForNextLevel,
                     user.CoinCount,
                     user.FirstTimeLogin,
@@ -795,6 +797,7 @@ namespace Inner_Tide.Controllers {
 
             user.AccountLevel = 1;
             user.XPForNextLevel = 100;
+            user.CurrentXP = 0;
             user.CoinCount = 0;
             user.SmallPelletCount = 0;
             user.LargePelletCount = 0;
