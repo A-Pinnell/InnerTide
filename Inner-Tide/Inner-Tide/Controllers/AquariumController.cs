@@ -13,6 +13,7 @@ namespace Inner_Tide.Controllers {
     public class AquariumController : Controller {
         private const int AquariumObjectGridColumns = 28;
         private const int AquariumObjectGridRows = 4;
+        private const int ObjectStoreUnlockLevel = LevelRewardCatalog.ObjectStoreUnlockLevel;
 
         private readonly SignInManager<User> signInManager;
         private readonly UserManager<User> userManager;
@@ -59,6 +60,8 @@ namespace Inner_Tide.Controllers {
             ViewData["AquariumNumber"] = aquarium;
             ViewData["AquariumId"] = selectedAquarium.AquariumId;
             ViewData["AquariumBackgroundNumber"] = backgroundNumber;
+            ViewData["AccountLevel"] = user.AccountLevel;
+            ViewData["ObjectStoreUnlockLevel"] = ObjectStoreUnlockLevel;
             return View("Index");
         }
 
@@ -133,7 +136,23 @@ namespace Inner_Tide.Controllers {
                         PropertyNameCaseInsensitive = true
                     });
 
-                return Json(fishList);
+                var user = await userManager.GetUserAsync(User);
+                var accountLevel = user?.AccountLevel ?? 1;
+                return Json(fishList?.Select(fish => {
+                    var requiredLevel = LevelRewardCatalog.GetRequiredLevelForFish(fish.Species);
+                    return new {
+                        _id = fish.FishId,
+                        fish.Sprite,
+                        fish.Species,
+                        fish.Description,
+                        fish.Price,
+                        fish.Height,
+                        fish.Width,
+                        fish.FunFacts,
+                        requiredLevel,
+                        isLocked = requiredLevel.HasValue && accountLevel < requiredLevel.Value
+                    };
+                }));
             } catch (Exception ex) {
                 return StatusCode(500, ex.Message);
             }
@@ -390,6 +409,11 @@ namespace Inner_Tide.Controllers {
                 return NotFound("This fish is no longer available.");
             }
 
+            var requiredLevel = LevelRewardCatalog.GetRequiredLevelForFish(fish.Species);
+            if (requiredLevel.HasValue && user.AccountLevel < requiredLevel.Value) {
+                return Conflict($"{fish.Species} unlocks at level {requiredLevel.Value}.");
+            }
+
             if (user.CoinCount < fish.Price) {
                 return BadRequest("You do not have enough coins to buy this fish.");
             }
@@ -432,6 +456,10 @@ namespace Inner_Tide.Controllers {
 
                 if (user == null) {
                     return NotFound();
+                }
+
+                if (user.AccountLevel < ObjectStoreUnlockLevel) {
+                    return Conflict($"Aquarium objects unlock at level {ObjectStoreUnlockLevel}.");
                 }
 
                 var item = await _httpClient.GetFromJsonAsync<Item>("https://innertideapi.vercel.app/api/v1/item/" + itemId);

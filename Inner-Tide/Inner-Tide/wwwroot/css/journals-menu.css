@@ -8,7 +8,7 @@ body {
     background-blend-mode: multiply, color, normal;
     background-position: 0 0, 0 0, 0 0;
     background-repeat: repeat, repeat, repeat;
-    background-size: 1080px 1080px, 1080px 1080px, 1080px 1080px;
+    background-size: 100vmax 100vmax, 100vmax 100vmax, 100vmax 100vmax;
     animation: journal-background-scroll 30s linear infinite paused;
 }
 
@@ -18,7 +18,7 @@ body.journal-menu-page.journal-background-moving {
 
 @keyframes journal-background-scroll {
     to {
-        background-position: -1080px 0, -1080px 0, -1080px 0;
+        background-position: -100vmax 0, -100vmax 0, -100vmax 0;
     }
 }
 

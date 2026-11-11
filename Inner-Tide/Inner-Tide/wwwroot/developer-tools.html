@@ -114,6 +114,11 @@
                     <div><dt>EXP to next level</dt><dd id="developerExperienceRemaining">Loading...</dd></div>
                 </dl>
             </section>
+            <section class="developer-tool-section">
+                <h3>Level reward popups</h3>
+                <p>Preview each level's unlock popup without changing your level.</p>
+                <div class="developer-level-reward-previews" id="developerLevelRewardPreviews">Loading...</div>
+            </section>
         </div>
     </section>
 </div>
@@ -236,6 +241,12 @@
         margin: 6px 0 0;
         font-size: 22px;
         font-weight: 700;
+    }
+
+    .developer-level-reward-previews {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
     }
 
     .developer-tools-heading h2,
@@ -406,6 +417,7 @@
         const currentLevelDisplay = document.querySelector("#developerCurrentLevel");
         const currentXPDisplay = document.querySelector("#developerCurrentXP");
         const experienceRemainingDisplay = document.querySelector("#developerExperienceRemaining");
+        const levelRewardPreviews = document.querySelector("#developerLevelRewardPreviews");
         const categoryTabs = [...panel.querySelectorAll("[data-dev-category]")];
         const categoryContents = [...panel.querySelectorAll("[data-dev-category-content]")];
         const inventoryTabs = [...panel.querySelectorAll("[data-inventory-category]")];
@@ -665,12 +677,58 @@
                 : String(progress.experienceRemaining);
         }
 
+        async function loadLevelRewardPreviews() {
+            const response = await fetch("/DeveloperTools/GetLevelRewards");
+            if (!response.ok) {
+                const details = await response.text();
+                throw new Error(details || `Unable to load level rewards (${response.status}).`);
+            }
+
+            const rewards = await response.json();
+            levelRewardPreviews.replaceChildren();
+            if (!Array.isArray(rewards) || rewards.length === 0) {
+                levelRewardPreviews.textContent = "No level rewards are configured.";
+                return;
+            }
+
+            const rewardsByLevel = new Map();
+            rewards.forEach(reward => {
+                if (!Number.isSafeInteger(reward.level) ||
+                    typeof reward.title !== "string" ||
+                    typeof reward.description !== "string") {
+                    throw new Error("A configured level reward is invalid.");
+                }
+
+                const levelRewards = rewardsByLevel.get(reward.level) ?? [];
+                levelRewards.push(reward);
+                rewardsByLevel.set(reward.level, levelRewards);
+            });
+
+            rewardsByLevel.forEach((levelRewards, level) => {
+                const button = document.createElement("button");
+                button.className = "developer-tool-action";
+                button.type = "button";
+                button.textContent = `Preview LVL ${level} popup`;
+                button.addEventListener("click", () => {
+                    if (typeof window.showLevelRewardPopup !== "function") {
+                        setDeveloperStatus("The level reward animation is unavailable on this page.", true);
+                        return;
+                    }
+
+                    window.showLevelRewardPopup(level, levelRewards);
+                    setDeveloperStatus(`Previewing level ${level} reward.`);
+                });
+                levelRewardPreviews.append(button);
+            });
+        }
+
         async function loadDeveloperToolsData() {
             await Promise.all([
                 loadDeveloperInventory(),
                 loadDeveloperAquariums(),
                 loadAquariumProgressLimit(),
-                loadLevelProgress()
+                loadLevelProgress(),
+                loadLevelRewardPreviews()
             ]);
         }
 

@@ -403,6 +403,56 @@ function showStoreImageLoading(item) {
     }
 }
 
+function setLockedFishSilhouetteColor(silhouette, spriteUrl) {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.addEventListener("load", () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 32;
+        canvas.height = 32;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) {
+            console.error(`Could not sample locked fish color for "${spriteUrl}": canvas is unavailable.`);
+            return;
+        }
+
+        try {
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+            const colors = new Map();
+            for (let index = 0; index < pixels.length; index += 4) {
+                if (pixels[index + 3] < 128) continue;
+                const red = pixels[index];
+                const green = pixels[index + 1];
+                const blue = pixels[index + 2];
+                const key = `${red >> 4},${green >> 4},${blue >> 4}`;
+                const sample = colors.get(key) || { count: 0, red: 0, green: 0, blue: 0 };
+                sample.count++;
+                sample.red += red;
+                sample.green += green;
+                sample.blue += blue;
+                colors.set(key, sample);
+            }
+
+            const dominantColor = [...colors.values()].sort((first, second) => second.count - first.count)[0];
+            if (!dominantColor) {
+                console.error(`Could not sample locked fish color for "${spriteUrl}": sprite has no opaque pixels.`);
+                return;
+            }
+
+            const color = [dominantColor.red, dominantColor.green, dominantColor.blue]
+                .map(channel => Math.round(channel / dominantColor.count));
+            silhouette.style.setProperty("--locked-fish-color", `rgb(${color.join(" ")})`);
+        } catch (error) {
+            console.error(`Could not sample locked fish color for "${spriteUrl}".`, error);
+        }
+    }, { once: true });
+    image.addEventListener("error", () => {
+        console.error(`Could not load locked fish sprite for color sampling: "${spriteUrl}".`);
+    }, { once: true });
+    image.src = spriteUrl;
+}
+
 async function renderStoreItems() {
     try {
 
@@ -515,29 +565,84 @@ async function renderStoreFish() {
         if (!storeContainer) return;
 
         storeContainer.innerHTML = "";
+        const accountLevel = Number(document.body.dataset.accountLevel);
+        const playerLevel = Number.isSafeInteger(accountLevel) && accountLevel > 0 ? accountLevel : 1;
 
         fish.forEach(f => {
-            //console.log(f);
             const item = document.createElement("div");
-            item.setAttribute("value", f._id)
-            item.addEventListener("click", () => purchaseStoreFish(f._id, item));
             item.className = "store-item";
+            item.setAttribute("value", f._id);
+            const requiredLevelValue = f.requiredLevel == null ? null : Number(f.requiredLevel);
+            const requiredLevel = Number.isSafeInteger(requiredLevelValue) ? requiredLevelValue : null;
+            const locked = f.isLocked === true ||
+                (requiredLevel !== null && playerLevel < requiredLevel);
+            if (locked) {
+                item.classList.add("store-item-locked");
+                item.setAttribute("aria-disabled", "true");
+                item.dataset.requiredLevel = String(requiredLevel);
+                item.title = `Unlock at level ${requiredLevel}`;
+            } else {
+                item.addEventListener("click", () => purchaseStoreFish(f._id, item));
+            }
 
-            item.innerHTML = `
-            <div class="store-item-image">
-                <img class="fish-preview"
-                     src="${f.sprite}"
-                     loading="lazy"
-                     decoding="async"
-                     alt="${f.species}">
-            </div>
+            const imageFrame = document.createElement("div");
+            imageFrame.className = "store-item-image";
+            if (locked) {
+                const silhouette = document.createElement("span");
+                silhouette.className = "locked-fish-silhouette";
+                silhouette.setAttribute("aria-hidden", "true");
+                silhouette.style.setProperty("--locked-fish-image", `url("${f.sprite}")`);
+                setLockedFishSilhouetteColor(silhouette, f.sprite);
+                imageFrame.append(silhouette);
+            } else {
+                const image = document.createElement("img");
+                image.className = "fish-preview";
+                image.src = f.sprite;
+                image.loading = "lazy";
+                image.decoding = "async";
+                image.alt = f.species;
+                imageFrame.append(image);
+            }
 
-            <div class="store-item-details">
-                <p class="store-product-name">${f.species} </p>
-                <span class="store-price"><img src="../img/coin.png" alt=""><span class="store-price-value">${f.price}</span></span>
-            </div>`;
+            const details = document.createElement("div");
+            details.className = "store-item-details";
+            const name = document.createElement("p");
+            name.className = "store-product-name";
+            name.textContent = f.species;
+            details.append(name);
 
-            showStoreImageLoading(item);
+            if (locked) {
+                const lockGroup = document.createElement("span");
+                lockGroup.className = "store-item-lock-group";
+                const levelLabel = document.createElement("span");
+                levelLabel.className = "store-item-lock-level";
+                levelLabel.textContent = `LVL ${requiredLevel}`;
+                const lock = document.createElement("span");
+                lock.className = "store-item-lock-icon";
+                lock.setAttribute("role", "img");
+                lock.setAttribute("aria-label", `Locked until level ${requiredLevel}`);
+                lock.title = `Unlock at level ${requiredLevel}`;
+                lock.innerHTML = `
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                        <path d="M7 10V7a5 5 0 0 1 10 0v3h1.5A1.5 1.5 0 0 1 20 11.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5v-9A1.5 1.5 0 0 1 5.5 10H7Zm2 0h6V7a3 3 0 0 0-6 0v3Zm3 4a2 2 0 0 0-1 3.732V19h2v-1.268A2 2 0 0 0 12 14Z"/>
+                    </svg>`;
+                lockGroup.append(levelLabel, lock);
+                details.append(lockGroup);
+            } else {
+                const price = document.createElement("span");
+                price.className = "store-price";
+                const coinIcon = document.createElement("img");
+                coinIcon.src = "../img/coin.png";
+                coinIcon.alt = "";
+                const priceValue = document.createElement("span");
+                priceValue.className = "store-price-value";
+                priceValue.textContent = String(f.price);
+                price.append(coinIcon, priceValue);
+                details.append(price);
+            }
+
+            item.append(imageFrame, details);
+            if (!locked) showStoreImageLoading(item);
             storeContainer.appendChild(item);
         });
 
@@ -850,7 +955,7 @@ if (document.body.classList.contains("aquarium-page")) {
             hideExitButton.hidden = false;
             window.requestAnimationFrame(() => {
                 document.body.classList.add("aquarium-hide-mode");
-                hideExitButton.focus();
+                hideExitButton.focus({ preventScroll: true });
             });
         });
 
@@ -863,7 +968,7 @@ if (document.body.classList.contains("aquarium-page")) {
             }
             window.clearInterval(hideModeClockInterval);
             document.body.classList.remove("aquarium-hide-mode");
-            hideButton.focus();
+            hideButton.focus({ preventScroll: true });
             window.setTimeout(() => {
                 hideExitButton.hidden = true;
             }, 400);
@@ -1029,6 +1134,14 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
 }
 
 initializeAquariumMenu(storeBtn, storePanel, storeBackdrop, "store");
+const storeObjectsTab = document.querySelector("#storeObjectsTab");
+const accountLevel = Number(document.body.dataset.accountLevel);
+const objectStoreUnlockLevel = Number(document.body.dataset.objectStoreUnlockLevel);
+if (storeObjectsTab && accountLevel < objectStoreUnlockLevel) {
+    storeObjectsTab.disabled = true;
+    storeObjectsTab.textContent = `Objects (Level ${objectStoreUnlockLevel})`;
+    storeObjectsTab.title = `Unlock aquarium objects at level ${objectStoreUnlockLevel}.`;
+}
 document.querySelectorAll(".pellet-store-item").forEach(item => {
     item.addEventListener("click", () => {
         void purchasePellet(item.dataset.pelletType, item).catch(error => {

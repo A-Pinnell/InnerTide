@@ -206,6 +206,7 @@ function renderTasks(period, fadeIn = false) {
                     levelUpSound.play().catch(error => {
                         console.error("Unable to play level-up sound.", error);
                     });
+                    window.showLevelRewardPopup(result.level, result.levelRewards);
                 }
                 if (playerLevel && Number.isInteger(result.level)) {
                     playerLevel.textContent = `LEVEL ${result.level}`;

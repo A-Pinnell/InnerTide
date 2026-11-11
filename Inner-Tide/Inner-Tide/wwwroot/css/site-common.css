@@ -147,7 +147,7 @@ body.aquarium-page.journal-aquarium-returning {
     background-blend-mode: multiply, color, normal;
     background-position: 0 0, 0 0, 0 0;
     background-repeat: repeat, repeat, repeat;
-    background-size: 1080px 1080px, 1080px 1080px, 1080px 1080px;
+    background-size: 100vmax 100vmax, 100vmax 100vmax, 100vmax 100vmax;
 }
 
 html.journal-aquarium-transition-pending:has(body.aquarium-page) #journalButton,
@@ -340,7 +340,7 @@ body.aquarium-page.journal-aquarium-returning {
     background-blend-mode: multiply, color, normal;
     background-position: 0 0, 0 0, 0 0;
     background-repeat: repeat, repeat, repeat;
-    background-size: 1080px 1080px, 1080px 1080px, 1080px 1080px;
+    background-size: 100vmax 100vmax, 100vmax 100vmax, 100vmax 100vmax;
     animation: none;
     transition: background-color .85s ease;
 }
@@ -352,7 +352,7 @@ body.aquarium-page.journal-aquarium-returning {
 
 @keyframes journal-background-scroll {
     to {
-        background-position: -1080px 0, -1080px 0, -1080px 0;
+        background-position: -100vmax 0, -100vmax 0, -100vmax 0;
     }
 }
 
@@ -369,6 +369,7 @@ body.aquarium-page.journal-aquarium-returning {
     left: 0;
     width: 100%;
     height: 360px;
+    overflow-x: clip;
     pointer-events: none;
 }
 
