@@ -1294,11 +1294,12 @@ document.addEventListener("click", event => {
             document.body.style.transition = "background-position .85s cubic-bezier(.76, 0, .24, 1)";
             document.body.classList.add("journal-aquarium-exiting");
             window.requestAnimationFrame(() => {
+                const backgroundTileSize = Math.max(window.innerWidth, window.innerHeight);
                 document.body.style.backgroundPosition = journalBackgroundPosition
                     .split(",")
                     .map(position => {
                         const [x, y] = position.trim().split(/\s+/).map(parseFloat);
-                        return `${Math.round(x / 1080) * 1080}px ${Math.round(y / 1080) * 1080}px`;
+                        return `${Math.round(x / backgroundTileSize) * backgroundTileSize}px ${Math.round(y / backgroundTileSize) * backgroundTileSize}px`;
                     })
                     .join(", ");
             });

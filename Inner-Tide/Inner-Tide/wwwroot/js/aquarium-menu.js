@@ -955,7 +955,7 @@ if (document.body.classList.contains("aquarium-page")) {
             hideExitButton.hidden = false;
             window.requestAnimationFrame(() => {
                 document.body.classList.add("aquarium-hide-mode");
-                hideExitButton.focus();
+                hideExitButton.focus({ preventScroll: true });
             });
         });
 
@@ -968,7 +968,7 @@ if (document.body.classList.contains("aquarium-page")) {
             }
             window.clearInterval(hideModeClockInterval);
             document.body.classList.remove("aquarium-hide-mode");
-            hideButton.focus();
+            hideButton.focus({ preventScroll: true });
             window.setTimeout(() => {
                 hideExitButton.hidden = true;
             }, 400);
