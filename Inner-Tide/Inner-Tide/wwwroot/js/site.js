@@ -121,6 +121,8 @@ window.showLevelRewardPopup = function (level, rewards) {
         copy.append(title, description);
         entry.append(copy);
         if (typeof reward.fishSpecies === "string" && reward.fishSpecies.trim()) {
+            const imageFrame = document.createElement("span");
+            imageFrame.className = "level-up-reward-fish-frame";
             const image = document.createElement("img");
             image.className = "level-up-reward-fish";
             image.alt = reward.fishSpecies;
@@ -129,7 +131,8 @@ window.showLevelRewardPopup = function (level, rewards) {
                 image.hidden = true;
                 console.error(`Could not load fish image for "${reward.fishSpecies}".`);
             }, { once: true });
-            entry.prepend(image);
+            imageFrame.append(image);
+            entry.prepend(imageFrame);
             getLevelRewardFishCatalog().then(fishCatalog => {
                 const sprite = fishCatalog.get(reward.fishSpecies.toLowerCase());
                 if (!sprite) {
@@ -158,7 +161,13 @@ window.showLevelRewardPopup = function (level, rewards) {
     dialog.addEventListener("click", event => {
         if (event.target === dialog) dialog.close();
     });
-    dialog.addEventListener("close", () => dialog.remove(), { once: true });
+    dialog.addEventListener("close", () => {
+        dialog.remove();
+        levelRewardCloseSound.currentTime = 0;
+        levelRewardCloseSound.play().catch(error => {
+            console.error("Unable to play the level reward close sound.", error);
+        });
+    }, { once: true });
 
     dialog.append(stars, heading, levelLabel, rewardHeading, rewardList, closeButton);
     document.body.append(dialog);
@@ -452,6 +461,7 @@ const soundPathPrefix = new URL("/sfx/", document.baseURI).pathname;
 const musicPathPrefix = new URL("/music/", document.baseURI).pathname;
 const coinGainSound = registerAudioPlayer(new Audio(`${soundPathPrefix}coin_gain.mp3`), "sfx");
 const rewardUnlockSound = registerAudioPlayer(new Audio(`${soundPathPrefix}rewardUnlock.mp3`), "sfx");
+const levelRewardCloseSound = registerAudioPlayer(new Audio(`${soundPathPrefix}Close.mp3`), "sfx");
 const coinChangeSounds = new Set();
 const musicVolumeTestSound = new Audio(`${musicPathPrefix}test_music.mp3`);
 const sfxVolumeTestSound = new Audio(`${soundPathPrefix}Open.mp3`);

@@ -412,7 +412,8 @@ namespace Inner_TideMVCTest {
                 _userManagerMock.Object,
                 new HttpClient(),
                 environment.Object,
-                new AquariumProgressLimitSettings()) {
+                new AquariumProgressLimitSettings(),
+                new LevelRewardUnlockSettings()) {
                 ControllerContext = controller.ControllerContext
             };
 
@@ -425,6 +426,66 @@ namespace Inner_TideMVCTest {
             var values = await _context.UserCategoryValues.SingleAsync();
             Assert.AreEqual(20, values.Sleep);
             Assert.AreEqual(0, values.Mood);
+        }
+
+        [TestMethod]
+        public async System.Threading.Tasks.Task SetLevelProgressUpdatesTheCurrentUser() {
+            var user = new User {
+                Id = "1",
+                AccountLevel = 1,
+                CurrentXP = 0,
+                XPForNextLevel = 100
+            };
+            _userManagerMock
+                .Setup(userManager => userManager.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
+                .ReturnsAsync(user);
+            _userManagerMock
+                .Setup(userManager => userManager.UpdateAsync(user))
+                .ReturnsAsync(IdentityResult.Success);
+
+            var environment = new Mock<IWebHostEnvironment>();
+            environment.SetupGet(host => host.EnvironmentName).Returns(Environments.Development);
+            var developerController = new DeveloperToolsController(
+                _context,
+                _userManagerMock.Object,
+                new HttpClient(),
+                environment.Object,
+                new AquariumProgressLimitSettings(),
+                new LevelRewardUnlockSettings()) {
+                ControllerContext = controller.ControllerContext
+            };
+
+            var result = await developerController.SetLevelProgress(new SetLevelProgressRequest {
+                Level = 7,
+                CurrentXP = 250
+            });
+
+            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+            Assert.AreEqual(7, user.AccountLevel);
+            Assert.AreEqual(250, user.CurrentXP);
+            Assert.AreEqual(700, user.XPForNextLevel);
+        }
+
+        [TestMethod]
+        public void SetUnlockAllLevelRewardsEnablesRewardUnlockSetting() {
+            var environment = new Mock<IWebHostEnvironment>();
+            environment.SetupGet(host => host.EnvironmentName).Returns(Environments.Development);
+            var settings = new LevelRewardUnlockSettings();
+            var developerController = new DeveloperToolsController(
+                _context,
+                _userManagerMock.Object,
+                new HttpClient(),
+                environment.Object,
+                new AquariumProgressLimitSettings(),
+                settings) {
+                ControllerContext = controller.ControllerContext
+            };
+
+            var result = developerController.SetUnlockAllLevelRewards(
+                new SetUnlockAllLevelRewardsRequest { Enabled = true });
+
+            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+            Assert.IsTrue(settings.UnlockAllRewards);
         }
         #endregion
     }

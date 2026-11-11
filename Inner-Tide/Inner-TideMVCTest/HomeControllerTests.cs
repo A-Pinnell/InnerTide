@@ -67,6 +67,59 @@ namespace Inner_TideMVCTest {
             };
         }
 
+        [TestMethod]
+        public async System.Threading.Tasks.Task GetTasksReplacesAssignmentsWithMissingCategoryTags() {
+            var now = DateTime.UtcNow;
+            _context.UserCategoryValues.Add(new UserCategoryValues { UserId = "1" });
+
+            var requiredCounts = new[] {
+                ("Daily", 3),
+                ("Weekly", 5),
+                ("Monthly", 7)
+            };
+            foreach (var (timeFrame, count) in requiredCounts) {
+                for (var index = 0; index < count; index++) {
+                    _context.Tasks.Add(new Inner_Tide.Models.Task {
+                        Title = $"{timeFrame} categorized task {index}",
+                        TimeFrame = timeFrame,
+                        CoinReward = 1,
+                        CategoryTag = "Hydration"
+                    });
+                }
+            }
+
+            var legacyTask = new Inner_Tide.Models.Task {
+                Title = "Legacy task without a category",
+                TimeFrame = "Daily",
+                CoinReward = 1,
+                CategoryTag = ""
+            };
+            _context.Tasks.Add(legacyTask);
+            _context.UserTasks.Add(new UserTask {
+                UserId = "1",
+                Task = legacyTask,
+                Priority = false,
+                Multiplier = 1,
+                Completed = false,
+                AssignedAt = now
+            });
+            await _context.SaveChangesAsync();
+
+            var result = await controller.GetTasks();
+
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var assignments = await _context.UserTasks
+                .Include(userTask => userTask.Task)
+                .ToListAsync();
+            Assert.AreEqual(15, assignments.Count);
+            Assert.IsTrue(assignments.All(userTask => userTask.Task?.CategoryTag == "Hydration"));
+
+            using var json = JsonDocument.Parse(JsonSerializer.Serialize(((JsonResult)result).Value));
+            Assert.AreEqual(
+                "Hydration",
+                json.RootElement.GetProperty("daily")[0].GetProperty("categoryTag").GetString());
+        }
+
         #region Index
 
         [TestMethod]

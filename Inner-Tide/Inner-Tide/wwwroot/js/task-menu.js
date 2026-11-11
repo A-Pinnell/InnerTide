@@ -3,6 +3,101 @@ const levelUpSound = registerAudioPlayer(
     "sfx"
 );
 
+const taskCategoryIcons = {
+    sleep: "Sleep.png",
+    hydration: "Hydration.png",
+    fitness: "Fitness.png",
+    learning: "Learning.png",
+    organization: "Organization.png",
+    mood: "Mood.png",
+    nutrition: "Nutrition.png",
+    productivity: "Productivity.png",
+    social: "Social.png",
+    finance: "Organization.png",
+    exploration: "Learning.png",
+    habit: "Organization.png",
+    hobby: "Productivity.png",
+    wellness: "Fitness.png",
+    creativity: "Learning.png"
+};
+
+function updateTaskTitleOverflow(title) {
+    const content = title.firstElementChild;
+    if (!content) return;
+
+    title.classList.remove("is-overflowing");
+    content.style.removeProperty("--task-title-scroll-distance");
+    content.style.removeProperty("--task-title-scroll-duration");
+
+    if (isReducedMotionEnabled()) return;
+
+    const distance = content.scrollWidth - title.clientWidth;
+    if (distance > 1) {
+        title.classList.add("is-overflowing");
+        content.style.setProperty("--task-title-scroll-distance", `${distance}px`);
+        content.style.setProperty("--task-title-scroll-duration", `${Math.max(5, distance / 30 + 4)}s`);
+    }
+}
+
+async function showLevelRewardAfterSound(level, rewards) {
+    let finishSound;
+    const soundFinished = new Promise(resolve => {
+        finishSound = resolve;
+    });
+    const onSoundEnd = () => finishSound();
+
+    levelUpSound.addEventListener("ended", onSoundEnd, { once: true });
+    levelUpSound.addEventListener("error", onSoundEnd, { once: true });
+    try {
+        levelUpSound.currentTime = 0;
+        await levelUpSound.play();
+        if (!levelUpSound.ended) {
+            await soundFinished;
+        }
+    } catch (error) {
+        console.error("Unable to play the level-up sound.", error);
+    } finally {
+        levelUpSound.removeEventListener("ended", onSoundEnd);
+        levelUpSound.removeEventListener("error", onSoundEnd);
+    }
+
+    window.showLevelRewardPopup(level, rewards);
+}
+
+function waitForLevelProgressAnimation(element, previousProgress, progress) {
+    if (!element || !Number.isFinite(previousProgress) || previousProgress === progress || isReducedMotionEnabled()) {
+        return Promise.resolve();
+    }
+
+    return new Promise(resolve => {
+        let timeoutId;
+        const finish = event => {
+            if (event && (event.target !== element || event.propertyName !== "--level-progress")) return;
+            window.clearTimeout(timeoutId);
+            element.removeEventListener("transitionend", finish);
+            resolve();
+        };
+
+        element.addEventListener("transitionend", finish);
+        timeoutId = window.setTimeout(() => finish(), 350);
+    });
+}
+
+function shinePlayerAvatar() {
+    const avatar = document.querySelector(".avatar");
+    if (!avatar || isReducedMotionEnabled()) return;
+
+    avatar.classList.remove("level-up-shine");
+    void avatar.offsetWidth;
+    const removeShine = event => {
+        if (event.animationName !== "player-level-up-shine") return;
+        avatar.classList.remove("level-up-shine");
+        avatar.removeEventListener("animationend", removeShine);
+    };
+    avatar.addEventListener("animationend", removeShine);
+    avatar.classList.add("level-up-shine");
+}
+
 function setAquariumPercent(percent) {
     const numericPercent = Number(percent);
     if (!Number.isFinite(numericPercent)) {
@@ -129,13 +224,19 @@ function renderTasks(period, fadeIn = false) {
             row.append(priorityIcon);
         }
 
-        const icon = document.createElement("span");
+        const icon = document.createElement("img");
         icon.className = "task-icon";
-        icon.innerHTML = bedIcon;
+        const categoryName = task.categoryTag ?? task.CategoryTag ?? task.category ?? task.Category ?? "";
+        const category = typeof categoryName === "string" ? categoryName.trim().toLowerCase() : "";
+        icon.src = `/img/icons/${taskCategoryIcons[category] ?? taskCategoryIcons.sleep}`;
+        icon.alt = categoryName ? `${categoryName} category` : "Task category unavailable";
 
         const title = document.createElement("span");
         title.className = "task-text";
-        title.textContent = task.title;
+        const titleContent = document.createElement("span");
+        titleContent.className = "task-text-content";
+        titleContent.textContent = task.title;
+        title.append(titleContent);
 
         const reward = document.createElement("span");
         reward.className = "task-reward";
@@ -201,25 +302,26 @@ function renderTasks(period, fadeIn = false) {
                 showExperienceReward(result.experienceAwarded);
                 const playerLevel = document.querySelector(".player-level");
                 const previousLevel = Number(playerLevel?.textContent.match(/\d+/)?.[0]);
-                if (Number.isInteger(result.level) && Number.isInteger(previousLevel) && result.level > previousLevel) {
-                    levelUpSound.currentTime = 0;
-                    levelUpSound.play().catch(error => {
-                        console.error("Unable to play level-up sound.", error);
-                    });
-                    window.showLevelRewardPopup(result.level, result.levelRewards);
-                }
+                const leveledUp = Number.isInteger(result.level) &&
+                    Number.isInteger(previousLevel) &&
+                    result.level > previousLevel;
+                const previousProgress = playerLevel
+                    ? Number.parseFloat(getComputedStyle(playerLevel).getPropertyValue("--level-progress"))
+                    : NaN;
                 if (playerLevel && Number.isInteger(result.level)) {
                     playerLevel.textContent = `LEVEL ${result.level}`;
                 }
+                let progress = NaN;
                 if (Number.isInteger(result.level) && Number.isInteger(result.currentXP) &&
                     Number.isInteger(result.experienceForNextLevel)) {
                     const maxLevel = result.level >= 99;
                     const remaining = Math.max(0, result.experienceForNextLevel - result.currentXP);
-                    const progress = maxLevel
+                    progress = maxLevel
                         ? 100
                         : Math.min(100, Math.round(result.currentXP * 100 / Math.max(1, result.experienceForNextLevel)));
                     const experienceLabel = document.querySelector(".player-copy small");
-                    const currentXPLabel = document.querySelector(".player-current-xp span");
+                    const currentXPLabel = document.querySelector(".player-current-xp-value");
+                    const requiredXPLabel = document.querySelector(".player-current-xp-required");
                     const experienceBar = document.querySelector(".xp-track-fill");
                     const experienceBarLevel = document.querySelector(".xp-track-level");
                     if (experienceLabel) {
@@ -227,6 +329,9 @@ function renderTasks(period, fadeIn = false) {
                     }
                     if (currentXPLabel) {
                         currentXPLabel.textContent = String(result.currentXP);
+                    }
+                    if (requiredXPLabel) {
+                        requiredXPLabel.textContent = maxLevel ? "MAX" : String(result.experienceForNextLevel);
                     }
                     if (experienceBar) {
                         experienceBar.style.width = `${progress}%`;
@@ -236,6 +341,16 @@ function renderTasks(period, fadeIn = false) {
                     }
                     if (playerLevel) {
                         playerLevel.style.setProperty("--level-progress", `${progress}%`);
+                    }
+                }
+                if (leveledUp) {
+                    shinePlayerAvatar();
+                    document.body.classList.add("level-up-pending");
+                    try {
+                        await waitForLevelProgressAnimation(playerLevel, previousProgress, progress);
+                        await showLevelRewardAfterSound(result.level, result.levelRewards);
+                    } finally {
+                        document.body.classList.remove("level-up-pending");
                     }
                 }
                 const coinChange = beginCoinChangeAnimation(result.coins);
@@ -251,11 +366,33 @@ function renderTasks(period, fadeIn = false) {
 
         if (index === tasks.length - 1) row.classList.add("last-task");
         taskList.append(row);
+        window.requestAnimationFrame(() => updateTaskTitleOverflow(title));
     });
 }
 
+window.addEventListener("resize", () => {
+    taskList?.querySelectorAll(".task-text").forEach(updateTaskTitleOverflow);
+});
+
+document.addEventListener("click", event => {
+    if (!document.body.classList.contains("level-up-pending")) return;
+
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.closest("a[href], .tab")) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+}, true);
+
+document.addEventListener("submit", event => {
+    if (!document.body.classList.contains("level-up-pending")) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+}, true);
+
 function selectPeriod(tab) {
-    if (!tab || tab.classList.contains("active")) return;
+    if (!tab || document.body.classList.contains("level-up-pending") || tab.classList.contains("active")) return;
 
     const period = tab.dataset.period;
     const updateTabs = () => {
@@ -431,6 +568,11 @@ if (gameShell) {
     });
 
     tabsContainer.addEventListener("click", event => {
+        if (document.body.classList.contains("level-up-pending")) {
+            event.preventDefault();
+            return;
+        }
+
         const tabs = [...tabsContainer.querySelectorAll(".tab")];
         const target = event.target instanceof Element ? event.target.closest(".tab") : null;
         let clickedTab = target;

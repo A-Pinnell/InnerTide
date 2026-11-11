@@ -28,6 +28,7 @@ namespace Inner_TideMVCTest {
         private Mock<UserManager<User>> _userManagerMock;
         private Mock<SignInManager<User>> _signInManagerMock;
         private AquariumProgressLimitSettings _progressLimitSettings;
+        private LevelRewardUnlockSettings _levelRewardUnlockSettings;
 
         private Mock<UserManager<User>> GetMockUserManager() {
             var store = new Mock<IUserStore<User>>();
@@ -49,12 +50,20 @@ namespace Inner_TideMVCTest {
             _loggerMock = new Mock<ILogger<AquariumController>>();
             _httpClient = new HttpClient();
             _progressLimitSettings = new AquariumProgressLimitSettings();
+            _levelRewardUnlockSettings = new LevelRewardUnlockSettings();
 
             var testUser = new User { Id = "1", UserName = "TestUser", Email = "test@test.com", CoinCount = 0 };
 
             _userManagerMock.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(testUser);
 
-            controller = new AquariumController(_context, _signInManagerMock.Object, _userManagerMock.Object, _httpClient, _loggerMock.Object, _progressLimitSettings);
+            controller = new AquariumController(
+                _context,
+                _signInManagerMock.Object,
+                _userManagerMock.Object,
+                _httpClient,
+                _loggerMock.Object,
+                _progressLimitSettings,
+                _levelRewardUnlockSettings);
 
             controller.ControllerContext = new ControllerContext {
                 HttpContext = new DefaultHttpContext {
@@ -237,52 +246,57 @@ namespace Inner_TideMVCTest {
         }
 
         [TestMethod]
-        public void LevelTwoUnlockIsOnlyReportedWhenCrossingTheRewardLevel() {
+        public void LevelTwoUnlockReportsPinkSalmonAndLevelFiveUnlocksObjects() {
             var unlockedRewards = LevelRewardCatalog.GetUnlockedRewards(1, 2);
-            var laterLevelRewards = LevelRewardCatalog.GetUnlockedRewards(2, 3);
+            var objectRewards = LevelRewardCatalog.GetUnlockedRewards(4, 5);
 
             Assert.AreEqual(1, unlockedRewards.Count);
-            Assert.AreEqual("Aquarium objects", unlockedRewards[0].Title);
-            Assert.AreEqual(0, laterLevelRewards.Count);
+            Assert.AreEqual("Pink Salmon", unlockedRewards[0].Title);
+            Assert.AreEqual("Pink Salmon", unlockedRewards[0].FishSpecies);
+            Assert.AreEqual(2, LevelRewardCatalog.GetRequiredLevelForFish("Pink Salmon"));
+            Assert.AreEqual(1, objectRewards.Count);
+            Assert.AreEqual("Aquarium objects", objectRewards[0].Title);
+            Assert.IsNull(objectRewards[0].FishSpecies);
+            Assert.AreEqual(5, LevelRewardCatalog.ObjectStoreUnlockLevel);
         }
 
         [TestMethod]
         public void CatalogFishUnlockAtTheirConfiguredLevels() {
-            Assert.AreEqual(4, LevelRewardCatalog.GetRequiredLevelForFish("Butterfly ray"));
-            Assert.AreEqual(4, LevelRewardCatalog.GetRequiredLevelForFish("Australian prowfish"));
-            Assert.AreEqual(4, LevelRewardCatalog.GetRequiredLevelForFish("Gombessa"));
-            Assert.AreEqual(6, LevelRewardCatalog.GetRequiredLevelForFish("Pelican eel"));
-            Assert.AreEqual(6, LevelRewardCatalog.GetRequiredLevelForFish("Longfin dragonfish"));
-            Assert.AreEqual(6, LevelRewardCatalog.GetRequiredLevelForFish("Grunion"));
-            Assert.AreEqual(8, LevelRewardCatalog.GetRequiredLevelForFish("Pacific trout"));
-            Assert.AreEqual(8, LevelRewardCatalog.GetRequiredLevelForFish("Hillstream loach"));
-            Assert.AreEqual(8, LevelRewardCatalog.GetRequiredLevelForFish("Skate"));
-            Assert.AreEqual(10, LevelRewardCatalog.GetRequiredLevelForFish("River stingray"));
-            Assert.AreEqual(10, LevelRewardCatalog.GetRequiredLevelForFish("Black neon tetra"));
-            Assert.AreEqual(10, LevelRewardCatalog.GetRequiredLevelForFish("Tarwhine"));
-            Assert.AreEqual(12, LevelRewardCatalog.GetRequiredLevelForFish("Ammonite"));
-            Assert.AreEqual(12, LevelRewardCatalog.GetRequiredLevelForFish("Longnose chimaera"));
-            Assert.AreEqual(12, LevelRewardCatalog.GetRequiredLevelForFish("Dab"));
-            Assert.AreEqual(14, LevelRewardCatalog.GetRequiredLevelForFish("Blobfish"));
-            Assert.AreEqual(14, LevelRewardCatalog.GetRequiredLevelForFish("Merluccid hake"));
-            Assert.AreEqual(14, LevelRewardCatalog.GetRequiredLevelForFish("Orbicular batfish"));
-            Assert.AreEqual(16, LevelRewardCatalog.GetRequiredLevelForFish("Bank sea bass"));
-            Assert.AreEqual(16, LevelRewardCatalog.GetRequiredLevelForFish("Sacramento blackfish"));
-            Assert.AreEqual(16, LevelRewardCatalog.GetRequiredLevelForFish("Man-of-War fish"));
-            Assert.AreEqual(18, LevelRewardCatalog.GetRequiredLevelForFish("Viperfish"));
-            Assert.AreEqual(18, LevelRewardCatalog.GetRequiredLevelForFish("Colorado squawfish"));
-            Assert.AreEqual(18, LevelRewardCatalog.GetRequiredLevelForFish("Featherback"));
-            Assert.AreEqual(20, LevelRewardCatalog.GetRequiredLevelForFish("Mola Mola"));
-            Assert.AreEqual(20, LevelRewardCatalog.GetRequiredLevelForFish("Armorhead catfish"));
-            Assert.AreEqual(20, LevelRewardCatalog.GetRequiredLevelForFish("Tigerperch"));
-            Assert.AreEqual(22, LevelRewardCatalog.GetRequiredLevelForFish("Yellowtail snapper"));
-            Assert.AreEqual(22, LevelRewardCatalog.GetRequiredLevelForFish("Oarfish"));
+            Assert.AreEqual(6, LevelRewardCatalog.GetRequiredLevelForFish("Butterfly ray"));
+            Assert.AreEqual(6, LevelRewardCatalog.GetRequiredLevelForFish("Australian prowfish"));
+            Assert.AreEqual(6, LevelRewardCatalog.GetRequiredLevelForFish("Gombessa"));
+            Assert.AreEqual(8, LevelRewardCatalog.GetRequiredLevelForFish("Pelican eel"));
+            Assert.AreEqual(8, LevelRewardCatalog.GetRequiredLevelForFish("Longfin dragonfish"));
+            Assert.AreEqual(8, LevelRewardCatalog.GetRequiredLevelForFish("Grunion"));
+            Assert.AreEqual(10, LevelRewardCatalog.GetRequiredLevelForFish("Pacific trout"));
+            Assert.AreEqual(10, LevelRewardCatalog.GetRequiredLevelForFish("Hillstream loach"));
+            Assert.AreEqual(10, LevelRewardCatalog.GetRequiredLevelForFish("Skate"));
+            Assert.AreEqual(12, LevelRewardCatalog.GetRequiredLevelForFish("River stingray"));
+            Assert.AreEqual(12, LevelRewardCatalog.GetRequiredLevelForFish("Black neon tetra"));
+            Assert.AreEqual(12, LevelRewardCatalog.GetRequiredLevelForFish("Tarwhine"));
+            Assert.AreEqual(14, LevelRewardCatalog.GetRequiredLevelForFish("Ammonite"));
+            Assert.AreEqual(14, LevelRewardCatalog.GetRequiredLevelForFish("Longnose chimaera"));
+            Assert.AreEqual(14, LevelRewardCatalog.GetRequiredLevelForFish("Dab"));
+            Assert.AreEqual(16, LevelRewardCatalog.GetRequiredLevelForFish("Blobfish"));
+            Assert.AreEqual(16, LevelRewardCatalog.GetRequiredLevelForFish("Merluccid hake"));
+            Assert.AreEqual(16, LevelRewardCatalog.GetRequiredLevelForFish("Orbicular batfish"));
+            Assert.AreEqual(18, LevelRewardCatalog.GetRequiredLevelForFish("Bank sea bass"));
+            Assert.AreEqual(18, LevelRewardCatalog.GetRequiredLevelForFish("Sacramento blackfish"));
+            Assert.AreEqual(18, LevelRewardCatalog.GetRequiredLevelForFish("Man-of-War fish"));
+            Assert.AreEqual(20, LevelRewardCatalog.GetRequiredLevelForFish("Viperfish"));
+            Assert.AreEqual(20, LevelRewardCatalog.GetRequiredLevelForFish("Colorado squawfish"));
+            Assert.AreEqual(20, LevelRewardCatalog.GetRequiredLevelForFish("Featherback"));
+            Assert.AreEqual(22, LevelRewardCatalog.GetRequiredLevelForFish("Mola Mola"));
+            Assert.AreEqual(22, LevelRewardCatalog.GetRequiredLevelForFish("Armorhead catfish"));
+            Assert.AreEqual(22, LevelRewardCatalog.GetRequiredLevelForFish("Tigerperch"));
+            Assert.AreEqual(24, LevelRewardCatalog.GetRequiredLevelForFish("Yellowtail snapper"));
+            Assert.AreEqual(24, LevelRewardCatalog.GetRequiredLevelForFish("Oarfish"));
             Assert.IsNull(LevelRewardCatalog.GetRequiredLevelForFish("Common clownfish"));
 
-            for (var level = 4; level <= 20; level += 2) {
+            for (var level = 6; level <= 22; level += 2) {
                 Assert.AreEqual(3, LevelRewardCatalog.GetUnlockedRewards(level - 1, level).Count);
             }
-            Assert.AreEqual(2, LevelRewardCatalog.GetUnlockedRewards(21, 22).Count);
+            Assert.AreEqual(2, LevelRewardCatalog.GetUnlockedRewards(23, 24).Count);
         }
 
         #endregion

@@ -108,7 +108,7 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
 }
 
 .player-level {
-    transition: opacity .2s ease, visibility .2s ease;
+    transition: --level-progress .24s cubic-bezier(.16, 1, .3, 1), opacity .2s ease, visibility .2s ease;
 }
 
 .coin-counter {
@@ -217,6 +217,9 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
 
 .player-current-xp {
     position: absolute;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
     right: 10%;
     bottom: 27%;
     left: 5%;
@@ -224,6 +227,14 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     font: 700 clamp(20px, 2.2vw, 30px)/1 "Hydration", sans-serif;
     text-align: left;
     text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+
+.player-current-xp-required {
+    font: 700 clamp(12px, 1.35vw, 18px)/1 "Hydration", sans-serif;
+}
+
+.player-current-xp-divider {
+    font-size: .75em;
 }
 
 .player-current-xp,
@@ -262,6 +273,12 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     white-space: nowrap;
 }
 
+@property --level-progress {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 0%;
+}
+
 .player-level {
     position: absolute;
     z-index: 2;
@@ -278,7 +295,7 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
         rgba(31, 82, 48, .82) var(--level-progress, 0%),
         rgba(31, 82, 48, .82) 100%
     );
-    transition: background .35s ease;
+    transition: --level-progress .24s cubic-bezier(.16, 1, .3, 1), opacity .2s ease, visibility .2s ease;
     box-shadow: 0 1px 3px rgba(18,67,34,.55);
     color: #fff;
     font-size: clamp(7px, .65vw, 10px);
@@ -393,13 +410,13 @@ html.graphical-advanced body.question-page .question-background {
     text-align: center;
     transform: translate(-50%, -50%);
     isolation: isolate;
-    animation: level-up-dialog-in .72s cubic-bezier(.16, 1, .3, 1) both;
+    animation: level-up-dialog-in .4s cubic-bezier(.16, 1, .3, 1) both;
 }
 
 .level-up-dialog::backdrop {
     background: rgba(15, 25, 55, .68);
     backdrop-filter: blur(5px);
-    animation: level-up-backdrop-in .45s ease-out both;
+    animation: none;
 }
 
 .level-up-dialog h2 {
@@ -409,14 +426,14 @@ html.graphical-advanced body.question-page .question-background {
     letter-spacing: .04em;
     -webkit-text-stroke: 1px #e58b36;
     text-shadow: 0 4px 0 #e58b36, 0 7px 12px rgba(76, 49, 99, .28);
-    animation: level-up-heading-pop .6s cubic-bezier(.18, .89, .32, 1.4) .2s both;
+    animation: none;
 }
 
 .level-up-number,
 .level-up-reward-heading {
     margin: 0;
     font: 800 20px/1.3 "Neuropolx", sans-serif;
-    animation: level-up-content-in .45s ease-out .34s both;
+    animation: none;
 }
 
 .level-up-reward-heading {
@@ -424,7 +441,6 @@ html.graphical-advanced body.question-page .question-background {
     font-size: 15px;
     letter-spacing: .14em;
     text-transform: uppercase;
-    animation-delay: .43s;
 }
 
 .level-up-rewards {
@@ -445,7 +461,7 @@ html.graphical-advanced body.question-page .question-background {
     border-radius: 16px;
     background: rgba(255,255,255,.56);
     font: 15px/1.35 "Neuropolx", sans-serif;
-    animation: level-up-content-in .48s cubic-bezier(.16, 1, .3, 1) .52s both;
+    animation: none;
 }
 
 .level-up-reward-copy {
@@ -453,11 +469,23 @@ html.graphical-advanced body.question-page .question-background {
     gap: 4px;
 }
 
+.level-up-reward-fish-frame {
+    box-sizing: border-box;
+    width: clamp(64px, 8vw, 108px);
+    height: 88px;
+    flex: 0 0 clamp(64px, 8vw, 108px);
+    overflow: hidden;
+    border: 2px solid #fff;
+    border-radius: 12px;
+}
+
 .level-up-reward-fish {
-    width: 64px;
-    height: 64px;
-    flex: 0 0 64px;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: left center;
+    transform: scale(1.8);
+    transform-origin: left center;
 }
 
 .level-up-rewards strong {
@@ -476,7 +504,7 @@ html.graphical-advanced body.question-page .question-background {
     border: 0;
     background: transparent;
     cursor: pointer;
-    animation: level-up-content-in .5s cubic-bezier(.16, 1, .3, 1) .65s both;
+    animation: none;
     transition: transform .18s ease, filter .18s ease;
 }
 
@@ -676,6 +704,43 @@ html.graphical-advanced body.question-page .question-background {
     border: 1px solid rgba(246, 255, 255, .85);
     border-radius: 13%;
     object-fit: cover;
+}
+
+.avatar::before {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        transparent 32%,
+        rgba(255,255,255,.12) 42%,
+        rgba(255,255,255,.95) 50%,
+        rgba(255,255,255,.12) 58%,
+        transparent 68%
+    );
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+}
+
+.avatar.level-up-shine::before {
+    animation: player-level-up-shine .8s ease-out both;
+}
+
+@keyframes player-level-up-shine {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+
+    18% {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
 }
 
 .avatar::after {
@@ -1180,6 +1245,10 @@ body.task-menu-page .task-menu-version {
     transform-style: preserve-3d;
 }
 
+.level-up-pending .tabs {
+    pointer-events: none;
+}
+
 .tab {
     position: absolute;
     top: 50%;
@@ -1400,19 +1469,14 @@ body.task-menu-page .task-menu-version {
     }
 
 .task-icon {
-    display: grid;
-    place-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    object-fit: contain;
     color: #fff;
     background: linear-gradient(140deg, #aa8aa5, #8b6e8a);
     box-shadow: inset -5px 0 5px rgba(90,50,84,.13);
 }
-
-    .task-icon svg {
-        width: 54px;
-        height: 45px;
-        fill: #fff;
-        opacity: .95;
-    }
 
 .task-text {
     display: flex;
@@ -1420,6 +1484,13 @@ body.task-menu-page .task-menu-version {
     min-width: 0;
     overflow: hidden;
     padding: 0 12px;
+}
+
+.task-text-content {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow: hidden;
     color: transparent;
     background: var(--text-gradient);
     background-clip: text;
@@ -1431,6 +1502,35 @@ body.task-menu-page .task-menu-version {
     filter: drop-shadow(2px 3px 1px #281b27) drop-shadow(-1px -1px 0 rgba(67,43,67,.25));
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.task-text.is-overflowing .task-text-content {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    animation: task-title-scroll var(--task-title-scroll-duration) linear infinite;
+}
+
+@keyframes task-title-scroll {
+    0%, 14% {
+        transform: translateX(0);
+    }
+    44%, 56% {
+        transform: translateX(calc(-1 * var(--task-title-scroll-distance)));
+    }
+    86%, 100% {
+        transform: translateX(0);
+    }
+}
+
+.task-row.completed .task-text-content {
+    color: #fff;
+    background: none;
+    -webkit-text-fill-color: #fff;
+}
+
+.reduced-motion .task-text.is-overflowing .task-text-content {
+    animation: none;
 }
 
 .task-reward {

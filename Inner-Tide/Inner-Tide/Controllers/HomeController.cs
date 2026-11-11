@@ -102,6 +102,7 @@ namespace Inner_Tide.Controllers
                         ut.UserTaskId,
                         ut.TaskId,
                         ut.Task.Title,
+                        categoryTag = ut.Task.CategoryTag,
                         ut.Task.TimeFrame,
                         ut.Task.CoinReward,
                         ut.Multiplier,
@@ -313,10 +314,18 @@ namespace Inner_Tide.Controllers
             DateTime assignedAt,
             bool preserveExistingAssignments = false) {
             var currentAssignments = await _context.UserTasks
+                .Include(userTask => userTask.Task)
                 .Where(userTask => userTask.UserId == userId &&
                                    userTask.Task!.TimeFrame == timeFrame &&
                                    userTask.AssignedAt >= periodStart)
                 .ToListAsync();
+            var assignmentsWithoutCategories = currentAssignments
+                .Where(userTask => NormalizeCategory(userTask.Task?.CategoryTag ?? "") == null)
+                .ToList();
+            if (assignmentsWithoutCategories.Count > 0) {
+                _context.UserTasks.RemoveRange(assignmentsWithoutCategories);
+                currentAssignments.RemoveAll(assignmentsWithoutCategories.Contains);
+            }
 
             var expiredAssignments = await _context.UserTasks
                 .Where(userTask => userTask.UserId == userId &&

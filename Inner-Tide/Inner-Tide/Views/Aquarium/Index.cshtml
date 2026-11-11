@@ -13,6 +13,8 @@
     var coinCount = 0;
     var accountLevel = ViewData["AccountLevel"] as int? ?? 1;
     var objectStoreUnlockLevel = ViewData["ObjectStoreUnlockLevel"] as int? ?? LevelRewardCatalog.ObjectStoreUnlockLevel;
+    var unlockAllLevelRewards = ViewData["UnlockAllLevelRewards"] as bool? ?? false;
+    var objectsUnlocked = unlockAllLevelRewards || accountLevel >= objectStoreUnlockLevel;
     var aquariumNumber = (int)ViewData["AquariumNumber"]!;
     var aquariumId = (int)ViewData["AquariumId"]!;
     var aquariumBackgroundNumber = (int)ViewData["AquariumBackgroundNumber"]!;
@@ -61,7 +63,7 @@
     }
 }
 
-<body id="aquariumBody" class="aquarium-page aquarium-enter" data-account-id="@accountId" data-account-level="@accountLevel" data-object-store-unlock-level="@objectStoreUnlockLevel" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber" style="--aquarium-sand-back: @sandBack; --aquarium-sand-middle: @sandMiddle; --aquarium-sand-front: @sandFront">
+<body id="aquariumBody" class="aquarium-page aquarium-enter" data-account-id="@accountId" data-account-level="@accountLevel" data-object-store-unlock-level="@objectStoreUnlockLevel" data-unlock-all-level-rewards="@unlockAllLevelRewards.ToString().ToLowerInvariant()" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber" style="--aquarium-sand-back: @sandBack; --aquarium-sand-middle: @sandMiddle; --aquarium-sand-front: @sandFront">
     <script>
         if (new URLSearchParams(window.location.search).get("from") === "journal") {
             document.documentElement.classList.add("journal-aquarium-transition-pending");
@@ -247,7 +249,7 @@
             <div class="tank-store-backdrop" id="tankStoreBackdrop" hidden></div>
             <section class="tank-store-panel" id="tankStorePanel" hidden>
                 <div class="store-tabs">
-                    <button class="store-tab" id="storeObjectsTab" type="button" data-category="objects">Objects</button>
+                    <button class="store-tab" id="storeObjectsTab" type="button" data-category="objects" hidden="@(!objectsUnlocked)">Objects</button>
                     <button class="store-tab active" id="storeFishTab" type="button" data-category="fish">Fish</button>
                     <button class="store-tab" id="storeMiscTab" type="button" data-category="misc">Misc</button>
                 </div>

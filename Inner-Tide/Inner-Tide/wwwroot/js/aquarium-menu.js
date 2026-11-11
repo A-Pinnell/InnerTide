@@ -567,15 +567,19 @@ async function renderStoreFish() {
         storeContainer.innerHTML = "";
         const accountLevel = Number(document.body.dataset.accountLevel);
         const playerLevel = Number.isSafeInteger(accountLevel) && accountLevel > 0 ? accountLevel : 1;
+        const unlockAllLevelRewards = document.body.dataset.unlockAllLevelRewards === "true";
 
         fish.forEach(f => {
             const item = document.createElement("div");
             item.className = "store-item";
             item.setAttribute("value", f._id);
-            const requiredLevelValue = f.requiredLevel == null ? null : Number(f.requiredLevel);
-            const requiredLevel = Number.isSafeInteger(requiredLevelValue) ? requiredLevelValue : null;
-            const locked = f.isLocked === true ||
-                (requiredLevel !== null && playerLevel < requiredLevel);
+            const species = typeof f.species === "string" ? f.species.trim().toLowerCase() : "";
+            const fishRequiredLevel = species === "pink salmon" ? 2 : null;
+            const requiredLevelValue = f.requiredLevel ?? f.RequiredLevel ?? fishRequiredLevel;
+            const parsedRequiredLevel = requiredLevelValue == null ? null : Number(requiredLevelValue);
+            const requiredLevel = Number.isSafeInteger(parsedRequiredLevel) ? parsedRequiredLevel : null;
+            const locked = !unlockAllLevelRewards &&
+                (f.isLocked === true || (requiredLevel !== null && playerLevel < requiredLevel));
             if (locked) {
                 item.classList.add("store-item-locked");
                 item.setAttribute("aria-disabled", "true");
@@ -1042,7 +1046,7 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
     let contentLoaded = false;
 
     function setCategory(category) {
-        const tabsInPanel = [...tabs.querySelectorAll(".store-tab")];
+        const tabsInPanel = [...tabs.querySelectorAll(".store-tab:not([hidden])")];
         const selectedIndex = tabsInPanel.findIndex(tab => tab.dataset.category === category);
         if (selectedIndex < 0) return;
         tabsInPanel.forEach(tab => {
@@ -1133,15 +1137,14 @@ function initializeAquariumMenu(button, panel, backdrop, catalogPrefix, loadCont
     });
 }
 
-initializeAquariumMenu(storeBtn, storePanel, storeBackdrop, "store");
 const storeObjectsTab = document.querySelector("#storeObjectsTab");
 const accountLevel = Number(document.body.dataset.accountLevel);
 const objectStoreUnlockLevel = Number(document.body.dataset.objectStoreUnlockLevel);
-if (storeObjectsTab && accountLevel < objectStoreUnlockLevel) {
-    storeObjectsTab.disabled = true;
-    storeObjectsTab.textContent = `Objects (Level ${objectStoreUnlockLevel})`;
-    storeObjectsTab.title = `Unlock aquarium objects at level ${objectStoreUnlockLevel}.`;
+const unlockAllLevelRewards = document.body.dataset.unlockAllLevelRewards === "true";
+if (storeObjectsTab) {
+    storeObjectsTab.hidden = !unlockAllLevelRewards && accountLevel < objectStoreUnlockLevel;
 }
+initializeAquariumMenu(storeBtn, storePanel, storeBackdrop, "store");
 document.querySelectorAll(".pellet-store-item").forEach(item => {
     item.addEventListener("click", () => {
         void purchasePellet(item.dataset.pelletType, item).catch(error => {

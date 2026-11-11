@@ -25,6 +25,7 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<AquariumProgressLimitSettings>();
+builder.Services.AddSingleton<LevelRewardUnlockSettings>();
 
 builder.Services.AddSession();
 

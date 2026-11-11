@@ -15,18 +15,21 @@ namespace Inner_Tide.Controllers {
         private readonly HttpClient _httpClient;
         private readonly IWebHostEnvironment _environment;
         private readonly AquariumProgressLimitSettings _progressLimitSettings;
+        private readonly LevelRewardUnlockSettings _levelRewardUnlockSettings;
 
         public DeveloperToolsController(
             ApplicationDbContext context,
             UserManager<User> userManager,
             HttpClient httpClient,
             IWebHostEnvironment environment,
-            AquariumProgressLimitSettings progressLimitSettings) {
+            AquariumProgressLimitSettings progressLimitSettings,
+            LevelRewardUnlockSettings levelRewardUnlockSettings) {
             _context = context;
             _userManager = userManager;
             _httpClient = httpClient;
             _environment = environment;
             _progressLimitSettings = progressLimitSettings;
+            _levelRewardUnlockSettings = levelRewardUnlockSettings;
         }
 
         [HttpGet]
@@ -50,7 +53,8 @@ namespace Inner_Tide.Controllers {
                 currentXP = user.CurrentXP,
                 experienceForNextLevel = user.XPForNextLevel,
                 experienceRemaining = Math.Max(0, user.XPForNextLevel - user.CurrentXP),
-                isMaxLevel = user.AccountLevel >= 99
+                isMaxLevel = user.AccountLevel >= 99,
+                unlockAllRewards = _levelRewardUnlockSettings.UnlockAllRewards
             });
         }
 
@@ -202,6 +206,56 @@ namespace Inner_Tide.Controllers {
             }
 
             return Ok(new { coins = user.CoinCount });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetLevelProgress([FromBody] SetLevelProgressRequest request) {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+
+            if (request == null || !ModelState.IsValid) {
+                return ValidationProblem(ModelState);
+            }
+            if (request.Level < 99 && request.CurrentXP >= request.Level * 100) {
+                return BadRequest($"XP at level {request.Level} must be less than {request.Level * 100}.");
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            user.AccountLevel = request.Level;
+            user.CurrentXP = request.CurrentXP;
+            user.XPForNextLevel = request.Level * 100;
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) {
+                return BadRequest(new { errors = result.Errors.Select(error => error.Description) });
+            }
+
+            return Ok(new {
+                level = user.AccountLevel,
+                currentXP = user.CurrentXP,
+                experienceForNextLevel = user.XPForNextLevel,
+                experienceRemaining = Math.Max(0, user.XPForNextLevel - user.CurrentXP),
+                isMaxLevel = user.AccountLevel >= 99
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SetUnlockAllLevelRewards([FromBody] SetUnlockAllLevelRewardsRequest request) {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+            if (request == null || !ModelState.IsValid) {
+                return ValidationProblem(ModelState);
+            }
+
+            _levelRewardUnlockSettings.UnlockAllRewards = request.Enabled;
+            return Ok(new { unlockAllRewards = _levelRewardUnlockSettings.UnlockAllRewards });
         }
 
         [HttpPost]
@@ -478,6 +532,18 @@ namespace Inner_Tide.Controllers {
     public class SetCoinsRequest {
         [Range(0, 999)]
         public int Amount { get; set; }
+    }
+
+    public class SetLevelProgressRequest {
+        [Range(1, 99)]
+        public int Level { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int CurrentXP { get; set; }
+    }
+
+    public class SetUnlockAllLevelRewardsRequest {
+        public bool Enabled { get; set; }
     }
 
     public class SetInventoryRequest {

@@ -113,6 +113,17 @@
                     <div><dt>Current XP</dt><dd id="developerCurrentXP">Loading...</dd></div>
                     <div><dt>EXP to next level</dt><dd id="developerExperienceRemaining">Loading...</dd></div>
                 </dl>
+                <form id="developerLevelProgressForm">
+                    <label for="developerLevelAmount">Level (1-99)</label>
+                    <input id="developerLevelAmount" type="number" min="1" max="99" step="1" required>
+                    <label for="developerXPAmount">Current XP</label>
+                    <input id="developerXPAmount" type="number" min="0" max="2147483647" step="1" required>
+                    <button class="developer-tool-action" type="submit">Set Level and XP</button>
+                </form>
+                <label class="developer-level-unlock-option">
+                    <input id="developerUnlockAllRewards" type="checkbox">
+                    Unlock all level rewards at my current level
+                </label>
             </section>
             <section class="developer-tool-section">
                 <h3>Level reward popups</h3>
@@ -310,6 +321,18 @@
         margin-top: 4px;
     }
 
+    .developer-level-unlock-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .developer-level-unlock-option input {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+    }
+
     .developer-inventory-tabs {
         justify-content: flex-start;
     }
@@ -417,6 +440,10 @@
         const currentLevelDisplay = document.querySelector("#developerCurrentLevel");
         const currentXPDisplay = document.querySelector("#developerCurrentXP");
         const experienceRemainingDisplay = document.querySelector("#developerExperienceRemaining");
+        const levelProgressForm = document.querySelector("#developerLevelProgressForm");
+        const levelAmountInput = document.querySelector("#developerLevelAmount");
+        const xpAmountInput = document.querySelector("#developerXPAmount");
+        const unlockAllRewardsToggle = document.querySelector("#developerUnlockAllRewards");
         const levelRewardPreviews = document.querySelector("#developerLevelRewardPreviews");
         const categoryTabs = [...panel.querySelectorAll("[data-dev-category]")];
         const categoryContents = [...panel.querySelectorAll("[data-dev-category-content]")];
@@ -668,13 +695,41 @@
             }
 
             const progress = await response.json();
+            unlockAllRewardsToggle.checked = progress.unlockAllRewards;
             currentLevelDisplay.textContent = String(progress.level);
+            levelAmountInput.value = String(progress.level);
+            xpAmountInput.value = String(progress.currentXP);
             currentXPDisplay.textContent = progress.isMaxLevel
                 ? String(progress.currentXP)
                 : `${progress.currentXP} / ${progress.experienceForNextLevel}`;
             experienceRemainingDisplay.textContent = progress.isMaxLevel
                 ? "Max level"
                 : String(progress.experienceRemaining);
+
+            const playerLevel = document.querySelector(".player-level");
+            const experienceLabel = document.querySelector(".player-copy small");
+            const currentXPLabel = document.querySelector(".player-current-xp-value");
+            const requiredXPLabel = document.querySelector(".player-current-xp-required");
+            const experienceBar = document.querySelector(".xp-track-fill");
+            const experienceBarLevel = document.querySelector(".xp-track-level");
+            const progressPercent = progress.isMaxLevel
+                ? 100
+                : Math.min(100, Math.round(progress.currentXP * 100 / Math.max(1, progress.experienceForNextLevel)));
+            if (playerLevel) {
+                playerLevel.textContent = `LEVEL ${progress.level}`;
+                playerLevel.style.setProperty("--level-progress", `${progressPercent}%`);
+            }
+            if (experienceLabel) {
+                experienceLabel.textContent = progress.isMaxLevel
+                    ? "Max level reached"
+                    : `${progress.experienceRemaining} EXP needed to level up`;
+            }
+            if (currentXPLabel) currentXPLabel.textContent = String(progress.currentXP);
+            if (requiredXPLabel) {
+                requiredXPLabel.textContent = progress.isMaxLevel ? "MAX" : String(progress.experienceForNextLevel);
+            }
+            if (experienceBar) experienceBar.style.width = `${progressPercent}%`;
+            if (experienceBarLevel) experienceBarLevel.textContent = `LEVEL ${progress.level}`;
         }
 
         async function loadLevelRewardPreviews() {
@@ -704,22 +759,26 @@
                 rewardsByLevel.set(reward.level, levelRewards);
             });
 
-            rewardsByLevel.forEach((levelRewards, level) => {
-                const button = document.createElement("button");
-                button.className = "developer-tool-action";
-                button.type = "button";
-                button.textContent = `Preview LVL ${level} popup`;
-                button.addEventListener("click", () => {
-                    if (typeof window.showLevelRewardPopup !== "function") {
-                        setDeveloperStatus("The level reward animation is unavailable on this page.", true);
-                        return;
-                    }
+            [...rewardsByLevel.entries()]
+                .sort(([firstLevel], [secondLevel]) => firstLevel - secondLevel)
+                .forEach(([level, levelRewards]) => {
+                    const button = document.createElement("button");
+                    button.className = "developer-tool-action";
+                    button.type = "button";
+                    const rewardTitles = levelRewards.map(reward => reward.title).join(", ");
+                    button.textContent = `Preview LVL ${level}: ${rewardTitles}`;
+                    button.setAttribute("aria-label", `Preview level ${level} popup: ${rewardTitles}`);
+                    button.addEventListener("click", () => {
+                        if (typeof window.showLevelRewardPopup !== "function") {
+                            setDeveloperStatus("The level reward animation is unavailable on this page.", true);
+                            return;
+                        }
 
-                    window.showLevelRewardPopup(level, levelRewards);
-                    setDeveloperStatus(`Previewing level ${level} reward.`);
+                        window.showLevelRewardPopup(level, levelRewards);
+                        setDeveloperStatus(`Previewing level ${level} reward: ${rewardTitles}.`);
+                    });
+                    levelRewardPreviews.append(button);
                 });
-                levelRewardPreviews.append(button);
-            });
         }
 
         async function loadDeveloperToolsData() {
@@ -811,6 +870,62 @@
             } catch (error) {
                 console.error(error);
                 setDeveloperStatus(error.message, true);
+            }
+        });
+
+        levelProgressForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            const level = Number(levelAmountInput.value);
+            const currentXP = Number(xpAmountInput.value);
+            if (!Number.isInteger(level) || level < 1 || level > 99) {
+                setDeveloperStatus("Level must be a whole number from 1 to 99.", true);
+                return;
+            }
+            if (!Number.isInteger(currentXP) || currentXP < 0 || currentXP > 2147483647 ||
+                (level < 99 && currentXP >= level * 100)) {
+                setDeveloperStatus(
+                    level < 99
+                        ? `XP must be a whole number from 0 to ${level * 100 - 1} at level ${level}.`
+                        : "XP must be a whole number from 0 to 2147483647.",
+                    true
+                );
+                return;
+            }
+
+            const submitButton = levelProgressForm.querySelector("button[type='submit']");
+            submitButton.disabled = true;
+            try {
+                await postDeveloperAction("/DeveloperTools/SetLevelProgress", { level, currentXP });
+                await loadLevelProgress();
+                setDeveloperStatus(`Level set to ${level} with ${currentXP} XP.`);
+            } catch (error) {
+                console.error(error);
+                setDeveloperStatus(error.message, true);
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        unlockAllRewardsToggle.addEventListener("change", async () => {
+            unlockAllRewardsToggle.disabled = true;
+            try {
+                const response = await postDeveloperAction("/DeveloperTools/SetUnlockAllLevelRewards", {
+                    enabled: unlockAllRewardsToggle.checked
+                });
+                const setting = await response.json();
+                unlockAllRewardsToggle.checked = setting.unlockAllRewards;
+                setDeveloperStatus(setting.unlockAllRewards
+                    ? "All level rewards are unlocked."
+                    : "Level rewards are locked according to your current level.");
+                if (document.body.classList.contains("aquarium-page")) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error(error);
+                unlockAllRewardsToggle.checked = !unlockAllRewardsToggle.checked;
+                setDeveloperStatus(error.message, true);
+            } finally {
+                unlockAllRewardsToggle.disabled = false;
             }
         });
 

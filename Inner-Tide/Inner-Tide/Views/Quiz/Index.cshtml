@@ -62,7 +62,11 @@
                     <strong> @userName </strong>
                     <small>@(currentLevel >= 99 ? "Max level reached" : $"{experienceRemaining} EXP needed to level up")</small>
                 </div>
-                <span class="player-current-xp"><span>@currentXP</span></span>
+                <span class="player-current-xp">
+                    <span class="player-current-xp-value">@currentXP</span>
+                    <span class="player-current-xp-divider" aria-hidden="true">/</span>
+                    <span class="player-current-xp-required">@(currentLevel >= 99 ? "MAX" : experienceForNextLevel.ToString())</span>
+                </span>
                 <div class="xp-track">
                     <span class="xp-track-fill" style="width: @experienceProgress%"></span>
                     <strong class="xp-track-level">LEVEL @currentLevel</strong>

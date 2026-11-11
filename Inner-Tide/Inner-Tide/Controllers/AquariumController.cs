@@ -20,18 +20,21 @@ namespace Inner_Tide.Controllers {
         private readonly HttpClient _httpClient;
         private readonly ILogger<AquariumController> _logger;
         private readonly AquariumProgressLimitSettings _progressLimitSettings;
+        private readonly LevelRewardUnlockSettings _levelRewardUnlockSettings;
 
         // Shared db connection obj
         ApplicationDbContext _context;
 
         public AquariumController(ApplicationDbContext context, SignInManager<User> signInManager, 
                                     UserManager<User> userManager, HttpClient httpClient, ILogger<AquariumController> logger,
-                                    AquariumProgressLimitSettings progressLimitSettings) {
+                                    AquariumProgressLimitSettings progressLimitSettings,
+                                    LevelRewardUnlockSettings levelRewardUnlockSettings) {
             this.signInManager = signInManager;
             this.userManager = userManager;
             _httpClient = httpClient;
             _logger = logger;
             _progressLimitSettings = progressLimitSettings;
+            _levelRewardUnlockSettings = levelRewardUnlockSettings;
             _context = context;
         }
         public async Task<IActionResult> Index(int aquarium = 1) {
@@ -62,6 +65,7 @@ namespace Inner_Tide.Controllers {
             ViewData["AquariumBackgroundNumber"] = backgroundNumber;
             ViewData["AccountLevel"] = user.AccountLevel;
             ViewData["ObjectStoreUnlockLevel"] = ObjectStoreUnlockLevel;
+            ViewData["UnlockAllLevelRewards"] = _levelRewardUnlockSettings.UnlockAllRewards;
             return View("Index");
         }
 
@@ -150,7 +154,8 @@ namespace Inner_Tide.Controllers {
                         fish.Width,
                         fish.FunFacts,
                         requiredLevel,
-                        isLocked = requiredLevel.HasValue && accountLevel < requiredLevel.Value
+                        isLocked = !_levelRewardUnlockSettings.UnlockAllRewards &&
+                            requiredLevel.HasValue && accountLevel < requiredLevel.Value
                     };
                 }));
             } catch (Exception ex) {
@@ -410,7 +415,8 @@ namespace Inner_Tide.Controllers {
             }
 
             var requiredLevel = LevelRewardCatalog.GetRequiredLevelForFish(fish.Species);
-            if (requiredLevel.HasValue && user.AccountLevel < requiredLevel.Value) {
+            if (!_levelRewardUnlockSettings.UnlockAllRewards &&
+                requiredLevel.HasValue && user.AccountLevel < requiredLevel.Value) {
                 return Conflict($"{fish.Species} unlocks at level {requiredLevel.Value}.");
             }
 
@@ -458,7 +464,8 @@ namespace Inner_Tide.Controllers {
                     return NotFound();
                 }
 
-                if (user.AccountLevel < ObjectStoreUnlockLevel) {
+                if (!_levelRewardUnlockSettings.UnlockAllRewards &&
+                    user.AccountLevel < ObjectStoreUnlockLevel) {
                     return Conflict($"Aquarium objects unlock at level {ObjectStoreUnlockLevel}.");
                 }
 
