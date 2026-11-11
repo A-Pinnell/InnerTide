@@ -2,6 +2,8 @@ const journalMusic = document.querySelector("#journal-music");
 const journalTrack = `${musicPathPrefix}journal.mp3`;
 const journalHistoryContainer = document.querySelector("#JournalHistoryContainer");
 const deleteJournalBtn = document.querySelector("#deleteJournalBtn");
+const viewFullBtn = document.querySelector("#viewFullBtn");
+const journalButtonContainer = document.querySelector("#journalButtonContainer");
 var journalEntryText = document.querySelector("#journalEntryText");
 var currentlySelectedJournal = 0;
 
@@ -37,7 +39,10 @@ async function RenderJournalEntries() {
         if (childCount == 0) {
             var h3 = document.createElement("h3");
             h3.textContent = "No Journals Found";
+            journalEntryText.textContent = "Write a Journal Entry to get Started";
             journalHistoryContainer.appendChild(h3);
+
+            journalButtonContainer.classList.remove("showViewAndDelete");
 
             journalHistoryContainer.style.display = "flex";
             journalHistoryContainer.style.flexDirection = "column";
@@ -120,11 +125,19 @@ document.addEventListener("click", async event => {
         const journalId = Number(target.getAttribute("value"));
         currentlySelectedJournal = journalId;
 
-        console.log(currentlySelectedJournal);
-
         const journal = await GetJournalEntry(journalId);
 
+        if (currentlySelectedJournal !== journalId) {
+            return;
+        }
+
+        if (!journal) {
+            return;
+        }
+
         journalEntryText.textContent = journal.journalContent;
+
+        journalButtonContainer.classList.add("showViewAndDelete");
     }
 
     const targetBounds = target.getBoundingClientRect();
@@ -139,6 +152,10 @@ document.addEventListener("click", async event => {
 
 deleteJournalBtn.addEventListener("click", async event => {
     const url = `/Journals/Delete`;
+
+    if (currentlySelectedJournal === 0) {
+        return;
+    }
 
     try {
         const res = await fetch('/Journals/Delete', {
@@ -155,7 +172,10 @@ deleteJournalBtn.addEventListener("click", async event => {
             throw new Error(`Failed to Load Journal Entry (${res.status})`);
         }
 
-        RenderJournalEntries();
+        journalEntryText.textContent = "Click a Journal to Read its Contents";
+        currentlySelectedJournal = 0;
+
+        await RenderJournalEntries();
 
     } catch (err) {
         console.error(err);

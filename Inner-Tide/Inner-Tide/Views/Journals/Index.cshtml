@@ -19,7 +19,7 @@
                 <div id="backToAquariumButton" class="journalMenuBubble">
                     <a asp-area="" asp-controller="Aquarium" asp-action="Index" id="backArrow"></a>
                 </div>
-                <p id="aquariumBtnText"> Aquarium </p>
+                <p class="aquariumBtnText"> Aquarium </p>
             </div>
 
             <div id="createJournalButtonContainer">
@@ -37,22 +37,28 @@
         <audio id="journal-music" loop preload="auto"></audio>
 
         <main id="journalMain">
-            <section id="JournalHistoryContainer">
-
-            </section>
+            <section id="JournalHistoryContainer"> </section>
 
             <section id="journalTextContainer">
                 <div id="journalTextBackground">
                     <div id="journalEntryText">
-                        <p>
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut fringilla sapien lectus, a sodales turpis euismod tempor. Praesent consectetur tincidunt sem, tempor condimentum nunc tempor id. Etiam tincidunt, diam nec facilisis dictum, ex metus lacinia magna, in hendrerit eros enim sed mi. Aliquam egestas nisi et dui efficitur tincidunt. Quisque fringilla vehicula auctor. Morbi et posuere lectus. Proin sit amet dapibus mauris. Donec dapibus tellus sed purus varius tempus. Nullam porta malesuada libero, et ullamcorper purus consectetur sit amet. Cras mi tellus, cursus eu nisi id, accumsan suscipit nisi. In ornare nisl id metus aliquet iaculis. Mauris faucibus est vitae erat accumsan vehicula. Aenean vel sapien massa.
-                        </p>
+                        <p> Click a Journal to Read its Contents </p>
                     </div>
 
                     <div id="journalButtonContainer">
-                        <button id="viewFullBtn"> View Full </button>
+                        <div id="viewFullButtonContainer">
+                            <div id="viewFullBtn" class="journalMenuBubble">
+                                <a id=""></a>
+                            </div>
+                             <p class="aquariumBtnText"> View Full </p>
+                        </div>
 
-                        <button id="deleteJournalBtn"> Delete </button>
+                        <div id="deleteButtonContainer">
+                            <div id="deleteJournalBtn" class="journalMenuBubble">
+                                <a id="XIcon"></a>
+                            </div>
+                            <p class="aquariumBtnText"> Delete </p>
+                        </div>
                     </div>
                 </div>
             </section>
