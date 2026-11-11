@@ -9,9 +9,6 @@ namespace Inner_Tide.Models {
         public int AccountLevel { get; set; }
 
         [Required]
-        public int CurrentXP { get; set; }
-
-        [Required]
         public int XPForNextLevel { get; set; }
 
         [Range(0, int.MaxValue)]

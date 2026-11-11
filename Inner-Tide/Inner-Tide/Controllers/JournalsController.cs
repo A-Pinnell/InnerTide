@@ -81,21 +81,21 @@ namespace Inner_Tide.Controllers {
             return RedirectToAction("Index", "Journals");
         }
 
+        public class DeleteJournalRequest {
+            public int JournalId { get; set; }
+        }
+
         [HttpPost]
-        public async Task<IActionResult> Delete(int journalId) {
+        public async Task<IActionResult> Delete([FromBody] DeleteJournalRequest request) {
             var user = await userManager.GetUserAsync(User);
             if (user == null) {
                 return Unauthorized();
             }
 
-            var journal = await _context.Journals.FirstOrDefaultAsync(j => j.JournalId == journalId && j.UserId == user.Id);
+            var journal = await _context.Journals.FirstOrDefaultAsync(j => j.JournalId == request.JournalId && j.UserId == user.Id);
 
             if (journal == null) {
                 return NotFound();
-            }
-
-            if (!ModelState.IsValid) {
-                return View("Create");
             }
 
             _context.Journals.Remove(journal);

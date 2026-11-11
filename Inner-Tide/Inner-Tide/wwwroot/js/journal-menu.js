@@ -1,7 +1,9 @@
 const journalMusic = document.querySelector("#journal-music");
 const journalTrack = `${musicPathPrefix}journal.mp3`;
 const journalHistoryContainer = document.querySelector("#JournalHistoryContainer");
+const deleteJournalBtn = document.querySelector("#deleteJournalBtn");
 var journalEntryText = document.querySelector("#journalEntryText");
+var currentlySelectedJournal = 0;
 
 async function RenderJournalEntries() {
     try {
@@ -12,6 +14,8 @@ async function RenderJournalEntries() {
             throw new Error("Failed to Load Journal Entries");
         }
 
+        journalHistoryContainer.innerHTML = "";
+
         const journals = await res.json();
         console.log(journals);
 
@@ -19,8 +23,6 @@ async function RenderJournalEntries() {
             var div = document.createElement("div");
             div.classList.add("journalContainer");
             div.setAttribute("value", journal.journalId);
-
-            console.log("stored value:", div.getAttribute("value"));
 
             var h3 = document.createElement("h3");
             h3.textContent = journal.journalTitle;
@@ -49,23 +51,16 @@ async function RenderJournalEntries() {
 }
 
 async function GetJournalEntry(journalId) {
-    console.log("journalId =", journalId);
-
     const url = `/Journals/GetJournalEntry?journalId=${journalId}`;
-    console.log("url =", url);
 
     try {
         const res = await fetch(url);
-
-        console.log("Status:", res.status);
 
         if (!res.ok) {
             throw new Error(`Failed to Load Journal Entry (${res.status})`);
         }
 
         const journal = await res.json();
-
-        console.log(journal);
 
         return journal;
 
@@ -122,19 +117,14 @@ document.addEventListener("click", async event => {
             console.error("Unable to play Journal selection sound.", error);
         });
 
-        console.log("target:", target);
-        console.log("value:", target.getAttribute("value"));
-
         const journalId = Number(target.getAttribute("value"));
+        currentlySelectedJournal = journalId;
 
-        console.log("journalId:", journalId);
+        console.log(currentlySelectedJournal);
 
         const journal = await GetJournalEntry(journalId);
 
-
         journalEntryText.textContent = journal.journalContent;
-
-        console.log(journal);
     }
 
     const targetBounds = target.getBoundingClientRect();
@@ -145,4 +135,29 @@ document.addEventListener("click", async event => {
         top: scrollTop,
         behavior: isReducedMotionEnabled() ? "auto" : "smooth"
     });
+});
+
+deleteJournalBtn.addEventListener("click", async event => {
+    const url = `/Journals/Delete`;
+
+    try {
+        const res = await fetch('/Journals/Delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                journalId: currentlySelectedJournal
+            })
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to Load Journal Entry (${res.status})`);
+        }
+
+        RenderJournalEntries();
+
+    } catch (err) {
+        console.error(err);
+    }
 });

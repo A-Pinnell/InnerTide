@@ -103,6 +103,7 @@ a {
     transform: rotate(-35deg);
 }
 
+/* ----- Buttons on Journal Index Page ----- */
 #createJournalButton {
     display: flex;
     align-items: center;
@@ -187,6 +188,19 @@ a#backArrow {
     margin: 0;
 }
 
+#deleteJournalBtn, #viewFullBtn {
+    transition: box-shadow 0.5s ease-in;
+}
+
+#deleteJournalBtn:hover, #viewFullBtn:hover {
+    box-shadow: 5px 5px 3px black;
+}
+
+#deleteJournalBtn:hover, #viewFullBtn:hover, .journalContainer:hover {
+    cursor: pointer;
+}
+
+/* ----- Sand Layers ----- */
 /* Top Layer*/
 #sand {
     position: absolute;
