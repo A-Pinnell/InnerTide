@@ -43,6 +43,133 @@ window.fetch = async (...args) => {
     return response;
 };
 
+let levelRewardFishCatalogPromise;
+
+function getLevelRewardFishCatalog() {
+    if (!levelRewardFishCatalogPromise) {
+        levelRewardFishCatalogPromise = fetch("/Aquarium/GetAllFish")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Unable to load fish for the level reward (${response.status}).`);
+                }
+                return response.json();
+            })
+            .then(fish => {
+                if (!Array.isArray(fish)) {
+                    throw new Error("The fish catalog for the level reward is invalid.");
+                }
+                return new Map(fish
+                    .filter(entry => typeof entry?.species === "string" && typeof entry?.sprite === "string")
+                    .map(entry => [entry.species.toLowerCase(), entry.sprite]));
+            })
+            .catch(error => {
+                levelRewardFishCatalogPromise = null;
+                throw error;
+            });
+    }
+
+    return levelRewardFishCatalogPromise;
+}
+
+window.showLevelRewardPopup = function (level, rewards) {
+    if (!Number.isSafeInteger(level) || !Array.isArray(rewards) || rewards.length === 0) return;
+
+    document.querySelector(".level-up-dialog")?.close();
+
+    const dialog = document.createElement("dialog");
+    dialog.className = "level-up-dialog";
+    dialog.setAttribute("aria-labelledby", "levelUpHeading");
+
+    const stars = document.createElement("div");
+    stars.className = "level-up-star-burst";
+    stars.setAttribute("aria-hidden", "true");
+    for (let index = 0; index < 18; index++) {
+        const star = document.createElement("span");
+        const side = index % 2 === 0 ? -1 : 1;
+        const horizontalDistance = window.innerWidth / 2 + 40;
+        const verticalDistance = (Math.random() - .5) * Math.min(window.innerHeight * .7, 420);
+        star.className = "level-up-star";
+        star.style.setProperty("--star-x", `${side * horizontalDistance}px`);
+        star.style.setProperty("--star-y", `${verticalDistance}px`);
+        star.style.setProperty("--star-delay", `${Math.random() * 160}ms`);
+        stars.append(star);
+    }
+
+    const heading = document.createElement("h2");
+    heading.id = "levelUpHeading";
+    heading.textContent = "LEVEL UP!";
+
+    const levelLabel = document.createElement("p");
+    levelLabel.className = "level-up-number";
+    levelLabel.textContent = `You reached level ${level}`;
+
+    const rewardHeading = document.createElement("p");
+    rewardHeading.className = "level-up-reward-heading";
+    rewardHeading.textContent = "New unlock";
+
+    const rewardList = document.createElement("ul");
+    rewardList.className = "level-up-rewards";
+    rewards.forEach(reward => {
+        if (typeof reward?.title !== "string" || typeof reward?.description !== "string") return;
+        const entry = document.createElement("li");
+        const title = document.createElement("strong");
+        title.textContent = reward.title;
+        const description = document.createElement("span");
+        description.textContent = reward.description;
+        const copy = document.createElement("div");
+        copy.className = "level-up-reward-copy";
+        copy.append(title, description);
+        entry.append(copy);
+        if (typeof reward.fishSpecies === "string" && reward.fishSpecies.trim()) {
+            const image = document.createElement("img");
+            image.className = "level-up-reward-fish";
+            image.alt = reward.fishSpecies;
+            image.hidden = true;
+            image.addEventListener("error", () => {
+                image.hidden = true;
+                console.error(`Could not load fish image for "${reward.fishSpecies}".`);
+            }, { once: true });
+            entry.prepend(image);
+            getLevelRewardFishCatalog().then(fishCatalog => {
+                const sprite = fishCatalog.get(reward.fishSpecies.toLowerCase());
+                if (!sprite) {
+                    console.error(`Could not find fish "${reward.fishSpecies}" for the level reward.`);
+                    return;
+                }
+                image.src = sprite;
+                image.hidden = false;
+            }).catch(error => {
+                console.error("Unable to load the fish image for a level reward.", error);
+            });
+        }
+        rewardList.append(entry);
+    });
+    if (rewardList.childElementCount === 0) return;
+
+    const closeButton = document.createElement("button");
+    closeButton.className = "level-up-close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Close level reward");
+    const closeIcon = document.createElement("img");
+    closeIcon.src = "/img/close_icon.png";
+    closeIcon.alt = "";
+    closeButton.append(closeIcon);
+    closeButton.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", event => {
+        if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => dialog.remove(), { once: true });
+
+    dialog.append(stars, heading, levelLabel, rewardHeading, rewardList, closeButton);
+    document.body.append(dialog);
+    dialog.showModal();
+    rewardUnlockSound.currentTime = 0;
+    rewardUnlockSound.play().catch(error => {
+        console.error("Unable to play the reward unlock sound.", error);
+    });
+    closeButton.focus();
+};
+
 const selectedAquariumStorageKey = `innerTide.selectedAquarium.${document.body.dataset.accountId}`;
 const selectedAquariumNumberStorageKey = "innerTide.selectedAquariumNumber";
 
@@ -324,6 +451,7 @@ function setAudioVolume(type, volume) {
 const soundPathPrefix = new URL("/sfx/", document.baseURI).pathname;
 const musicPathPrefix = new URL("/music/", document.baseURI).pathname;
 const coinGainSound = registerAudioPlayer(new Audio(`${soundPathPrefix}coin_gain.mp3`), "sfx");
+const rewardUnlockSound = registerAudioPlayer(new Audio(`${soundPathPrefix}rewardUnlock.mp3`), "sfx");
 const coinChangeSounds = new Set();
 const musicVolumeTestSound = new Audio(`${musicPathPrefix}test_music.mp3`);
 const sfxVolumeTestSound = new Audio(`${soundPathPrefix}Open.mp3`);

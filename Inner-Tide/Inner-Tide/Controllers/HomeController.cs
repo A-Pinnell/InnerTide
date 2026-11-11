@@ -1,5 +1,6 @@
 using Inner_Tide.Data;
 using Inner_Tide.Models;
+using Inner_Tide.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -144,7 +145,8 @@ namespace Inner_Tide.Controllers
                     coins = user.CoinCount,
                     level = user.AccountLevel,
                     currentXP = user.CurrentXP,
-                    experienceForNextLevel = user.XPForNextLevel
+                    experienceForNextLevel = user.XPForNextLevel,
+                    levelRewards = Array.Empty<LevelReward>()
                 });
             }
 
@@ -155,6 +157,7 @@ namespace Inner_Tide.Controllers
             var reward = userTask.Task.CoinReward * userTask.Multiplier;
             userTask.Completed = true;
             user.CoinCount += reward;
+            var previousLevel = user.AccountLevel;
             AwardTaskExperience(user);
             await _context.SaveChangesAsync();
             return Json(new {
@@ -163,7 +166,8 @@ namespace Inner_Tide.Controllers
                 experienceAwarded = 5,
                 level = user.AccountLevel,
                 currentXP = user.CurrentXP,
-                experienceForNextLevel = user.XPForNextLevel
+                experienceForNextLevel = user.XPForNextLevel,
+                levelRewards = LevelRewardCatalog.GetUnlockedRewards(previousLevel, user.AccountLevel)
             });
         }
 

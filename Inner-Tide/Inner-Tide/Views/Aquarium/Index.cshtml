@@ -1,5 +1,6 @@
 @using Inner_Tide.Models
 @using Microsoft.AspNetCore.Identity
+@using Inner_Tide.Services
 @using System.Globalization
 @inject UserManager<User> UserManager
 
@@ -10,6 +11,8 @@
 
     var accountId = ViewData["AccountId"] as string ?? "";
     var coinCount = 0;
+    var accountLevel = ViewData["AccountLevel"] as int? ?? 1;
+    var objectStoreUnlockLevel = ViewData["ObjectStoreUnlockLevel"] as int? ?? LevelRewardCatalog.ObjectStoreUnlockLevel;
     var aquariumNumber = (int)ViewData["AquariumNumber"]!;
     var aquariumId = (int)ViewData["AquariumId"]!;
     var aquariumBackgroundNumber = (int)ViewData["AquariumBackgroundNumber"]!;
@@ -58,7 +61,7 @@
     }
 }
 
-<body id="aquariumBody" class="aquarium-page aquarium-enter" data-account-id="@accountId" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber" style="--aquarium-sand-back: @sandBack; --aquarium-sand-middle: @sandMiddle; --aquarium-sand-front: @sandFront">
+<body id="aquariumBody" class="aquarium-page aquarium-enter" data-account-id="@accountId" data-account-level="@accountLevel" data-object-store-unlock-level="@objectStoreUnlockLevel" data-aquarium-number="@aquariumNumber" data-aquarium-id="@aquariumId" data-aquarium-background-number="@aquariumBackgroundNumber" style="--aquarium-sand-back: @sandBack; --aquarium-sand-middle: @sandMiddle; --aquarium-sand-front: @sandFront">
     <script>
         if (new URLSearchParams(window.location.search).get("from") === "journal") {
             document.documentElement.classList.add("journal-aquarium-transition-pending");

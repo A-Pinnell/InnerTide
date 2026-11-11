@@ -54,6 +54,11 @@ namespace Inner_Tide.Controllers {
             });
         }
 
+        [HttpGet]
+        public IActionResult GetLevelRewards() {
+            return Json(LevelRewardCatalog.GetAllRewards());
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SetAquariumProgressLimit([FromBody] SetAquariumProgressLimitRequest request) {
