@@ -4,8 +4,86 @@ const journalHistoryContainer = document.querySelector("#JournalHistoryContainer
 const deleteJournalBtn = document.querySelector("#deleteJournalBtn");
 const viewFullBtn = document.querySelector("#viewFullBtn");
 const journalButtonContainer = document.querySelector("#journalButtonContainer");
-var journalEntryText = document.querySelector("#journalEntryText");
+const journalEntryTitle = document.querySelector("#journalEntryTitle");
+const journalEntryText = document.querySelector("#journalEntryText");
+const journalDeleteDialog = document.querySelector("#journalDeleteDialog");
+const journalDeleteCancel = document.querySelector("#journalDeleteCancel");
+const journalDeleteConfirm = document.querySelector("#journalDeleteConfirm");
+const journalBottleShardShapes = [
+    "polygon(0 0, 50% 0, 50% 50%)",
+    "polygon(0 0, 50% 50%, 0 50%)",
+    "polygon(50% 0, 100% 0, 100% 50%)",
+    "polygon(50% 0, 100% 50%, 50% 50%)",
+    "polygon(0 50%, 50% 50%, 50% 100%)",
+    "polygon(0 50%, 50% 100%, 0 100%)",
+    "polygon(50% 50%, 100% 50%, 100% 100%)",
+    "polygon(50% 50%, 100% 100%, 50% 100%)"
+];
 var currentlySelectedJournal = 0;
+
+async function breakJournalBottle(bottle) {
+    if (!(bottle instanceof HTMLElement)
+        || isReducedMotionEnabled()
+        || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        return;
+    }
+
+    const bottleBounds = bottle.getBoundingClientRect();
+    const shards = journalBottleShardShapes.map((shape, index) => {
+        const shard = document.createElement("span");
+        const angle = (index / journalBottleShardShapes.length) * Math.PI * 2 - Math.PI / 2;
+        const directionX = Math.cos(angle);
+        const directionY = Math.sin(angle);
+        const distanceToExitX = directionX > 0
+            ? (window.innerWidth - bottleBounds.left + 80) / directionX
+            : directionX < 0
+                ? (bottleBounds.right + 80) / -directionX
+                : Infinity;
+        const distanceToExitY = directionY > 0
+            ? (window.innerHeight - bottleBounds.top + 80) / directionY
+            : directionY < 0
+                ? (bottleBounds.bottom + 80) / -directionY
+                : Infinity;
+        const distance = Math.min(distanceToExitX, distanceToExitY);
+
+        shard.className = "journal-bottle-shard";
+        shard.style.clipPath = shape;
+        shard.style.left = `${bottleBounds.left}px`;
+        shard.style.top = `${bottleBounds.top}px`;
+        shard.style.width = `${bottleBounds.width}px`;
+        shard.style.height = `${bottleBounds.height}px`;
+        shard.style.setProperty("--shard-x", `${directionX * distance}px`);
+        shard.style.setProperty("--shard-y", `${directionY * distance}px`);
+        shard.style.setProperty("--shard-rotation", `${Math.random() * 720 - 360}deg`);
+        shard.style.setProperty("--shard-delay", `${Math.random() * 70}ms`);
+        shard.style.setProperty("--shard-duration", `${Math.min(1800, Math.max(900, distance * 0.85))}ms`);
+        return shard;
+    });
+
+    document.body.append(...shards);
+    const animationFinished = Promise.all(shards.map(shard => new Promise(resolve => {
+        shard.addEventListener("animationend", resolve, { once: true });
+    })));
+    bottle.classList.add("is-breaking");
+    shards.forEach(shard => shard.classList.add("is-flying"));
+    await animationFinished;
+    shards.forEach(shard => shard.remove());
+}
+
+function confirmJournalDeletion() {
+    if (!(journalDeleteDialog instanceof HTMLDialogElement)) {
+        throw new Error("The Journal menu requires its delete confirmation dialog.");
+    }
+
+    return new Promise(resolve => {
+        journalDeleteDialog.returnValue = "";
+        journalDeleteDialog.addEventListener("close", () => {
+            resolve(journalDeleteDialog.returnValue === "delete");
+        }, { once: true });
+        journalDeleteDialog.showModal();
+        journalDeleteCancel.focus();
+    });
+}
 
 async function RenderJournalEntries() {
     try {
@@ -27,7 +105,11 @@ async function RenderJournalEntries() {
             div.setAttribute("value", journal.journalId);
 
             var h3 = document.createElement("h3");
-            h3.textContent = journal.journalTitle;
+            h3.textContent = new Date(journal.journalCreation).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            });
 
             div.appendChild(h3);
 
@@ -39,6 +121,7 @@ async function RenderJournalEntries() {
         if (childCount == 0) {
             var h3 = document.createElement("h3");
             h3.textContent = "No Journals Found";
+            journalEntryTitle.textContent = "";
             journalEntryText.textContent = "Write a Journal Entry to get Started";
             journalHistoryContainer.appendChild(h3);
 
@@ -135,6 +218,7 @@ document.addEventListener("click", async event => {
             return;
         }
 
+        journalEntryTitle.textContent = journal.journalTitle;
         journalEntryText.textContent = journal.journalContent;
 
         journalButtonContainer.classList.add("showViewAndDelete");
@@ -157,6 +241,12 @@ deleteJournalBtn.addEventListener("click", async event => {
         return;
     }
 
+    if (!await confirmJournalDeletion()) {
+        return;
+    }
+
+    const selectedBottle = journalHistoryContainer.querySelector(".journalContainer.isSelected");
+
     try {
         const res = await fetch('/Journals/Delete', {
             method: 'POST',
@@ -172,6 +262,8 @@ deleteJournalBtn.addEventListener("click", async event => {
             throw new Error(`Failed to Load Journal Entry (${res.status})`);
         }
 
+        await breakJournalBottle(selectedBottle);
+        journalEntryTitle.textContent = "";
         journalEntryText.textContent = "Click a Journal to Read its Contents";
         currentlySelectedJournal = 0;
 
@@ -180,4 +272,12 @@ deleteJournalBtn.addEventListener("click", async event => {
     } catch (err) {
         console.error(err);
     }
+});
+
+journalDeleteCancel.addEventListener("click", () => {
+    journalDeleteDialog.close("cancel");
+});
+
+journalDeleteConfirm.addEventListener("click", () => {
+    journalDeleteDialog.close("delete");
 });

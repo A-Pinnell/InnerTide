@@ -78,7 +78,7 @@ namespace Inner_Tide.Controllers {
             _context.Journals.Add(journal);
             _context.SaveChanges();
 
-            return RedirectToAction("Index", "Journals");
+            return RedirectToAction("Index", "Journals", new { from = "journal-create" });
         }
 
         public class DeleteJournalRequest {

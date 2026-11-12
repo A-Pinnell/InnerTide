@@ -1,4 +1,6 @@
 body {
+    --journal-menu-transition-duration: .8s;
+    --journal-menu-transition-easing: cubic-bezier(.4, 0, .2, 1);
     --journal-background: color-mix(in srgb, var(--journal-sand-back) 65%, #000);
     background-color: var(--journal-background);
     background-image:
@@ -10,9 +12,10 @@ body {
     background-repeat: repeat, repeat, repeat;
     background-size: 100vmax 100vmax, 100vmax 100vmax, 100vmax 100vmax;
     animation: journal-background-scroll 30s linear infinite paused;
+    animation-delay: var(--journal-background-animation-delay, 0s);
 }
 
-body.journal-menu-page.journal-background-moving {
+html.journal-background-active body.journal-menu-page {
     animation-play-state: running;
 }
 
@@ -26,6 +29,17 @@ body.journal-menu-page.journal-background-moving {
     body {
         animation: none;
     }
+
+    body.journal-menu-page *,
+    body.journal-menu-page *::before,
+    body.journal-menu-page *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+html.reduced-motion body.journal-menu-page {
+    animation: none;
 }
 
 a {
@@ -303,8 +317,41 @@ a#backArrowJournal {
     transition: transform .75s cubic-bezier(.22, 1, .36, 1);
 }
 
+.journalContainer.is-breaking {
+    z-index: 1;
+    background-image: none;
+    pointer-events: none;
+}
+
+.journalContainer.is-breaking h3 {
+    opacity: 0;
+}
+
+.journal-bottle-shard {
+    position: fixed;
+    z-index: 2147483647;
+    background-image: url("../img/journal-entry-background.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% auto;
+    pointer-events: none;
+}
+
+.journal-bottle-shard.is-flying {
+    animation: journal-bottle-shatter var(--shard-duration) cubic-bezier(.08, .72, .2, 1) var(--shard-delay) forwards;
+}
+
+@keyframes journal-bottle-shatter {
+    to {
+        opacity: 0;
+        transform: translate3d(var(--shard-x), var(--shard-y), 0) rotate(var(--shard-rotation));
+    }
+}
+
 .journalContainer h3 {
-    font-size: 2.8rem;
+    position: relative;
+    z-index: 1;
+    font-size: 2rem;
     text-align: center;
     margin: 2rem;
 }
@@ -325,10 +372,9 @@ a#backArrowJournal {
 
 #journalTextBackground {
     background: var(--journal-sand-middle);
-    border-top-left-radius: 35%;
-    border-bottom-left-radius: 35%;
+    border-radius: 15%;
     transform: translateX(100%);
-    transition: transform .8s cubic-bezier(.22, 1, .36, 1);
+    transition: transform var(--journal-menu-transition-duration) var(--journal-menu-transition-easing);
 
     display: flex;
     flex-direction: column;
@@ -343,11 +389,234 @@ body.journal-menu-page.journal-menu-revealed #journalTextBackground {
     transform: translateX(0);
 }
 
+body.journal-menu-page.journal-return-from-create #journalTextBackground {
+    transform: translateX(0);
+    transition: none;
+}
+
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #JournalHistoryContainer {
+    transform: translateX(-120vw);
+}
+
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #journalTextBackground > * {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #journalH1,
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #backToAquariumButtonContainer,
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #createJournalButtonContainer {
+    opacity: 0;
+    transform: translateY(-90px);
+}
+
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #sand,
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #sand-layer,
+body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #sand2 {
+    opacity: 0;
+    transform: translateY(-140px) rotate(180deg);
+}
+
+body.journal-menu-page.journal-to-create-exiting #JournalHistoryContainer {
+    animation: journal-bottles-slide-left var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+    pointer-events: none;
+}
+
+body.journal-menu-page.journal-to-create-exiting #journalTextBackground {
+    animation: journal-panel-center var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+    pointer-events: none;
+    --journal-panel-center-x: -50%;
+    --journal-panel-center-y: -10vh;
+}
+
+body.journal-menu-page.journal-to-create-exiting #journalTextBackground > * {
+    animation: journal-panel-content-fade .4s ease both;
+    pointer-events: none;
+}
+
+body.journal-menu-page.journal-to-create-exiting #journalH1,
+body.journal-menu-page.journal-to-create-exiting #backToAquariumButtonContainer,
+body.journal-menu-page.journal-to-create-exiting #createJournalButtonContainer {
+    animation: journal-header-slide-up .72s var(--journal-menu-transition-easing) .08s both;
+    pointer-events: none;
+}
+
+body.journal-menu-page.journal-to-create-exiting #sand,
+body.journal-menu-page.journal-to-create-exiting #sand-layer,
+body.journal-menu-page.journal-to-create-exiting #sand2 {
+    animation: journal-sand-slide-up var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+}
+
+body.journal-create-page.journal-create-revealed.journal-create-exiting #journalH1,
+body.journal-create-page.journal-create-revealed.journal-create-exiting #backToJournalsButtonContainer {
+    animation: journal-header-slide-up .72s var(--journal-menu-transition-easing) .08s both;
+    pointer-events: none;
+}
+
+body.journal-create-page.journal-create-revealed.journal-create-exiting #journalTextBackground {
+    --journal-panel-menu-x: 50%;
+    --journal-panel-menu-y: 10vh;
+    animation: journal-panel-to-menu var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+    pointer-events: none;
+}
+
+body.journal-create-page.journal-create-revealed.journal-create-exiting #sand,
+body.journal-create-page.journal-create-revealed.journal-create-exiting #sand-layer,
+body.journal-create-page.journal-create-revealed.journal-create-exiting #sand2 {
+    animation: journal-sand-slide-up var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+    pointer-events: none;
+}
+
+body.journal-create-page.journal-create-revealed.journal-create-exiting #journalCreationForm fieldset > .auth-field,
+body.journal-create-page.journal-create-revealed.journal-create-exiting #journalCreationForm fieldset > .auth-actions {
+    animation: journal-panel-content-fade .4s ease both;
+    pointer-events: none;
+}
+
+body.journal-create-page:not(.journal-create-revealed) #journalH1,
+body.journal-create-page:not(.journal-create-revealed) #backToJournalsButtonContainer {
+    opacity: 0;
+    transform: translateY(-90px);
+}
+
+body.journal-create-page:not(.journal-create-revealed) #sand,
+body.journal-create-page:not(.journal-create-revealed) #sand-layer,
+body.journal-create-page:not(.journal-create-revealed) #sand2 {
+    opacity: 0;
+    transform: translateY(-140px) rotate(180deg);
+}
+
+body.journal-create-page:not(.journal-create-revealed) #journalCreationForm fieldset > .auth-field,
+body.journal-create-page:not(.journal-create-revealed) #journalCreationForm fieldset > .auth-actions {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+body.journal-return-from-create.journal-menu-revealed #journalTextBackground > * {
+    animation: journal-panel-content-reveal .55s ease both;
+}
+
+body.journal-return-from-create.journal-menu-revealed #JournalHistoryContainer {
+    animation: journal-bottles-slide-in var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+}
+
+body.journal-return-from-create.journal-menu-revealed #journalH1,
+body.journal-return-from-create.journal-menu-revealed #backToAquariumButtonContainer,
+body.journal-return-from-create.journal-menu-revealed #createJournalButtonContainer {
+    animation: journal-header-slide-down var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+}
+
+body.journal-return-from-create.journal-menu-revealed #sand,
+body.journal-return-from-create.journal-menu-revealed #sand-layer,
+body.journal-return-from-create.journal-menu-revealed #sand2 {
+    animation: journal-sand-slide-down var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+}
+
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #JournalHistoryContainer {
+    animation: journal-bottles-slide-left var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+    pointer-events: none;
+}
+
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #journalTextBackground {
+    animation: journal-panel-center var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+    pointer-events: none;
+}
+
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #journalTextBackground > * {
+    animation: journal-panel-content-fade .4s ease both;
+    pointer-events: none;
+}
+
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #journalH1,
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #backToAquariumButtonContainer,
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #createJournalButtonContainer {
+    animation: journal-header-slide-up .72s var(--journal-menu-transition-easing) .08s both;
+    pointer-events: none;
+}
+
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #sand,
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #sand-layer,
+body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #sand2 {
+    animation: journal-sand-slide-up var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+    pointer-events: none;
+}
+
+@keyframes journal-bottles-slide-left {
+    to {
+        transform: translateX(-120vw);
+    }
+}
+
+@keyframes journal-bottles-slide-in {
+    from {
+        transform: translateX(-120vw);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes journal-panel-center {
+    to {
+        transform: translate(var(--journal-panel-center-x), var(--journal-panel-center-y));
+    }
+}
+
+@keyframes journal-panel-to-menu {
+    to {
+        transform: translate(var(--journal-panel-menu-x), var(--journal-panel-menu-y));
+    }
+}
+
+@keyframes journal-panel-content-fade {
+    to {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+@keyframes journal-panel-content-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes journal-header-slide-up {
+    to {
+        opacity: 0;
+        transform: translateY(-120px);
+    }
+}
+
+@keyframes journal-sand-slide-up {
+    to {
+        opacity: 0;
+        transform: translateY(-140px) rotate(180deg);
+    }
+}
+
 #journalEntryText {
     width: 85%;
+    max-height: 60%;
+    overflow-y: auto;
     border: 3px white solid;
     border-radius: 15%;
     padding: 25px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+#journalEntryTitle {
+    width: 85%;
+    margin: 0 0 1rem;
+    text-align: center;
 }
 
 #journalTextBackground p {
@@ -377,49 +646,366 @@ body.journal-menu-page.journal-menu-revealed #journalTextBackground {
     display: flex;
 }
 
+.journal-delete-dialog {
+    width: min(28rem, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    padding: 2rem;
+    border: 2px solid rgba(255, 255, 255, .9);
+    border-radius: 1.5rem;
+    background: linear-gradient(145deg, #fff8df, #f4e3a8);
+    color: #355563;
+    box-shadow: 0 1.5rem 4rem rgba(10, 31, 45, .35), inset 0 0 1rem rgba(255, 255, 255, .75);
+    text-align: center;
+}
+
+.journal-delete-dialog::backdrop {
+    background: rgba(14, 33, 47, .62);
+    backdrop-filter: blur(5px);
+}
+
+.journal-delete-dialog h2 {
+    margin: 0 0 .75rem;
+    color: #6d5700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.journal-delete-dialog p {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.journal-delete-dialog-actions {
+    display: flex;
+    justify-content: center;
+    gap: .75rem;
+    margin-top: 1.5rem;
+}
+
+.journal-delete-dialog-actions button {
+    min-height: 2.75rem;
+    padding: .65rem 1.2rem;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 999px;
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 .25rem .75rem rgba(31, 67, 82, .2);
+}
+
+.journal-delete-dialog-actions button:first-child {
+    background: #4c9d9a;
+}
+
+.journal-delete-dialog-actions button:last-child {
+    background: #a64e43;
+}
+
+.journal-delete-dialog-actions button:hover {
+    filter: brightness(1.08);
+}
+
+.journal-delete-dialog-actions button:focus-visible {
+    outline: 3px solid #355563;
+    outline-offset: 3px;
+}
+
 /* ----- Form Stuff ----- */
-#journalCreationFormSection {
-    position: absolute;
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 75%;
-    height: 60%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+body.journal-create-page #journalH1 {
+    top: 3vh;
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
 }
 
-#journalCreationFormSection form fieldset {
+body.journal-create-page #journalCreationMain {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 100vh;
+    opacity: 1;
+}
+
+body.journal-create-page #journalTextContainer {
+    position: fixed;
+    top: 0;
+    right: auto;
+    bottom: 0;
+    left: 25vw;
+    z-index: 4;
+    box-sizing: border-box;
+    width: 50vw;
+    height: 100vh;
+}
+
+body.journal-create-page #journalTextBackground {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-
-#journalCreationFormSection form fieldset {
-    margin: 50px;
-}
-
-.auth-field {
-    display: flex;
-    flex-direction: column;
-    margin: 15px;
-}
-
-label {
-    font-size: 2rem;
-}
-
-input {
-    width: 75%;
-    height: 50%;
-}
-
-textarea {
-    resize: vertical;
     width: 100%;
-    height: 150px;
-    max-height: 300px;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    padding: 2rem clamp(1.25rem, 3vw, 2rem);
+    background: var(--journal-sand-middle);
+    box-shadow: 0 1.5rem 3rem rgba(19, 47, 59, .25), inset 0 1px 0 rgba(255, 255, 255, .5);
+    transform: none;
+    transition: none;
+}
+
+body.journal-create-page.journal-create-revealed #journalH1,
+body.journal-create-page.journal-create-revealed #backToJournalsButtonContainer {
+    animation: journal-header-slide-down var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+}
+
+body.journal-create-page.journal-create-revealed #backToJournalsButtonContainer {
+    animation-delay: .08s;
+}
+
+body.journal-create-page.journal-create-revealed #sand,
+body.journal-create-page.journal-create-revealed #sand-layer,
+body.journal-create-page.journal-create-revealed #sand2 {
+    animation: journal-sand-slide-down var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
+}
+
+body.journal-create-page.journal-create-revealed #sand-layer {
+    animation-delay: .04s;
+}
+
+body.journal-create-page.journal-create-revealed #sand {
+    animation-delay: .08s;
+}
+
+@keyframes journal-header-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-90px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes journal-sand-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-140px) rotate(180deg);
+    }
+
+    to {
+        opacity: 1;
+        transform: rotate(180deg);
+    }
+}
+
+body.journal-create-page.journal-create-revealed #journalCreationForm fieldset > .auth-field,
+body.journal-create-page.journal-create-revealed #journalCreationForm fieldset > .auth-actions {
+    animation: journal-create-fields-fade .55s ease both;
+}
+
+body.journal-create-page.journal-create-revealed #journalCreationForm fieldset > .auth-field:nth-child(2) {
+    animation-delay: .12s;
+}
+
+body.journal-create-page.journal-create-revealed #journalCreationForm fieldset > .auth-actions {
+    animation-delay: .24s;
+}
+
+@keyframes journal-create-fields-fade {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#journalCreationFormSection {
+    position: relative;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#journalCreationForm {
+    width: min(70%, 560px);
+    margin: 0 auto;
+}
+
+#journalCreationForm fieldset {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: clamp(1.25rem, 3vw, 2.25rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    border: 0;
+    background: transparent;
+}
+
+body.journal-create-page #journalCreationForm .auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    width: 100%;
+    margin: 0;
+}
+
+body.journal-create-page #journalCreationForm label {
+    color: #355563;
+    font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+    font-weight: 700;
+}
+
+body.journal-create-page #journalCreationForm input,
+body.journal-create-page #journalCreationForm textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: .85rem 1rem;
+    border: 2px solid rgba(69, 133, 139, .35);
+    border-radius: .9rem;
+    background: rgba(255, 255, 255, .92);
+    color: #243f4b;
+    font: inherit;
+    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+body.journal-create-page #journalCreationForm input {
+    min-height: 3.25rem;
+}
+
+body.journal-create-page #journalCreationForm textarea {
+    resize: vertical;
+    min-height: 12rem;
+    max-height: 42vh;
+    line-height: 1.55;
+}
+
+body.journal-create-page #journalCreationForm input:focus-visible,
+body.journal-create-page #journalCreationForm textarea:focus-visible {
+    border-color: #318d91;
+    outline: none;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(49, 141, 145, .2);
+}
+
+body.journal-create-page #journalCreationForm input::placeholder,
+body.journal-create-page #journalCreationForm textarea::placeholder {
+    color: #70858a;
+}
+
+body.journal-create-page #journalCreationForm .auth-error {
+    color: #9c3e43;
+    font-size: .9rem;
+}
+
+body.journal-create-page #journalCreationForm .auth-actions {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: .25rem;
+}
+
+body.journal-create-page #journalCreationForm .auth-submit {
+    min-height: 3.25rem;
+    padding: .8rem 2rem;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4c9d9a, #327f86);
+    box-shadow: 0 .5rem 1rem rgba(38, 107, 111, .24);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+}
+
+body.journal-create-page #journalCreationForm .auth-submit:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 .7rem 1.25rem rgba(38, 107, 111, .3);
+}
+
+body.journal-create-page #journalCreationForm .auth-submit:focus-visible {
+    outline: 3px solid #355563;
+    outline-offset: 4px;
+}
+
+@media (max-width: 600px) {
+    body.journal-menu-page #journalTextContainer {
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    body.journal-menu-page.journal-to-create-exiting #journalTextBackground {
+        --journal-panel-center-x: 0;
+        --journal-panel-center-y: 0;
+    }
+
+    body.journal-create-page.journal-create-revealed.journal-create-exiting #journalTextBackground {
+        --journal-panel-menu-x: 0;
+        --journal-panel-menu-y: 0;
+    }
+
+    body.journal-menu-page #journalTextBackground,
+    body.journal-create-page #journalTextBackground {
+        border-radius: 45%;
+    }
+
+    body.journal-create-page #journalTextContainer {
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    body.journal-create-page #journalTextBackground {
+        padding: 2rem 1rem;
+    }
+
+    body.journal-create-page #journalH1 {
+        padding: 0 4.5rem;
+        font-size: clamp(2rem, 8vw, 3rem);
+    }
+
+    body.journal-create-page #backToJournalsButtonContainer {
+        top: .75rem;
+        left: .5rem;
+        width: 90px;
+        height: 110px;
+    }
+
+    body.journal-create-page #backToJournalButton {
+        width: 65%;
+        height: 65%;
+    }
+
+    body.journal-create-page .aquariumBtnText {
+        font-size: 1rem;
+    }
+
+    body.journal-create-page #journalCreationForm fieldset {
+        border-radius: 1.25rem;
+    }
+
+    body.journal-create-page #journalCreationForm textarea {
+        min-height: 9rem;
+    }
+}
+
+html.reduced-motion body.journal-create-page #journalCreationMain {
+    opacity: 1;
+    animation: none;
 }
 

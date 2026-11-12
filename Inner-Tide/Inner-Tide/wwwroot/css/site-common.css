@@ -118,7 +118,14 @@ body.journal-menu-page #journalMain {
 }
 
 body.journal-menu-page.journal-menu-revealed #journalMain {
-    animation: journal-menu-fade-in 1s ease-out both;
+    animation: journal-menu-fade-in .8s cubic-bezier(.4, 0, .2, 1) both;
+}
+
+body.journal-menu-page.journal-return-from-create #journalMain,
+body.journal-menu-page.journal-return-from-create.journal-menu-revealed #journalMain {
+    opacity: 1;
+    transition: none;
+    animation: none;
 }
 
 @keyframes journal-menu-fade-in {

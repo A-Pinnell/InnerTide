@@ -78,11 +78,8 @@ window.showLevelRewardPopup = function (level, rewards) {
 
     const dialog = document.createElement("dialog");
     dialog.className = "level-up-dialog";
-    dialog.setAttribute("aria-labelledby", "levelUpHeading");
-
     const stars = document.createElement("div");
     stars.className = "level-up-star-burst";
-    stars.setAttribute("aria-hidden", "true");
     for (let index = 0; index < 18; index++) {
         const star = document.createElement("span");
         const side = index % 2 === 0 ? -1 : 1;
@@ -152,7 +149,6 @@ window.showLevelRewardPopup = function (level, rewards) {
     const closeButton = document.createElement("button");
     closeButton.className = "level-up-close";
     closeButton.type = "button";
-    closeButton.setAttribute("aria-label", "Close level reward");
     const closeIcon = document.createElement("img");
     closeIcon.src = "/img/close_icon.png";
     closeIcon.alt = "";
@@ -312,7 +308,8 @@ function revealPageAfterAssetsLoad() {
 
 revealPageAfterAssetsLoad();
 
-if (document.body.classList.contains("journal-menu-page")) {
+if (document.body.classList.contains("journal-menu-page")
+    && !document.body.classList.contains("journal-create-page")) {
     window.addEventListener("page-assets-ready", () => {
         const journalTextBackground = document.querySelector("#journalTextBackground");
         if (!(journalTextBackground instanceof HTMLElement)) {
@@ -320,15 +317,10 @@ if (document.body.classList.contains("journal-menu-page")) {
         }
 
         if (isReducedMotionEnabled()) {
-            document.body.classList.add("journal-menu-revealed", "journal-background-moving");
+            document.body.classList.add("journal-menu-revealed");
             return;
         }
 
-        journalTextBackground.addEventListener("transitionend", event => {
-            if (event.target === journalTextBackground && event.propertyName === "transform") {
-                document.body.classList.add("journal-background-moving");
-            }
-        }, { once: true });
         document.body.classList.add("journal-menu-revealed");
     }, { once: true });
 }
@@ -1207,6 +1199,46 @@ function isReducedMotionEnabled() {
     return document.documentElement.classList.contains("reduced-motion");
 }
 
+function navigateAfterJournalHeaderAnimation(element, animationName, destination, startTransition) {
+    let timeoutId;
+    let completed = false;
+    const cleanup = () => {
+        window.clearTimeout(timeoutId);
+        element.removeEventListener("animationend", finish);
+        element.removeEventListener("animationcancel", finish);
+    };
+    const finish = event => {
+        if (event && (event.target !== element || event.animationName !== animationName)) return;
+        if (completed) return;
+
+        completed = true;
+        cleanup();
+        window.location.assign(destination);
+    };
+
+    element.addEventListener("animationend", finish);
+    element.addEventListener("animationcancel", finish);
+    startTransition();
+
+    const styles = window.getComputedStyle(element);
+    const animationNames = styles.animationName.split(",").map(name => name.trim());
+    const animationIndex = animationNames.indexOf(animationName);
+    let fallbackDelay = 0;
+    if (animationIndex >= 0) {
+        const parseTime = value => {
+            const time = Number.parseFloat(value);
+            return value.trim().endsWith("ms") ? time : time * 1000;
+        };
+        const duration = styles.animationDuration.split(",").map(value => value.trim());
+        const delay = styles.animationDelay.split(",").map(value => value.trim());
+        const durationMs = parseTime(duration[animationIndex % duration.length]);
+        const delayMs = parseTime(delay[animationIndex % delay.length]);
+        fallbackDelay = Math.max(0, durationMs + delayMs) + 100;
+    }
+
+    timeoutId = window.setTimeout(() => finish(), fallbackDelay);
+}
+
 function syncRippleMotion() {
     const svg = document.querySelector("#background-water-ripple")?.ownerSVGElement;
     if (!svg) return;
@@ -1286,6 +1318,54 @@ document.addEventListener("click", event => {
         playSideNavigationSound("right");
     } else if (link.closest(".task-tab")) {
         playSideNavigationSound("left");
+    }
+
+    if (document.body.classList.contains("journal-menu-page") && link.closest("#createJournalButton")) {
+        event.preventDefault();
+        if (document.body.classList.contains("journal-to-create-exiting")) return;
+
+        const journalHeading = document.querySelector("#journalH1");
+        if (!(journalHeading instanceof HTMLElement)) {
+            throw new Error("The Journal menu requires its header title.");
+        }
+
+        destination.searchParams.set("from", "journal-index");
+        if (isReducedMotionEnabled() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            window.location.assign(destination.href);
+            return;
+        }
+
+        navigateAfterJournalHeaderAnimation(
+            journalHeading,
+            "journal-header-slide-up",
+            destination.href,
+            () => document.body.classList.add("journal-to-create-exiting")
+        );
+        return;
+    }
+
+    if (document.body.classList.contains("journal-create-page") && link.closest("#backArrowJournal")) {
+        event.preventDefault();
+        if (document.body.classList.contains("journal-create-exiting")) return;
+
+        const journalHeading = document.querySelector("#journalH1");
+        if (!(journalHeading instanceof HTMLElement)) {
+            throw new Error("The Journal creation page requires its header title.");
+        }
+
+        destination.searchParams.set("from", "journal-create");
+        if (isReducedMotionEnabled() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            window.location.assign(destination.href);
+            return;
+        }
+
+        navigateAfterJournalHeaderAnimation(
+            journalHeading,
+            "journal-header-slide-up",
+            destination.href,
+            () => document.body.classList.add("journal-create-exiting")
+        );
+        return;
     }
 
     if (document.body.classList.contains("journal-menu-page") && link.closest("#backArrow")) {

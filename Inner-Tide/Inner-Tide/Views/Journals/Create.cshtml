@@ -7,7 +7,10 @@
 }
 
 <script>
-    document.body.classList.add("journal-menu-page");
+    document.body.classList.add("journal-menu-page", "journal-create-page");
+    window.addEventListener("page-assets-ready", () => {
+        document.body.classList.add("journal-create-revealed");
+    }, { once: true });
 </script>
 
     <audio id="journal-music" loop preload="auto"></audio>
@@ -27,26 +30,30 @@
             </div>
         </section>
 
-        <section id="journalCreationFormSection">
-            <form asp-controller="Journals" asp-action="Create" method="post" id="journalCreationForm">
-                <fieldset>
-                    <div class="auth-field">
-                        <label asp-for="JournalTitle"> Journal Title </label>
-                        <input asp-for="JournalTitle" placeholder="Enter the Title of Your Journal Here">
-                        <span asp-validation-for="JournalTitle" class="auth-error"></span>
-                    </div>
+        <section id="journalTextContainer">
+            <div id="journalTextBackground">
+                <section id="journalCreationFormSection">
+                    <form asp-controller="Journals" asp-action="Create" method="post" id="journalCreationForm">
+                        <fieldset>
+                            <div class="auth-field">
+                                <label asp-for="JournalTitle"> Journal Title </label>
+                                <input asp-for="JournalTitle" placeholder="Enter the Title of Your Journal Here">
+                                <span asp-validation-for="JournalTitle" class="auth-error"></span>
+                            </div>
 
-                    <div id="journalTextArea" class="auth-field">
-                        <label asp-for="JournalContent"> Journal Content </label>
-                        <textarea asp-for="JournalContent" placeholder="Enter the Contents of Your Journal Here"></textarea>
-                        <span asp-validation-for="JournalContent" class="auth-error"></span>
-                    </div>
+                            <div id="journalTextArea" class="auth-field">
+                                <label asp-for="JournalContent"> Journal Content </label>
+                                <textarea asp-for="JournalContent" placeholder="Enter the Contents of Your Journal Here"></textarea>
+                                <span asp-validation-for="JournalContent" class="auth-error"></span>
+                            </div>
 
-                    <div class="auth-actions">
-                        <button class="auth-submit" type="submit"> Save Journal </button>
-                    </div>
-                </fieldset>
-            </form>
+                            <div class="auth-actions">
+                                <button class="auth-submit" type="submit"> Save Journal </button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </section>
+            </div>
         </section>
 
         <svg focusable="false" width="0" height="0">

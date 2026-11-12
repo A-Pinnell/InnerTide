@@ -582,7 +582,6 @@ async function renderStoreFish() {
                 (f.isLocked === true || (requiredLevel !== null && playerLevel < requiredLevel));
             if (locked) {
                 item.classList.add("store-item-locked");
-                item.setAttribute("aria-disabled", "true");
                 item.dataset.requiredLevel = String(requiredLevel);
                 item.title = `Unlock at level ${requiredLevel}`;
             } else {
@@ -594,7 +593,6 @@ async function renderStoreFish() {
             if (locked) {
                 const silhouette = document.createElement("span");
                 silhouette.className = "locked-fish-silhouette";
-                silhouette.setAttribute("aria-hidden", "true");
                 silhouette.style.setProperty("--locked-fish-image", `url("${f.sprite}")`);
                 setLockedFishSilhouetteColor(silhouette, f.sprite);
                 imageFrame.append(silhouette);
@@ -623,11 +621,9 @@ async function renderStoreFish() {
                 levelLabel.textContent = `LVL ${requiredLevel}`;
                 const lock = document.createElement("span");
                 lock.className = "store-item-lock-icon";
-                lock.setAttribute("role", "img");
-                lock.setAttribute("aria-label", `Locked until level ${requiredLevel}`);
                 lock.title = `Unlock at level ${requiredLevel}`;
                 lock.innerHTML = `
-                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
                         <path d="M7 10V7a5 5 0 0 1 10 0v3h1.5A1.5 1.5 0 0 1 20 11.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5v-9A1.5 1.5 0 0 1 5.5 10H7Zm2 0h6V7a3 3 0 0 0-6 0v3Zm3 4a2 2 0 0 0-1 3.732V19h2v-1.268A2 2 0 0 0 12 14Z"/>
                     </svg>`;
                 lockGroup.append(levelLabel, lock);
@@ -842,7 +838,6 @@ if (document.body.classList.contains("aquarium-page")) {
         dropFeedingPellet = null;
         if (heldPelletPreview) heldPelletPreview.hidden = true;
         if (feedingPelletPicker) feedingPelletPicker.hidden = true;
-        feedingBagButton?.setAttribute("aria-expanded", "false");
         if (feedingControls) {
             feedingControls.hidden = true;
             feedingControls.classList.remove("is-visible");
@@ -852,7 +847,6 @@ if (document.body.classList.contains("aquarium-page")) {
             const icon = hideExitButton.querySelector(".aquarium-icon-frame img");
             if (icon) icon.src = "../img/open_crab.png";
             hideExitButton.querySelector(".aquarium-menu-label").textContent = "Show";
-            hideExitButton.setAttribute("aria-label", "Show aquarium menu");
         }
         fishList.forEach(fish => {
             const isFinishingPellet = fish.pauseUntil > performance.now();
@@ -923,7 +917,6 @@ if (document.body.classList.contains("aquarium-page")) {
             const startY = Math.min(y, restY);
             const pelletElement = document.createElement("span");
             pelletElement.className = `fish-food-pellet ${type}`;
-            pelletElement.setAttribute("aria-hidden", "true");
             pelletElement.style.left = `${x}px`;
             pelletElement.style.top = `${startY}px`;
             fishContainer.appendChild(pelletElement);
@@ -987,7 +980,6 @@ if (document.body.classList.contains("aquarium-page")) {
             const icon = hideExitButton.querySelector(".aquarium-icon-frame img");
             if (icon) icon.src = "../img/close_icon.png";
             hideExitButton.querySelector(".aquarium-menu-label").textContent = "";
-            hideExitButton.setAttribute("aria-label", "Close Actions");
             feedingControls.hidden = false;
             window.requestAnimationFrame(() => feedingControls.classList.add("is-visible"));
         });
@@ -996,7 +988,6 @@ if (document.body.classList.contains("aquarium-page")) {
     feedingBagButton?.addEventListener("click", () => {
         if (!feedingPelletPicker) return;
         feedingPelletPicker.hidden = !feedingPelletPicker.hidden;
-        feedingBagButton.setAttribute("aria-expanded", String(!feedingPelletPicker.hidden));
     });
 
     feedingPelletPicker?.addEventListener("click", event => {
@@ -1014,7 +1005,6 @@ if (document.body.classList.contains("aquarium-page")) {
             updateHeldPelletPreview();
         }
         feedingPelletPicker.hidden = true;
-        feedingBagButton?.setAttribute("aria-expanded", "false");
         if (feedingStatus) feedingStatus.textContent = `Holding a ${type} pellet. Click in the tank to drop it.`;
     });
 

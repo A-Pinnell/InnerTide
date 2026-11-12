@@ -15,6 +15,25 @@
             if (new URLSearchParams(window.location.search).get("from") === "aquarium") {
                 document.documentElement.classList.add("aquarium-transition-return");
             }
+
+            if (/(?:^|\/)journals(?:\/(?:index|create))?\/?$/i.test(window.location.pathname)) {
+                const from = new URLSearchParams(window.location.search).get("from");
+                const resumeBackground = from === "journal-index"
+                    || from === "journal-create"
+                    || from === "aquarium-journal";
+                const storageKey = "innerTide.journalBackgroundStartTime";
+                const now = Date.now();
+                const storedStartTime = Number(sessionStorage.getItem(storageKey));
+                const startTime = resumeBackground && Number.isFinite(storedStartTime) && storedStartTime > 0
+                    ? storedStartTime
+                    : now;
+                const duration = 30000;
+                const elapsed = ((now - startTime) % duration + duration) % duration;
+
+                sessionStorage.setItem(storageKey, String(startTime));
+                document.documentElement.style.setProperty("--journal-background-animation-delay", `-${elapsed / 1000}s`);
+                document.documentElement.classList.add("journal-background-active");
+            }
         </script>
         <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
         @foreach (var stylesheet in ViewData["PageStylesheets"] as string[] ?? Array.Empty<string>()) {

@@ -61,7 +61,7 @@
                 </div>
                 <span class="player-current-xp">
                     <span class="player-current-xp-value">@currentXP</span>
-                    <span class="player-current-xp-divider" aria-hidden="true">/</span>
+                    <span class="player-current-xp-divider">/</span>
                     <span class="player-current-xp-required">@(currentLevel >= 99 ? "MAX" : experienceForNextLevel.ToString())</span>
                 </span>
                 <div class="xp-track">
@@ -298,7 +298,7 @@
         </div>
     </section>
     <dialog class="task-regeneration-dialog" id="regenerateTasksDialog">
-        <div class="task-regeneration-coin-layer" id="regenerateTasksCoinLayer" aria-hidden="true"></div>
+        <div class="task-regeneration-coin-layer" id="regenerateTasksCoinLayer"></div>
         <h2 id="regenerateTasksHeading">Refresh tasks</h2>
         <p>Choose which task list to refresh. The coin amounts will refresh based on the selected period.</p>
         <div class="task-regeneration-options">

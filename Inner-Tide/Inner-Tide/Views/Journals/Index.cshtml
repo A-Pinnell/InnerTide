@@ -7,6 +7,9 @@
 
 <script>
     document.body.classList.add("journal-menu-page");
+    if (new URLSearchParams(window.location.search).get("from") === "journal-create") {
+        document.body.classList.add("journal-return-from-create");
+    }
 </script>
 
         <section id="upperSandHeader">
@@ -23,9 +26,9 @@
             </div>
 
             <div id="createJournalButtonContainer">
-                <div id="createJournalButton" class="journalMenuBubble" type="button" aria-label="Create journal entry" title="Create journal entry">
+                <div id="createJournalButton" class="journalMenuBubble" type="button" title="Create journal entry">
                     <a asp-area="" asp-controller="Journals" asp-action="Create">
-                        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                        <svg viewBox="0 0 48 48" focusable="false">
                             <path d="M8 32.5V40h7.5L37.6 17.9l-7.5-7.5L8 32.5Zm35.4-21.2a2 2 0 0 0 0-2.8l-3.9-3.9a2 2 0 0 0-2.8 0l-3.7 3.7 7.5 7.5 2.9-4.5Z" />
                         </svg>
                     </a>
@@ -41,6 +44,7 @@
 
             <section id="journalTextContainer">
                 <div id="journalTextBackground">
+                    <h2 id="journalEntryTitle"></h2>
                     <div id="journalEntryText">
                         <p> Click a Journal to Read its Contents </p>
                     </div>
@@ -62,6 +66,14 @@
                     </div>
                 </div>
             </section>
+            <dialog id="journalDeleteDialog" class="journal-delete-dialog">
+                <h2 id="journalDeleteHeading">Are you sure?</h2>
+                <p id="journalDeleteMessage">This will permanently erase this journal.</p>
+                <div class="journal-delete-dialog-actions">
+                    <button id="journalDeleteCancel" type="button">Cancel</button>
+                    <button id="journalDeleteConfirm" type="button">Delete journal</button>
+                </div>
+            </dialog>
             <svg focusable="false" width="0" height="0">
                 <filter id="background-water-ripple" x="-15%" y="-15%" width="130%" height="130%">
                     <feTurbulence type="fractalNoise" baseFrequency=".004 .01" numOctaves="2" seed="4" result="water-noise">

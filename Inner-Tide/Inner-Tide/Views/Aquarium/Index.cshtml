@@ -117,10 +117,10 @@
                         <span data-pellet-count="large">0</span>
                     </button>
                 </div>
-                <button class="feeding-bag-button" id="feedingBagButton" type="button" aria-expanded="false" aria-controls="feedingPelletPicker" aria-label="Choose a fish pellet">
+                <button class="feeding-bag-button" id="feedingBagButton" type="button">
                     <img src="../img/bag.png" alt="">
                 </button>
-                <span class="feeding-status" id="feedingStatus" role="status" aria-live="polite"></span>
+                <span class="feeding-status" id="feedingStatus"></span>
             </div>
             <div class="held-pellet-preview" id="heldPelletPreview" hidden></div>
 
@@ -290,14 +290,14 @@
             <div id="journalButton">
                 <a class="journalText" asp-area="" asp-controller="Journals" asp-action="Index"> <span> Journals </span> <b> ˅ </b> </a>
             </div>
-            <button class="aquariumMenuBtn aquarium-hide-exit" id="aquariumHideExit" type="button" aria-label="Show aquarium menu" hidden>
+            <button class="aquariumMenuBtn aquarium-hide-exit" id="aquariumHideExit" type="button" hidden>
                 <span class="aquarium-icon-frame">
                     <img src="../img/open_crab.png" alt="">
                 </span>
                 <span class="aquarium-menu-label">Show</span>
             </button>
         </div>
-        <div class="aquarium-journal-sand-continuation" aria-hidden="true">
+        <div class="aquarium-journal-sand-continuation">
             <span class="aquarium-journal-sand-front"></span>
             <span class="aquarium-journal-sand-middle"></span>
             <span class="aquarium-journal-sand-back"></span>

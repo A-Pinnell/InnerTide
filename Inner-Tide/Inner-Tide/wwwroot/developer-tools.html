@@ -11,13 +11,13 @@
             <h2>Developer Tools</h2>
             <button class="developer-tools-close" id="developerToolsClose" type="button">Close</button>
         </div>
-        <nav class="developer-tool-categories" aria-label="Developer tool categories" role="tablist">
-            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="general">General</button>
-            <button class="developer-tool-category active" type="button" role="tab" aria-selected="true" data-dev-category="tasks">Tasks</button>
-            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="aquarium">Aquarium</button>
-            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="quizzes">Quizzes</button>
-            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="journals">Journals</button>
-            <button class="developer-tool-category" type="button" role="tab" aria-selected="false" data-dev-category="levelling">Levelling System</button>
+        <nav class="developer-tool-categories">
+            <button class="developer-tool-category" type="button" data-dev-category="general">General</button>
+            <button class="developer-tool-category active" type="button" data-dev-category="tasks">Tasks</button>
+            <button class="developer-tool-category" type="button" data-dev-category="aquarium">Aquarium</button>
+            <button class="developer-tool-category" type="button" data-dev-category="quizzes">Quizzes</button>
+            <button class="developer-tool-category" type="button" data-dev-category="journals">Journals</button>
+            <button class="developer-tool-category" type="button" data-dev-category="levelling">Levelling System</button>
         </nav>
         <p class="developer-tools-status" id="developerToolsStatus"></p>
 
@@ -64,12 +64,12 @@
             <section class="developer-tool-section">
                 <h3>Items in Aquariums</h3>
                 <div class="developer-aquarium-navigation">
-                    <button class="developer-tool-action" id="developerPreviousAquarium" type="button" aria-label="Previous aquarium">Previous</button>
+                    <button class="developer-tool-action" id="developerPreviousAquarium" type="button">Previous</button>
                     <label>
                         Aquarium
                         <select id="developerAquariumSelect"></select>
                     </label>
-                    <button class="developer-tool-action" id="developerNextAquarium" type="button" aria-label="Next aquarium">Next</button>
+                    <button class="developer-tool-action" id="developerNextAquarium" type="button">Next</button>
                 </div>
                 <div class="developer-inventory-tabs">
                     <button class="developer-inventory-tab active" type="button" data-aquarium-category="fish">Fish</button>
@@ -493,7 +493,6 @@
                 categoryTabs.forEach(item => {
                     const selected = item === tab;
                     item.classList.toggle("active", selected);
-                    item.setAttribute("aria-selected", String(selected));
                 });
                 categoryContents.forEach(content => {
                     content.hidden = content.dataset.devCategoryContent !== category;
@@ -767,7 +766,6 @@
                     button.type = "button";
                     const rewardTitles = levelRewards.map(reward => reward.title).join(", ");
                     button.textContent = `Preview LVL ${level}: ${rewardTitles}`;
-                    button.setAttribute("aria-label", `Preview level ${level} popup: ${rewardTitles}`);
                     button.addEventListener("click", () => {
                         if (typeof window.showLevelRewardPopup !== "function") {
                             setDeveloperStatus("The level reward animation is unavailable on this page.", true);

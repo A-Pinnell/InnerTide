@@ -129,8 +129,6 @@ function showExperienceReward(amount) {
     const popup = document.createElement("div");
     popup.id = "experienceRewardPopup";
     popup.className = "experience-reward-popup";
-    popup.setAttribute("role", "status");
-    popup.setAttribute("aria-label", `Plus ${amount} experience points`);
     popup.style.left = `${bounds.left + bounds.width / 2}px`;
     popup.style.top = `${bounds.bottom + 8}px`;
 
@@ -138,7 +136,6 @@ function showExperienceReward(amount) {
     value.textContent = `+${amount}`;
     const pearl = document.createElement("span");
     pearl.className = "experience-reward-pearl";
-    pearl.setAttribute("aria-hidden", "true");
     popup.append(value, pearl);
     document.body.append(popup);
 
