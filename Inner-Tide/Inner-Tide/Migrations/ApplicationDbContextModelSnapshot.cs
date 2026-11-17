@@ -238,9 +238,6 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("AccountLevel")
                         .HasColumnType("int");
 
-                    b.Property<int>("CurrentXP")
-                        .HasColumnType("int");
-
                     b.Property<int>("CoinCount")
                         .HasColumnType("int");
 
@@ -416,6 +413,9 @@ namespace Inner_Tide.Migrations
                     b.Property<string>("FishId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("HasViewedInfo")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsInAquarium")
                         .HasColumnType("bit");

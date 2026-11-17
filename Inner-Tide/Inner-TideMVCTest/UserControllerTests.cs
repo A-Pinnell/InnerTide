@@ -228,10 +228,14 @@ namespace Inner_TideMVCTest {
             };
 
             // Act
-            var result = (RedirectToActionResult)await controller.Register(model);
+            var result = await controller.Register(model);
 
             // Assert
-            Assert.AreEqual("Index", result.ActionName);
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+
+            var redirectResult = (RedirectToActionResult)result;
+
+            Assert.AreEqual("Welcome", redirectResult.ActionName);
         }
 
         [TestMethod]
@@ -325,27 +329,15 @@ namespace Inner_TideMVCTest {
         }
 
         [TestMethod]
-        public async System.Threading.Tasks.Task LoginReturnsUnauthorizedWhenUserDataMissing() {
+        public async System.Threading.Tasks.Task LoginReturnsIndexViewWhenUserNotFound() {
             // Arrange
-            var user = new User {
-                Id = "1",
-                UserName = "Test",
-                Email = "test@test.com"
-            };
+            _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null);
 
-            _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
-
-            _signInManagerMock.Setup(x => x.PasswordSignInAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<bool>(),
-                    false)).ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-
-            _userManagerMock.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync((User)null);
+            _userManagerMock.Setup(x => x.FindByNameAsync(It.IsAny<string>())).ReturnsAsync((User)null);
 
             var model = new AccountViewModel {
                 Login = new LoginViewModel {
-                    EmailOrUserName = user.Email,
+                    EmailOrUserName = "test@test.com",
                     Password = "Password123!"
                 }
             };
@@ -354,7 +346,10 @@ namespace Inner_TideMVCTest {
             var result = await controller.Login(model);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
+            var viewResult = result as ViewResult;
+
+
+            Assert.AreEqual("Index", viewResult.ViewName);
         }
 
         [TestMethod]
@@ -363,7 +358,8 @@ namespace Inner_TideMVCTest {
             var user = new User {
                 Id = "1",
                 UserName = "Test",
-                Email = "test@test.com"
+                Email = "test@test.com",
+                FirstTimeLogin = true
             };
 
             _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);

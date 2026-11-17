@@ -15,6 +15,9 @@ namespace Inner_Tide.Models {
 
         public DateTime? AcquiredAt { get; set; } = DateTime.UtcNow;
 
+        [Required]
+        public bool HasViewedInfo { get; set; }
+
         //Foreign Key
         [Required]
         public string UserId { get; set; }
