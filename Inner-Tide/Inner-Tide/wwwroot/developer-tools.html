@@ -51,6 +51,11 @@
             </section>
 
             <section class="developer-tool-section">
+                <h3>Fish Info Experience</h3>
+                <button class="developer-tool-action" id="developerResetFishInfoExperience" type="button">Reset All Fish Info Awards</button>
+            </section>
+
+            <section class="developer-tool-section">
                 <h3>Aquarium Inventory</h3>
                 <div class="developer-inventory-tabs">
                     <button class="developer-inventory-tab active" type="button" data-inventory-category="fish">Fish</button>
@@ -826,6 +831,21 @@
                 await postDeveloperAction("/DeveloperTools/ResetTasks");
                 await getTaskData();
                 setDeveloperStatus("Current tasks have been reset.");
+            } catch (error) {
+                console.error(error);
+                setDeveloperStatus(error.message, true);
+            }
+        });
+
+        document.querySelector("#developerResetFishInfoExperience").addEventListener("click", async () => {
+            if (!window.confirm("Reset the first-view award for all fish?")) {
+                return;
+            }
+
+            try {
+                const response = await postDeveloperAction("/DeveloperTools/ResetFishInfoExperience");
+                const result = await response.json();
+                setDeveloperStatus(`${result.reset} fish info awards reset.`);
             } catch (error) {
                 console.error(error);
                 setDeveloperStatus(error.message, true);

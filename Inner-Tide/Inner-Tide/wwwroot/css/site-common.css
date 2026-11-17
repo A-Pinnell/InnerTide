@@ -311,7 +311,7 @@ html.reduced-motion body.users-page .auth-submit:hover {
 
 body.aquarium-page.aquarium-journal-exiting > main {
     position: relative;
-    transform: translateY(-110vh);
+    transform: translateY(-115vh);
     transition: transform .85s cubic-bezier(.76, 0, .24, 1);
 }
 
@@ -514,6 +514,6 @@ body.aquarium-page.journal-aquarium-returning {
 }
 
 html.aquarium-journal-transition-pending #journalMain {
-    transform: translateY(-100vh);
+    transform: translateY(-105vh);
     transition: opacity .65s ease, transform .85s cubic-bezier(.76, 0, .24, 1);
 }

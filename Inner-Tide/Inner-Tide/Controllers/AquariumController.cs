@@ -355,6 +355,9 @@ namespace Inner_Tide.Controllers {
                 }
                 user.LargePelletCount--;
             }
+            var experienceAwarded = type == "small" ? 1 : 3;
+            var previousLevel = user.AccountLevel;
+            ExperienceAwardCatalog.AwardExperience(user, experienceAwarded);
 
             try {
                 await _context.SaveChangesAsync();
@@ -367,7 +370,45 @@ namespace Inner_Tide.Controllers {
 
             return Ok(new {
                 small = user.SmallPelletCount,
-                large = user.LargePelletCount
+                large = user.LargePelletCount,
+                experienceAwarded,
+                previousLevel,
+                level = user.AccountLevel,
+                currentXP = user.CurrentXP,
+                experienceForNextLevel = user.XPForNextLevel,
+                levelRewards = LevelRewardCatalog.GetUnlockedRewards(previousLevel, user.AccountLevel)
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ViewFishInfo([FromForm] int userFishId) {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var userFish = await _context.UserFish.FirstOrDefaultAsync(
+                fish => fish.UserId == user.Id && fish.UserFishId == userFishId);
+            if (userFish == null) {
+                return NotFound();
+            }
+            if (userFish.HasViewedInfo) {
+                return Ok(new { experienceAwarded = 0 });
+            }
+
+            var previousLevel = user.AccountLevel;
+            var experienceAwarded = ExperienceAwardCatalog.AwardExperience(user, 1);
+            userFish.HasViewedInfo = true;
+            await _context.SaveChangesAsync();
+
+            return Ok(new {
+                experienceAwarded,
+                previousLevel,
+                level = user.AccountLevel,
+                currentXP = user.CurrentXP,
+                experienceForNextLevel = user.XPForNextLevel,
+                levelRewards = LevelRewardCatalog.GetUnlockedRewards(previousLevel, user.AccountLevel)
             });
         }
 
@@ -435,6 +476,9 @@ namespace Inner_Tide.Controllers {
 
             _context.UserFish.Add(userFish);
             user.CoinCount -= fish.Price;
+            var experienceAwarded = (fish.Price + 9) / 10;
+            var previousLevel = user.AccountLevel;
+            ExperienceAwardCatalog.AwardExperience(user, experienceAwarded);
 
             try {
                 await _context.SaveChangesAsync();
@@ -451,7 +495,13 @@ namespace Inner_Tide.Controllers {
                 fishId = fish.FishId,
                 fishSpecies = fish.Species,
                 coinsSpent = fish.Price,
-                remainingCoins = user.CoinCount
+                remainingCoins = user.CoinCount,
+                experienceAwarded,
+                previousLevel,
+                level = user.AccountLevel,
+                currentXP = user.CurrentXP,
+                experienceForNextLevel = user.XPForNextLevel,
+                levelRewards = LevelRewardCatalog.GetUnlockedRewards(previousLevel, user.AccountLevel)
             });
         }
 

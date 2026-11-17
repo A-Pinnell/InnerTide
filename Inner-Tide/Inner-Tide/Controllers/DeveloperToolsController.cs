@@ -105,6 +105,29 @@ namespace Inner_Tide.Controllers {
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetFishInfoExperience() {
+            if (!IsDeveloperEnvironment()) {
+                return NotFound();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var viewedFish = await _context.UserFish
+                .Where(fish => fish.UserId == user.Id && fish.HasViewedInfo)
+                .ToListAsync();
+            foreach (var fish in viewedFish) {
+                fish.HasViewedInfo = false;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { reset = viewedFish.Count });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetAdditionalQuizQuestions() {
             if (!IsDeveloperEnvironment()) {
                 return NotFound();

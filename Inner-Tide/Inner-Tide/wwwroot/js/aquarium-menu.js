@@ -309,6 +309,8 @@ async function purchaseStoreFish(_id, item) {
 
         const result = await res.json();
         coinBalance = result.remainingCoins;
+        window.showExperienceReward(result.experienceAwarded);
+        window.showExperienceLevelUp(result);
         showEditorInventoryPriority();
         await animateCoinSpend(result.coinsSpent, item || storePanel, result.remainingCoins);
         renderInventoryFish();
@@ -452,6 +454,22 @@ function setLockedFishSilhouetteColor(silhouette, spriteUrl) {
     }, { once: true });
     image.src = spriteUrl;
 }
+
+window.refreshAquariumLevelRewards = async function (level) {
+    if (!document.body.classList.contains("aquarium-page")) return;
+    if (!Number.isSafeInteger(level) || level < 1) {
+        throw new RangeError("Aquarium level must be a positive whole number.");
+    }
+
+    document.body.dataset.accountLevel = String(level);
+    const objectsTab = document.querySelector("#storeObjectsTab");
+    const objectStoreUnlockLevel = Number(document.body.dataset.objectStoreUnlockLevel);
+    const unlockAll = document.body.dataset.unlockAllLevelRewards === "true";
+    if (objectsTab) {
+        objectsTab.hidden = !unlockAll && level < objectStoreUnlockLevel;
+    }
+    await renderStoreFish();
+};
 
 async function renderStoreItems() {
     try {
@@ -910,7 +928,10 @@ if (document.body.classList.contains("aquarium-page")) {
             }
 
             const type = heldFeedingPelletType;
-            updatePelletInventory(await response.json());
+            const result = await response.json();
+            updatePelletInventory(result);
+            window.showExperienceReward(result.experienceAwarded);
+            window.showExperienceLevelUp(result);
             const pelletRadius = type === "small" ? 5 : 9;
             const sandSurfaceY = sand2.offsetTop - fishContainer.offsetTop + sand2.offsetHeight * .18;
             const restY = Math.min(bounds.height - pelletRadius, sandSurfaceY);
@@ -1575,6 +1596,7 @@ function appendAquariumFish(f, x, y, startMoving = false) {
     const swimBounds = getFishSwimBounds(fishContainer, item);
     fish = {
         element: item,
+        userFishId: Number(f.userFishId),
         sprite: f.sprite,
         species: f.species,
         description: f.description ?? "",
@@ -2105,9 +2127,38 @@ const aquariumFishInfoFacts = document.querySelector("#aquariumFishInfoFacts");
 let fishInfoSelection = null;
 let fishInfoTransition = 0;
 let fishInfoCameraFrame = 0;
+let pendingFishInfoExperience = 0;
+let pendingFishInfoResult = null;
+let pendingFishInfoExperienceTimer = 0;
+
+function showPendingFishInfoExperience() {
+    if (pendingFishInfoExperience <= 0 || !aquariumFishInfo?.classList.contains("is-visible")) return;
+
+    const bounds = aquariumFishInfo.getBoundingClientRect();
+    window.showExperienceReward(pendingFishInfoExperience, {
+        left: bounds.left + bounds.width / 2,
+        top: Math.max(12, bounds.top - 48),
+        abovePanel: true,
+        panel: aquariumFishInfo
+    });
+    window.showExperienceLevelUp(pendingFishInfoResult);
+    pendingFishInfoExperience = 0;
+    pendingFishInfoResult = null;
+}
+
+function scheduleFishInfoExperience() {
+    window.clearTimeout(pendingFishInfoExperienceTimer);
+    pendingFishInfoExperienceTimer = window.setTimeout(
+        showPendingFishInfoExperience,
+        isReducedMotionEnabled() ? 50 : 700
+    );
+}
 
 function closeAquariumFishInfo(restoreFocus = false) {
     if (!fishInfoSelection) return;
+    pendingFishInfoExperience = 0;
+    pendingFishInfoResult = null;
+    window.clearTimeout(pendingFishInfoExperienceTimer);
 
     const selection = fishInfoSelection;
     playElementsTransitionSound("out");
@@ -2188,6 +2239,29 @@ async function showAquariumFishInfo(fish) {
         return;
     }
     if (fishInfoSelection?.fish === fish) return;
+    if (Number.isInteger(fish.userFishId)) {
+        const token = document.querySelector("#pelletActionToken input[name='__RequestVerificationToken']")?.value;
+        if (token) {
+            void fetch("/Aquarium/ViewFishInfo", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    userFishId: String(fish.userFishId),
+                    __RequestVerificationToken: token
+                })
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(`Could not award fish information experience (${response.status}).`);
+                }
+                return response.json();
+            }).then(result => {
+                if (!Number.isSafeInteger(result.experienceAwarded) || result.experienceAwarded <= 0) return;
+                pendingFishInfoExperience = result.experienceAwarded;
+                pendingFishInfoResult = result;
+                scheduleFishInfoExperience();
+            }).catch(error => console.error("Could not award fish information experience.", error));
+        }
+    }
 
     if (
         !aquariumFishInfoTitle ||
@@ -2297,6 +2371,7 @@ async function showAquariumFishInfo(fish) {
             void aquariumFishInfo.offsetWidth;
             aquariumFishInfo.classList.add("is-visible");
             aquariumFishInfoClose.focus();
+            scheduleFishInfoExperience();
         }
 
         fishInfoCameraFrame = window.requestAnimationFrame(updateCamera);

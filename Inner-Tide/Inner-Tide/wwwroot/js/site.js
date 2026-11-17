@@ -45,6 +45,100 @@ window.fetch = async (...args) => {
 
 let levelRewardFishCatalogPromise;
 
+window.showExperienceReward = function (amount, position) {
+    if (!Number.isSafeInteger(amount) || amount <= 0) return;
+
+    document.querySelector("#experienceRewardPopup")?.remove();
+    playPearlRewardSound();
+
+    const anchor = position
+        ? null
+        : document.querySelector(".player-card")
+            || document.querySelector("#coinCounterAquarium")
+            || document.querySelector(".coin-counter");
+    const bounds = anchor?.getBoundingClientRect();
+    const left = Number.isFinite(position?.left)
+        ? position.left
+        : bounds ? bounds.left + bounds.width / 2 : window.innerWidth / 2;
+    const top = Number.isFinite(position?.top)
+        ? position.top
+        : bounds ? bounds.bottom + 8 : 28;
+
+    const popup = document.createElement("div");
+    popup.id = "experienceRewardPopup";
+    popup.className = "experience-reward-popup";
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+
+    const value = document.createElement("span");
+    value.textContent = `+${amount}`;
+    const pearl = document.createElement("span");
+    pearl.className = "experience-reward-pearl";
+    popup.append(value, pearl);
+    document.body.append(popup);
+
+    if (position?.abovePanel) {
+        const panelBounds = position.panel instanceof HTMLElement
+            ? position.panel.getBoundingClientRect()
+            : null;
+        if (panelBounds) {
+            const popupBounds = popup.getBoundingClientRect();
+            const gap = 10;
+            const horizontalMargin = 12;
+            const clampedLeft = Math.max(
+                horizontalMargin + popupBounds.width / 2,
+                Math.min(
+                    window.innerWidth - horizontalMargin - popupBounds.width / 2,
+                    panelBounds.left + panelBounds.width / 2
+                )
+            );
+            const idealTop = panelBounds.top - popupBounds.height - gap;
+            const clampedTop = Math.max(
+                horizontalMargin,
+                Math.min(window.innerHeight - popupBounds.height - horizontalMargin, idealTop)
+            );
+            popup.style.left = `${clampedLeft}px`;
+            popup.style.top = `${clampedTop}px`;
+        }
+    }
+
+    window.setTimeout(() => popup.remove(), 1500);
+};
+
+window.showExperienceLevelUp = function (result) {
+    if (!Number.isSafeInteger(result?.previousLevel) ||
+        !Number.isSafeInteger(result?.level) ||
+        result.level <= result.previousLevel ||
+        !Array.isArray(result.levelRewards)) {
+        return;
+    }
+
+    document.body.dataset.accountLevel = String(result.level);
+    if (typeof window.refreshAquariumLevelRewards === "function") {
+        window.refreshAquariumLevelRewards(result.level).catch(error => {
+            console.error("Could not refresh newly unlocked aquarium rewards.", error);
+        });
+    }
+    const sound = registerAudioPlayer(levelUpRewardSound.cloneNode(), "sfx");
+    let finished = false;
+    const finish = () => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(fallbackTimeout);
+        sound.removeEventListener("ended", finish);
+        sound.removeEventListener("error", finish);
+        audioPlayers.sfx.delete(sound);
+        window.showLevelRewardPopup(result.level, result.levelRewards);
+    };
+    const fallbackTimeout = window.setTimeout(finish, 4000);
+    sound.addEventListener("ended", finish, { once: true });
+    sound.addEventListener("error", finish, { once: true });
+    sound.play().catch(error => {
+        console.error("Unable to play the level-up sound.", error);
+        finish();
+    });
+};
+
 function getLevelRewardFishCatalog() {
     if (!levelRewardFishCatalogPromise) {
         levelRewardFishCatalogPromise = fetch("/Aquarium/GetAllFish")
@@ -72,7 +166,9 @@ function getLevelRewardFishCatalog() {
 }
 
 window.showLevelRewardPopup = function (level, rewards) {
-    if (!Number.isSafeInteger(level) || !Array.isArray(rewards) || rewards.length === 0) return;
+    if (!Number.isSafeInteger(level) || !Array.isArray(rewards)) return;
+    const hasRewards = rewards.some(reward =>
+        typeof reward?.title === "string" && typeof reward?.description === "string");
 
     document.querySelector(".level-up-dialog")?.close();
 
@@ -102,7 +198,7 @@ window.showLevelRewardPopup = function (level, rewards) {
 
     const rewardHeading = document.createElement("p");
     rewardHeading.className = "level-up-reward-heading";
-    rewardHeading.textContent = "New unlock";
+    rewardHeading.textContent = hasRewards ? "New unlock" : "Keep going!";
 
     const rewardList = document.createElement("ul");
     rewardList.className = "level-up-rewards";
@@ -144,7 +240,13 @@ window.showLevelRewardPopup = function (level, rewards) {
         }
         rewardList.append(entry);
     });
-    if (rewardList.childElementCount === 0) return;
+    if (rewardList.childElementCount === 0) {
+        const entry = document.createElement("li");
+        const description = document.createElement("span");
+        description.textContent = "Keep earning pearls to unlock more aquarium rewards.";
+        entry.append(description);
+        rewardList.append(entry);
+    }
 
     const closeButton = document.createElement("button");
     closeButton.className = "level-up-close";
@@ -168,10 +270,12 @@ window.showLevelRewardPopup = function (level, rewards) {
     dialog.append(stars, heading, levelLabel, rewardHeading, rewardList, closeButton);
     document.body.append(dialog);
     dialog.showModal();
-    rewardUnlockSound.currentTime = 0;
-    rewardUnlockSound.play().catch(error => {
-        console.error("Unable to play the reward unlock sound.", error);
-    });
+    if (hasRewards) {
+        rewardUnlockSound.currentTime = 0;
+        rewardUnlockSound.play().catch(error => {
+            console.error("Unable to play the reward unlock sound.", error);
+        });
+    }
     closeButton.focus();
 };
 
@@ -452,6 +556,8 @@ function setAudioVolume(type, volume) {
 const soundPathPrefix = new URL("/sfx/", document.baseURI).pathname;
 const musicPathPrefix = new URL("/music/", document.baseURI).pathname;
 const coinGainSound = registerAudioPlayer(new Audio(`${soundPathPrefix}coin_gain.mp3`), "sfx");
+const pearlRewardSound = registerAudioPlayer(new Audio(`${soundPathPrefix}Pearl.mp3`), "sfx");
+const levelUpRewardSound = registerAudioPlayer(new Audio(`${soundPathPrefix}levelup.mp3`), "sfx");
 const rewardUnlockSound = registerAudioPlayer(new Audio(`${soundPathPrefix}rewardUnlock.mp3`), "sfx");
 const levelRewardCloseSound = registerAudioPlayer(new Audio(`${soundPathPrefix}Close.mp3`), "sfx");
 const coinChangeSounds = new Set();
@@ -459,6 +565,15 @@ const musicVolumeTestSound = new Audio(`${musicPathPrefix}test_music.mp3`);
 const sfxVolumeTestSound = new Audio(`${soundPathPrefix}Open.mp3`);
 registerAudioPlayer(musicVolumeTestSound, "music");
 registerAudioPlayer(sfxVolumeTestSound, "sfx");
+
+function playPearlRewardSound() {
+    const sound = registerAudioPlayer(pearlRewardSound.cloneNode(), "sfx");
+    sound.addEventListener("ended", () => audioPlayers.sfx.delete(sound), { once: true });
+    sound.play().catch(error => {
+        audioPlayers.sfx.delete(sound);
+        console.error("Unable to play the pearl reward sound.", error);
+    });
+}
 
 function playCoinChangeSound() {
     const sound = registerAudioPlayer(coinGainSound.cloneNode(), "sfx");

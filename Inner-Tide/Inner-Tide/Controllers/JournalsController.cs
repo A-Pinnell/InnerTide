@@ -1,4 +1,4 @@
-﻿using Inner_Tide.Data;
+using Inner_Tide.Data;
 using Inner_Tide.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

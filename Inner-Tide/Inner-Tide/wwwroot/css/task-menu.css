@@ -365,7 +365,7 @@ html.graphical-advanced body.question-page .question-background {
 
 .experience-reward-popup {
     position: fixed;
-    z-index: 1100;
+    z-index: 1120;
     display: flex;
     align-items: center;
     gap: 7px;

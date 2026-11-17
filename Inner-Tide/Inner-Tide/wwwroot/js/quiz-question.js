@@ -235,6 +235,10 @@ if (questionScreen) {
                 !Number.isSafeInteger(saveResult.coins)) {
                 throw new Error("The quiz answer response is invalid.");
             }
+            if (saveResult.completed && Number.isSafeInteger(saveResult.experienceAwarded)) {
+                window.showExperienceReward(saveResult.experienceAwarded);
+                window.showExperienceLevelUp(saveResult);
+            }
 
             advanceQuestion(saveResult);
         } catch (error) {

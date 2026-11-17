@@ -12,8 +12,12 @@
             if (sessionStorage.getItem("innerTide.taskToQuizTransition") === "true") {
                 document.documentElement.classList.add("task-quiz-transition-pending");
             }
-            if (new URLSearchParams(window.location.search).get("from") === "aquarium") {
+            const transitionSource = new URLSearchParams(window.location.search).get("from");
+            if (transitionSource === "aquarium") {
                 document.documentElement.classList.add("aquarium-transition-return");
+            }
+            if (transitionSource === "aquarium-journal") {
+                document.documentElement.classList.add("aquarium-journal-transition-pending");
             }
 
             if (/(?:^|\/)journals(?:\/(?:index|create))?\/?$/i.test(window.location.pathname)) {

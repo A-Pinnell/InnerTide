@@ -159,38 +159,20 @@ namespace Inner_Tide.Controllers
             userTask.Completed = true;
             user.CoinCount += reward;
             var previousLevel = user.AccountLevel;
-            AwardTaskExperience(user);
+            var experienceAwarded = ExperienceAwardCatalog.ForTask(
+                userTask.Task.TimeFrame,
+                userTask.Priority);
+            ExperienceAwardCatalog.AwardExperience(user, experienceAwarded);
             await _context.SaveChangesAsync();
             return Json(new {
                 reward,
                 coins = user.CoinCount,
-                experienceAwarded = 5,
+                experienceAwarded,
                 level = user.AccountLevel,
                 currentXP = user.CurrentXP,
                 experienceForNextLevel = user.XPForNextLevel,
                 levelRewards = LevelRewardCatalog.GetUnlockedRewards(previousLevel, user.AccountLevel)
             });
-        }
-
-        private static void AwardTaskExperience(User user) {
-            if (user.AccountLevel >= 99) {
-                return;
-            }
-
-            var experience = (long)user.CurrentXP + 5;
-            while (user.AccountLevel < 99) {
-                var requiredExperience = user.AccountLevel * 100;
-                user.XPForNextLevel = requiredExperience;
-                if (experience < requiredExperience) {
-                    break;
-                }
-
-                experience -= requiredExperience;
-                user.AccountLevel++;
-                user.XPForNextLevel = checked(user.AccountLevel * 100);
-            }
-
-            user.CurrentXP = (int)Math.Min(experience, int.MaxValue);
         }
 
         [HttpPost]

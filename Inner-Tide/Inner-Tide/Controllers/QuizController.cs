@@ -1,5 +1,6 @@
 ﻿using Inner_Tide.Data;
 using Inner_Tide.Models;
+using Inner_Tide.Services;
 using Inner_Tide.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -397,11 +398,19 @@ namespace Inner_Tide.Controllers
 
                 var reward = quiz.CoinRewards * (isPriorityQuiz ? 2 : 1);
                 user.CoinCount += reward;
+                var previousLevel = user.AccountLevel;
+                var experienceAwarded = ExperienceAwardCatalog.AwardExperience(user, 5);
                 await _context.SaveChangesAsync();
                 return Json(new {
                     completed = true,
                     reward,
-                    coins = user.CoinCount
+                    coins = user.CoinCount,
+                    experienceAwarded,
+                    previousLevel,
+                    level = user.AccountLevel,
+                    currentXP = user.CurrentXP,
+                    experienceForNextLevel = user.XPForNextLevel,
+                    levelRewards = LevelRewardCatalog.GetUnlockedRewards(previousLevel, user.AccountLevel)
                 });
             }
 
