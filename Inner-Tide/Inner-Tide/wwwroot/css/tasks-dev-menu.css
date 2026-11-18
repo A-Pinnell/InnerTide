@@ -1,0 +1,183 @@
+﻿body {
+    min-width: 320px;
+    min-height: 100vh;
+    background-color: none;
+    background: #071b36 url("../backgrounds/Login.png") center / cover no-repeat fixed;
+}
+
+body, form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+h1 {
+    font-size: 4rem;
+    text-align: center;
+}
+
+table {
+    width: 100%;
+    box-shadow: inset -8px -10px 18px rgba(73, 176, 199, .2), inset 5px 5px 12px rgba(255, 255, 255, .72), 0 0 12px 3px rgba(255, 255, 255, .7);
+}
+
+table, thead, tbody, th, td {
+    border: 3px white solid;
+    border-collapse: collapse;
+}
+
+th, td {
+    height: auto;
+    text-align: center;
+}
+
+.menuBubble {
+    position: relative;
+    background: radial-gradient(ellipse at 32% 26%, rgba(255, 255, 255, .9) 0%, rgba(218, 250, 255, .72) 18%, rgba(117, 213, 230, .38) 55%, rgba(255, 255, 255, .68) 100%);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid rgba(237, 255, 255, .9);
+    box-shadow: inset -8px -10px 18px rgba(73, 176, 199, .2), inset 5px 5px 12px rgba(255, 255, 255, .72), 0 0 12px 3px rgba(255, 255, 255, .7);
+}
+
+#filterAndCreatedDiv {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+}
+
+#createBtn {
+    text-decoration: none;
+    border-radius: 50%;
+}
+
+#filterForm {
+    margin: 25px;
+}
+
+#filterForm div {
+    margin: 10px;
+}
+
+#filterForm select:hover, #submitBtn {
+    cursor: pointer;
+}
+
+#filterForm select, #createBtn {
+    padding: 10px;
+    color: white;
+    font: 24px "Neuropolx", sans-serif;
+    text-align: center;
+    border-radius: 15px;
+}
+
+#submitBtn {
+    padding: 10px;
+    color: white;
+    border-radius: 50%;
+}
+
+#updateBtn, #deleteBtn {
+    padding: 10px;
+    border-radius: 15px;
+}
+
+#createBtnDiv, #updateBtn, #deleteBtn, #submitBtn {
+    transition: transform .2s ease, filter .2s ease;
+}
+
+a#updateBtn, a#deleteBtn {
+    color: white;
+    text-decoration: none;
+}
+
+#updateBtn:hover, #deleteBtn:hover, #createBtnDiv:hover, #submitBtn:hover, #backToIndexButton:hover {
+    transform: scale(1.06);
+    filter: brightness(1.08);
+}
+
+#updateBtn:focus-visible, #deleteBtn:focus-visible,
+#createBtnDiv:focus-visible, #submitBtn:focus-visible, #backToIndexButton:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 5px;
+}
+
+a#backArrowTasks {
+    position: relative;
+    z-index: 1;
+    width: 45px;
+    height: 45px;
+    border-top: 12px solid #FFFFFF;
+    border-left: 12px solid #FFFFFF;
+}
+
+a#backArrowTasks {
+    transform: rotate(-43deg) translateY(5%) translateX(10%);
+}
+
+.aquariumBtnText {
+    font-size: 1.6rem;
+    color: #edffff;
+    font-family: "Ipanema", "Neuropolx", sans-serif;
+    font-weight: 700;
+    text-shadow: 1px 2px 1px rgba(75, 101, 167, .35);
+    width: auto;
+    text-align: center;
+    margin: 0;
+}
+
+#backToIndexButtonContainer {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    top: 2rem;
+    left: 5%;
+    width: 150px;
+    height: 150px;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+#backToIndexButton {
+    width: 80%;
+    height: 80%;
+    transition: transform .2s ease, filter .2s ease;
+}
+
+#taskForm {
+    width: 100%;
+    padding: 30px;
+    border: 3px white solid;
+    border-radius: 15px;
+    box-shadow: inset -8px -10px 18px rgba(73, 176, 199, .2), inset 5px 5px 12px rgba(255, 255, 255, .72), 0 0 12px 3px rgba(255, 255, 255, .7);
+}
+
+#taskForm, #taskForm div {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+#taskForm div {
+    margin: 10px;
+}
+
+.auth-field label {
+    font-size: 3rem;
+}
+
+.auth-field input[placeholder] {
+    color: white;
+}
+
+.auth-field input, .auth-field select {
+    width: auto;
+    height: 40px;
+    border-radius: 15px;
+    color: white;
+    font-size: 2rem;
+}

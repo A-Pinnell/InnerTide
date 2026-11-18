@@ -1,0 +1,87 @@
+﻿@model Inner_Tide.Models.Task;
+
+@{
+    ViewData["Title"] = "Tasks Create Page";
+    ViewData["PageStylesheets"] = new[] { "tasks-dev-menu.css" };
+    ViewData["PageScripts"] = new[] { "tasks-dev-menu.js" };
+
+    ViewBag.TimeFrames = new List<SelectListItem> {
+        new SelectListItem { Value = "Daily", Text = "Daily" },
+        new SelectListItem { Value = "Weekly", Text = "Weekly" },
+        new SelectListItem { Value = "Monthly", Text = "Monthly" },
+    };
+
+    ViewBag.CategoryTags = new List<SelectListItem> {
+        new SelectListItem { Value = "Sleep", Text = "Sleep" },
+        new SelectListItem { Value = "Hydration", Text = "Hydration" },
+        new SelectListItem { Value = "Fitness", Text = "Fitness" },
+        new SelectListItem { Value = "Learning", Text = "Learning" },
+        new SelectListItem { Value = "Organization", Text = "Organization" },
+        new SelectListItem { Value = "Mood", Text = "Mood" },
+        new SelectListItem { Value = "Nutrition", Text = "Nutrition" },
+        new SelectListItem { Value = "Social", Text = "Social" },
+        new SelectListItem { Value = "Productivity", Text = "Productivity" },
+        new SelectListItem { Value = "Finance", Text = "Finance" },
+        new SelectListItem { Value = "Exploration", Text = "Exploration" },
+        new SelectListItem { Value = "Habit", Text = "Habit" },
+        new SelectListItem { Value = "Hobby", Text = "Hobby" },
+        new SelectListItem { Value = "Wellness", Text = "Wellness" },
+        new SelectListItem { Value = "Creativity", Text = "Creativity" },
+    };
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#eb9fe4">
+    <title> Task Creation Menu — Inner Tide</title>
+</head>
+<body class="task-menu-page">
+    <main>
+        <div id="backToIndexButtonContainer">
+            <div id="backToIndexButton" class="menuBubble">
+                <a asp-area="" asp-controller="Tasks" asp-action="Index" id="backArrowTasks"></a>
+            </div>
+            <p class="aquariumBtnText"> Back </p>
+        </div>
+
+        <h1> Update a Task </h1>
+
+        <form asp-action="Update" id="taskForm">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="TaskId"/>
+            <div class="auth-field">
+                <label asp-for="Title"></label>
+                <input class="menuBubble" asp-for="Title"/>
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="auth-field">
+                <label class="aquariumBtnText" asp-for="TimeFrame"> Time Frame </label>
+                <select class="menuBubble" asp-for="TimeFrame" asp-items="ViewBag.TimeFrames" value="@Model.TimeFrame"></select>
+                <span asp-validation-for="TimeFrame" class="auth-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="CoinReward" ></label>
+                <input class="menuBubble" asp-for="CoinReward" type="number" value="@Model.CoinReward"/>
+                <span asp-validation-for="CoinReward" class="text-danger"></span>
+            </div>
+
+            <div class="auth-field">
+                <label class="aquariumBtnText" asp-for="CategoryTag"></label>
+                <select class="menuBubble" asp-for="CategoryTag" asp-items="ViewBag.CategoryTags" value="@Model.CategoryTag"></select>
+                <span asp-for="CategoryTag" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <button id="submitBtn" class="menuBubble" type="submit"> Update </button>
+            </div>
+        </form>
+    </main>
+</body>
+</html>
+
+

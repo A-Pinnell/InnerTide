@@ -1,5 +1,29 @@
-﻿@{
-	ViewData["Title"] = "Task CRUD Page";
+﻿@using Microsoft.AspNetCore.Mvc.Rendering;
+@model IEnumerable<Inner_Tide.Models.Task>;
+
+@{
+	ViewData["Title"] = "Tasks View Page";
+    ViewData["PageStylesheets"] = new[] { "tasks-dev-menu.css" };
+    ViewData["PageScripts"] = new[] { "tasks-dev-menu.js" };
+
+    ViewBag.CategoryFilters = new List<SelectListItem> {
+        new SelectListItem { Value = "Sleep", Text = "Sleep" },
+        new SelectListItem { Value = "Hydration", Text = "Hydration" },
+        new SelectListItem { Value = "Fitness", Text = "Fitness" },
+        new SelectListItem { Value = "Learning", Text = "Learning" },
+        new SelectListItem { Value = "Organization", Text = "Organization" },
+        new SelectListItem { Value = "Mood", Text = "Mood" },
+        new SelectListItem { Value = "Nutrition", Text = "Nutrition" },
+        new SelectListItem { Value = "Social", Text = "Social" },
+        new SelectListItem { Value = "Productivity", Text = "Productivity" },
+        new SelectListItem { Value = "Finance", Text = "Finance" },
+        new SelectListItem { Value = "Exploration", Text = "Exploration" },
+        new SelectListItem { Value = "Habit", Text = "Habit" },
+        new SelectListItem { Value = "Hobby", Text = "Hobby" },
+        new SelectListItem { Value = "Wellness", Text = "Wellness" },
+        new SelectListItem { Value = "Creativity", Text = "Creativity" },
+        new SelectListItem { Value = "NONE", Text = "All" }
+    };
 }
 
 <!DOCTYPE html>
@@ -8,16 +32,73 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#eb9fe4">
-        <title> Testing Menu — Inner Tide</title>
-        <link rel="stylesheet" href="~/css/site.css">
-        <link rel="stylesheet" href="~/css/task-menu.css">
-        <link rel="stylesheet" href="~/css/site-common.css">
-        @* <script src="./js/site.js" defer></script> *@
+        <title> Task Creation Menu — Inner Tide</title>
     </head>
     <body class="task-menu-page">
         <main>
-
             <h1> Task CRUD </h1>
+            <div id="filterAndCreatedDiv">
+                <form asp-controller="Tasks" asp-action="Index"  method="POST" id="filterForm">
+                    <div> 
+                        <label name="categoryFilter" for="categoryFilter" class="control-label"></label>
+                        <select name="categoryFilter" for="categoryFilter" class="form-control menuBubble" asp-items="ViewBag.CategoryFilters"></select>
+                        <span name="categoryFilter" for="categoryFilter" class="text-danger"></span>
+                    </div>
+
+                    <div>
+                        <button id="submitBtn" class="menuBubble"  type="submit"> Filter </button>
+                    </div>
+                </form>
+
+                <div id="createBtnDiv" class="menuBubble"> 
+                    <a asp-area="" asp-controller="Tasks" asp-action="Create" id="createBtn"> Create </a>
+                </div>
+
+            </div>
+
+            <table class="table table-striped table-hover sortable">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Title)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.TimeFrame)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.CoinReward)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.CategoryTag)
+                        </th>
+                        <th>
+                            <h4> Actions </h4>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model) {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Title)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.TimeFrame)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.CoinReward)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.CategoryTag)
+                        </td>
+                        <td>
+                            <a asp-action="Update" asp-route-taskId="@item.TaskId" id="updateBtn" class="menuBubble"> Update </a>
+                            <a asp-action="Delete" asp-route-taskId="@item.TaskId" onclick="return confirmDelete();" id="deleteBtn" class="menuBubble"> Delete </a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
 
         </main>
     </body>

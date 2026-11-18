@@ -1,6 +1,8 @@
 ﻿using Inner_Tide.Controllers;
+using Inner_Tide.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,11 +13,16 @@ using System.Threading.Tasks;
 namespace Inner_TideMVCTest {
     [TestClass]
     public class TaskControllerTests {
-        private TaskController controller;
+        private ApplicationDbContext _context;
+        private TasksController controller;
 
         [TestInitialize]
         public void TestInitialize() {
-            controller = new TaskController();
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+
+            new ApplicationDbContext(options);
+
+            controller = new TasksController(_context);
 
             controller.ControllerContext = new ControllerContext {
                 HttpContext = new DefaultHttpContext {
@@ -28,9 +35,9 @@ namespace Inner_TideMVCTest {
 
         #region "Index"
         [TestMethod]
-        public void TaskLoadsIndexView() {
+        public void TaskLoadsIndexView(string categoryString) {
             // Act
-            var result = (ViewResult)controller.Index();
+            var result = (ViewResult)controller.Index("Sleep");
 
             // Assert
             Assert.AreEqual("Index", result.ViewName);
@@ -44,7 +51,7 @@ namespace Inner_TideMVCTest {
             };
 
             //Act
-            var result = controller.Index();
+            var result = controller.Index("Sleep");
 
             // Assert
             Assert.AreEqual("/Users/Index", ((RedirectResult)result).Url);
