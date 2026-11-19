@@ -83,7 +83,7 @@ namespace Inner_Tide.Controllers {
             _context.Tasks.Update(task);
             _context.SaveChanges();
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", task.CategoryTag);
         }
 
         public IActionResult Delete(int taskId) {
