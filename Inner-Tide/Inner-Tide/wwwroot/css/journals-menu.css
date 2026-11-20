@@ -490,6 +490,12 @@ body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #j
     transform: translateY(8px);
 }
 
+body.journal-menu-page.journal-aquarium-exiting #JournalHistoryContainer,
+body.journal-menu-page.journal-aquarium-exiting #journalTextBackground {
+    animation: journal-aquarium-panels-fade-out .85s ease both;
+    pointer-events: none;
+}
+
 body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #journalH1,
 body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #backToAquariumButtonContainer,
 body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #createJournalButtonContainer {
@@ -537,7 +543,7 @@ body.journal-menu-page.journal-to-create-exiting #journalTextBackground {
     animation: journal-panel-center var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
     pointer-events: none;
     --journal-panel-center-x: -50%;
-    --journal-panel-center-y: -10vh;
+    --journal-panel-center-y: calc(0rem - max(5rem, 9vh));
 }
 
 body.journal-menu-page.journal-to-create-exiting #journalTextBackground > * {
@@ -566,7 +572,7 @@ body.journal-create-page.journal-create-revealed.journal-create-exiting #backToJ
 
 body.journal-create-page.journal-create-revealed.journal-create-exiting #journalTextBackground {
     --journal-panel-menu-x: 50%;
-    --journal-panel-menu-y: 10vh;
+    --journal-panel-menu-y: max(5rem, 9vh);
     animation: journal-panel-to-menu var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
     pointer-events: none;
 }
@@ -680,6 +686,12 @@ body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #san
     }
 }
 
+@keyframes journal-aquarium-panels-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
 @keyframes journal-panel-content-fade {
     to {
         opacity: 0;
@@ -735,6 +747,7 @@ body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #san
 #journalEntryContent {
     flex: 0 0 auto;
     margin-block: auto;
+    font-size: clamp(1.25rem, 1.3vw, 1.6rem);
 }
 
 #journalEntryText::-webkit-scrollbar {
@@ -856,14 +869,13 @@ body.journal-create-page #journalCreationMain {
 
 body.journal-create-page #journalTextContainer {
     position: fixed;
-    top: 0;
+    top: max(5rem, 9vh);
     right: auto;
-    bottom: 0;
+    bottom: max(5rem, 9vh);
     left: 25vw;
     z-index: 4;
     box-sizing: border-box;
     width: 50vw;
-    height: 100vh;
 }
 
 body.journal-create-page #journalTextBackground {
@@ -878,7 +890,6 @@ body.journal-create-page #journalTextBackground {
     overflow-y: auto;
     padding: 2rem clamp(1.25rem, 3vw, 2rem);
     background: var(--journal-sand-middle);
-    box-shadow: 0 1.5rem 3rem rgba(19, 47, 59, .25), inset 0 1px 0 rgba(255, 255, 255, .5);
     transform: none;
     transition: none;
 }
@@ -1030,9 +1041,27 @@ body.journal-create-page #journalCreationForm textarea:focus-visible {
     box-shadow: 0 0 0 4px rgba(49, 141, 145, .2);
 }
 
+body.journal-create-page #journalCreationForm textarea {
+    border: 3px solid #fff;
+    border-radius: 15%;
+    background: transparent;
+    color: #fff;
+    padding: 25px 3rem 25px 25px;
+}
+
+body.journal-create-page #journalCreationForm textarea:focus-visible {
+    border-color: #fff;
+    background: transparent;
+    box-shadow: none;
+}
+
 body.journal-create-page #journalCreationForm input::placeholder,
 body.journal-create-page #journalCreationForm textarea::placeholder {
     color: #70858a;
+}
+
+body.journal-create-page #journalCreationForm textarea::placeholder {
+    color: rgba(255, 255, 255, .75);
 }
 
 body.journal-create-page #journalCreationForm .auth-error {
@@ -1081,12 +1110,12 @@ body.journal-create-page #journalCreationForm .auth-submit:focus-visible {
 
     body.journal-menu-page.journal-to-create-exiting #journalTextBackground {
         --journal-panel-center-x: 0;
-        --journal-panel-center-y: 0;
+        --journal-panel-center-y: calc(0rem - max(5rem, 9vh));
     }
 
     body.journal-create-page.journal-create-revealed.journal-create-exiting #journalTextBackground {
         --journal-panel-menu-x: 0;
-        --journal-panel-menu-y: 0;
+        --journal-panel-menu-y: max(5rem, 9vh);
     }
 
     body.journal-menu-page #journalTextBackground,
@@ -1095,9 +1124,11 @@ body.journal-create-page #journalCreationForm .auth-submit:focus-visible {
     }
 
     body.journal-create-page #journalTextContainer {
+        top: max(5rem, 9vh);
+        right: auto;
+        bottom: max(5rem, 9vh);
         left: 0;
         width: 100%;
-        height: 100%;
     }
 
     body.journal-create-page #journalTextBackground {

@@ -175,7 +175,8 @@ html.journal-aquarium-transition-pending:has(body.aquarium-page) body > main {
 
 body.journal-menu-page.journal-aquarium-exiting #journalMain {
     animation: none;
-    opacity: 0;
+    opacity: 1;
+    transition: none;
 }
 
 html.page-assets-loading.aquarium-transition-return::before,
