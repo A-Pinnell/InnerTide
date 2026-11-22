@@ -22,8 +22,14 @@ P3 - Version 2.0
 
 P4 - Version 3.0
 - The Journal menu now exists, allowing you to write and save journal entries to the database
+- Journal entries can now be viewed, created, and deleted, with improved menu animations and transitions
 - Player levels now display from account data, with task completion granting experience toward level progression
-- Various visual improvements and bug fixes.
+- Completing daily, weekly, and monthly tasks now grants experience, with priority tasks granting additional experience
+- Level milestones now unlock aquarium objects and new fish in the Tank Store
+- New unlock rewards appear in level-up popups and include the unlocked item or fish
+- Tasks now have unique category icons
+- Aquarium and quiz menus now include animated reward feedback for earned pearls
+- Pearl and level reward sound effects have been added
+- Various visual improvements and bug fixes
 - Pearls can now be earned from tasks, additional quizzes, feeding fish, viewing fish information for the first time, and purchasing fish
 - Level-up and reward popups now appear when earning pearls in the quiz and aquarium menus
-- Pearl and level reward sound effects have been added
