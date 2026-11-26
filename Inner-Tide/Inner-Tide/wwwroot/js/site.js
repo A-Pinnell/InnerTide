@@ -4,9 +4,17 @@ let taskData = {
     weekly: []
 };
 
-window.triggerHapticFeedback = function (duration = 12) {
+window.triggerHapticFeedback = function (type = "menu") {
+    const nativeHaptics = window.InnerTideHaptics;
+    if (nativeHaptics && typeof nativeHaptics.perform === "function") {
+        nativeHaptics.perform(type);
+        return;
+    }
+
     if (typeof navigator.vibrate === "function") {
-        navigator.vibrate(duration);
+        const durations = { coin: 18, glass: 10, menu: 14 };
+        const duration = durations[type];
+        if (duration) navigator.vibrate(duration);
     }
 };
 
@@ -1480,7 +1488,7 @@ document.addEventListener("click", event => {
 
     const destination = new URL(link.href, window.location.href);
     if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
-    window.triggerHapticFeedback(14);
+    window.triggerHapticFeedback("menu");
     if (link.closest(".aquarium-tab") || link.closest("#journalButton")) {
         playSideNavigationSound("right");
     } else if (link.closest(".task-tab")) {

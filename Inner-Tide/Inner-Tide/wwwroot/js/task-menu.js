@@ -329,7 +329,7 @@ function renderTasks(period, fadeIn = false) {
 
                 const result = await response.json();
                 if (Number.isSafeInteger(result.reward) && result.reward > 0) {
-                    window.triggerHapticFeedback(18);
+                    window.triggerHapticFeedback("coin");
                 }
                 task.completed = true;
                 row.classList.add("completed");

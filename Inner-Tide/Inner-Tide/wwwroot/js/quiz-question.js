@@ -134,7 +134,7 @@ if (questionScreen) {
         if (previousButton) previousButton.disabled = true;
         rewardOverlay.hidden = false;
         if (reward > 0) {
-            window.triggerHapticFeedback(18);
+            window.triggerHapticFeedback("coin");
         }
         playCoinChangeSound();
 
