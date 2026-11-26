@@ -238,6 +238,9 @@ namespace Inner_Tide.Migrations
                     b.Property<int>("AccountLevel")
                         .HasColumnType("int");
 
+                    b.Property<int>("AquariumCount")
+                        .HasColumnType("int");
+
                     b.Property<int>("CoinCount")
                         .HasColumnType("int");
 

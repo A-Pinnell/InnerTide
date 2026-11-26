@@ -45,5 +45,8 @@ namespace Inner_Tide.Models {
 
         [Required]
         public bool FirstTimeLogin { get; set; }
+
+        [Required]
+        public int AquariumCount { get; set; }
     }
 }
