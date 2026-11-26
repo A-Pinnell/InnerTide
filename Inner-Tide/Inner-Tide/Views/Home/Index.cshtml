@@ -83,16 +83,15 @@
         </header>
 
         <nav class="quick-tools">
+            <button class="round-button" id="settingsButton" type="button">
+                <img src="img/settings_icon.png" alt="">
+            </button>
             <button class="round-button" type="button">
-                <button class="round-button" id="settingsButton" type="button">
-                    <img src="img/settings_icon.png" alt="">
-                </button>
-                <button class="round-button" type="button">
-                    <a asp-controller="Users" asp-action="Logout"> <img src="img/logout_icon.png" alt=""> </a>
-                </button>
-                <button class="round-button" id="creditsButton" type="button">
-                    <img src="img/credits_icon.png" alt="">
-                </button>
+                <a asp-controller="Users" asp-action="Logout"> <img src="img/logout_icon.png" alt=""> </a>
+            </button>
+            <button class="round-button" id="creditsButton" type="button">
+                <img src="img/credits_icon.png" alt="">
+            </button>
         </nav>
 
         <aside class="side-tab aquarium-tab">
@@ -218,9 +217,9 @@
             </button>
             <img class="credits-logo" src="img/Team_1.png" alt="Serene Stallions">
             <ul class="credits-list">
-                <li>Alyssa Pinnell</li>
-                <li>Emma Sauve</li>
-                <li>Matthew Johnston</li>
+                <li><a href="https://github.com/A-Pinnell" target="_blank">A-Pinnell</a></li>
+                <li><a href="https://github.com/emmaSauve" target="_blank">emmaSauve</a></li>
+                <li><a href="https://github.com/johnstonMatthew" target="_blank">johnstonMatthew</a></li>
             </ul>
         </section>
 
