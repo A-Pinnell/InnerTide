@@ -1018,6 +1018,7 @@ function incrementDisplayedCoinCount() {
     }
 
     coinCount.textContent = String(displayedBalance + 1);
+    window.triggerHapticFeedback("coin");
     playCoinChangeSound();
     pulseCoinCounter();
 }
