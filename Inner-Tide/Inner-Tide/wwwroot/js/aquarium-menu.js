@@ -2399,6 +2399,7 @@ if (aquariumFishContainer) {
         if (event.detail === 0 || target !== aquariumFishContainer) return;
 
         showGlassTapRipple(event, aquariumFishContainer);
+        window.triggerHapticFeedback(10);
         playAquariumGlassTapSound();
         if (fishList.length === 0) return;
 

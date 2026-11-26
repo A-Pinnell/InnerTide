@@ -328,6 +328,9 @@ function renderTasks(period, fadeIn = false) {
                 }
 
                 const result = await response.json();
+                if (Number.isSafeInteger(result.reward) && result.reward > 0) {
+                    window.triggerHapticFeedback(18);
+                }
                 task.completed = true;
                 row.classList.add("completed");
                 const chestAnimation = animateTaskChestOpening(chest);

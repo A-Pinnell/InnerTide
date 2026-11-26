@@ -4,6 +4,12 @@ let taskData = {
     weekly: []
 };
 
+window.triggerHapticFeedback = function (duration = 12) {
+    if (typeof navigator.vibrate === "function") {
+        navigator.vibrate(duration);
+    }
+};
+
 const mobileLetterboxDevice = document.documentElement.classList.contains("mobile-device");
 function syncMobileLetterboxing(forceViewportScale = false) {
     const enabled = localStorage.getItem("innerTide.mobileLetterboxed") === "true";
@@ -1474,6 +1480,7 @@ document.addEventListener("click", event => {
 
     const destination = new URL(link.href, window.location.href);
     if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+    window.triggerHapticFeedback(14);
     if (link.closest(".aquarium-tab") || link.closest("#journalButton")) {
         playSideNavigationSound("right");
     } else if (link.closest(".task-tab")) {

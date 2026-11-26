@@ -133,6 +133,9 @@ if (questionScreen) {
         nextButton.disabled = true;
         if (previousButton) previousButton.disabled = true;
         rewardOverlay.hidden = false;
+        if (reward > 0) {
+            window.triggerHapticFeedback(18);
+        }
         playCoinChangeSound();
 
         const duration = isReducedMotionEnabled() ? 0 : 1400;
