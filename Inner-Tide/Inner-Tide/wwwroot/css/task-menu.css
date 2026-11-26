@@ -315,15 +315,13 @@ body.quiz-menu-page .player-card.profile-collapsed {
     pointer-events: none;
 }
 
-@media (max-width: 800px) {
-    .player-level {
-        font-size: 0;
-    }
+html.mobile-device .player-level {
+    font-size: 0;
+}
 
-    .player-level::after {
-        content: "Lvl\00a0" attr(data-level);
-        font-size: clamp(7px, .65vw, 10px);
-    }
+html.mobile-device .player-level::after {
+    content: "Lvl\00a0" attr(data-level);
+    font-size: clamp(7px, .65vw, 10px);
 }
 
 html.graphical-advanced body.question-page .question-background {
@@ -1032,16 +1030,6 @@ html.graphical-advanced body.question-page .question-background {
     border: 2px solid rgba(255,255,255,.68);
     border-radius: 22px;
     background: rgba(102,74,139,.2);
-}
-
-.mobile-letterboxed-setting {
-    display: none;
-}
-
-@media (max-width: 768px), (max-height: 600px) and (orientation: landscape) {
-    .mobile-letterboxed-setting {
-        display: flex;
-    }
 }
 
 .graphical-presentation legend {

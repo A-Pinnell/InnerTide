@@ -6,11 +6,22 @@
         <title>@ViewData["Title"] - Inner Tide</title>
         <script>
             document.documentElement.classList.add("page-assets-loading");
-            if (window.matchMedia(
-                    "(max-width: 768px), (max-height: 600px) and (orientation: landscape)"
-                ).matches
-                && localStorage.getItem("innerTide.mobileLetterboxed") === "true") {
+            const letterboxDeviceQuery = window.matchMedia(
+                "(max-width: 768px), (max-height: 600px) and (orientation: landscape)"
+            );
+            if (letterboxDeviceQuery.matches) {
+                document.documentElement.classList.add("mobile-device");
+            }
+            if (localStorage.getItem("innerTide.mobileLetterboxed") === "true") {
                 document.documentElement.classList.add("mobile-letterboxed");
+                if (letterboxDeviceQuery.matches) {
+                    const viewport = document.querySelector('meta[name="viewport"]');
+                    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                    viewport.content = `width=1920,height=1080,initial-scale=${scale}`;
+                } else {
+                    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                    document.documentElement.style.setProperty("--letterbox-scale", scale);
+                }
             }
             if (sessionStorage.getItem("innerTide.quizExitTransition") === "true") {
                 document.documentElement.classList.add("quiz-return-pending");

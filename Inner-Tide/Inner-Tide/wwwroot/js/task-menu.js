@@ -574,10 +574,7 @@ if (gameShell) {
 
             const enabled = option.value === "on";
             localStorage.setItem(mobileLetterboxedKey, String(enabled));
-            document.documentElement.classList.toggle(
-                "mobile-letterboxed",
-                enabled && mobileLetterboxMedia.matches
-            );
+            syncMobileLetterboxing();
             playSideNavigationSound("right");
         });
     });

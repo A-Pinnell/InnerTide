@@ -4,15 +4,48 @@ let taskData = {
     weekly: []
 };
 
-const mobileLetterboxMedia = window.matchMedia(
-    "(max-width: 768px), (max-height: 600px) and (orientation: landscape)"
-);
-function syncMobileLetterboxing() {
+const mobileLetterboxDevice = document.documentElement.classList.contains("mobile-device");
+function syncMobileLetterboxing(forceViewportScale = false) {
     const enabled = localStorage.getItem("innerTide.mobileLetterboxed") === "true";
-    document.documentElement.classList.toggle("mobile-letterboxed", enabled && mobileLetterboxMedia.matches);
+    const active = enabled;
+    document.documentElement.classList.toggle("mobile-letterboxed", active);
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        if (active && mobileLetterboxDevice) {
+            document.documentElement.style.setProperty("--letterbox-scale", "1");
+            if (forceViewportScale || !viewport.content.includes("width=1920")) {
+                const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                viewport.content = `width=1920,height=1080,initial-scale=${scale}`;
+            }
+        } else {
+            viewport.content = "width=device-width, initial-scale=1.0";
+            if (active) {
+                const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                document.documentElement.style.setProperty("--letterbox-scale", String(scale));
+            } else {
+                document.documentElement.style.setProperty("--letterbox-scale", "1");
+            }
+        }
+    }
 }
 syncMobileLetterboxing();
-mobileLetterboxMedia.addEventListener("change", syncMobileLetterboxing);
+window.addEventListener("orientationchange", () => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    const enabled = localStorage.getItem("innerTide.mobileLetterboxed") === "true";
+    if (mobileLetterboxDevice && enabled && viewport) {
+        viewport.content = "width=device-width, initial-scale=1.0";
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => syncMobileLetterboxing(true));
+        });
+    } else {
+        syncMobileLetterboxing(true);
+    }
+});
+window.addEventListener("resize", () => {
+    if (!mobileLetterboxDevice && localStorage.getItem("innerTide.mobileLetterboxed") === "true") {
+        syncMobileLetterboxing(true);
+    }
+});
 
 let errorPageRedirectStarted = false;
 
