@@ -86,6 +86,33 @@ function clearEditorItemSlots() {
     });
 }
 
+const editorLayerList = document.querySelector(".editor-layer-list");
+const editorItemSlotTemplate = editorLayerList?.querySelector(".editor-item-slot")?.cloneNode(false);
+const editorItemSlotMediaQuery = window.matchMedia("(max-height: 739.99px)");
+
+function updateEditorItemSlotCount() {
+    if (!editorLayerList || !(editorItemSlotTemplate instanceof HTMLButtonElement)) return;
+
+    const desiredSlotCount = editorItemSlotMediaQuery.matches ? 6 : 8;
+    const slots = [...editorLayerList.querySelectorAll(".editor-item-slot")];
+    while (slots.length > desiredSlotCount) {
+        slots.pop().remove();
+    }
+
+    const moreButton = editorLayerList.querySelector(".editor-layer-more");
+    while (slots.length < desiredSlotCount) {
+        const slot = editorItemSlotTemplate.cloneNode(false);
+        editorLayerList.insertBefore(slot, moreButton);
+        slots.push(slot);
+    }
+}
+
+updateEditorItemSlotCount();
+editorItemSlotMediaQuery.addEventListener("change", () => {
+    updateEditorItemSlotCount();
+    renderEditorRecentShortcuts();
+});
+
 function renderRecentFishShortcut(inventoryFish) {
     if (!Array.isArray(inventoryFish)) return;
 
@@ -1479,7 +1506,8 @@ function randomRange(min, max) {
 function getResponsiveFishWidth(baseWidth) {
     const widthVw = Number(((baseWidth / 1920) * 100).toFixed(4));
     const heightVh = Number(((baseWidth / 1080) * 100).toFixed(4));
-    return `min(${widthVw}vw, ${heightVh}vh)`;
+    const minimumWidth = Math.round(baseWidth * 0.24);
+    return `max(min(${widthVw}vw, ${heightVh}vh), ${minimumWidth}px)`;
 }
 
 function startAquariumAnimation() {
