@@ -315,12 +315,23 @@ body.quiz-menu-page .player-card.profile-collapsed {
     pointer-events: none;
 }
 
+@media (max-width: 800px) {
+    .player-level {
+        font-size: 0;
+    }
+
+    .player-level::after {
+        content: "Lvl\00a0" attr(data-level);
+        font-size: clamp(7px, .65vw, 10px);
+    }
+}
+
 html.graphical-advanced body.question-page .question-background {
     filter: url("#background-water-ripple");
 }
 
 .player-copy small {
-    display: block;
+    display: none;
     width: 100%;
     grid-column: 1 / -1;
     margin-top: 7px;
@@ -1027,7 +1038,7 @@ html.graphical-advanced body.question-page .question-background {
     display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 600px) and (orientation: landscape) {
     .mobile-letterboxed-setting {
         display: flex;
     }
@@ -1660,39 +1671,6 @@ body.task-menu-page .task-menu-version {
     z-index: 1;
 }
 
-.task-check {
-    position: absolute;
-    z-index: 2;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    color: #50ee08;
-    font-family: "Hydration", sans-serif;
-    font-size: clamp(64px, 8vw, 92px);
-    font-weight: 900;
-    line-height: 1;
-    text-shadow: 3px 4px 1px rgba(23,114,10,.45), 0 0 5px rgba(255,255,255,.7);
-    animation: task-check-appear .42s cubic-bezier(.2, .8, .2, 1) both;
-    pointer-events: none;
-}
-
-@keyframes task-check-appear {
-    from {
-        opacity: 0;
-        transform: scale(.35) rotate(-18deg);
-    }
-
-    70% {
-        opacity: 1;
-        transform: scale(1.12) rotate(10deg);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1) rotate(8deg);
-    }
-}
-
 .task-row.completeable {
     cursor: pointer;
 }
@@ -1954,7 +1932,7 @@ html.task-menu-return .game-shell {
     position: absolute;
     z-index: 40;
     right: max(6px, 1vw);
-    bottom: max(12px, 2.5vh);
+    top: max(12px, 2.5vh);
     width: clamp(52px, 5vw, 68px);
     height: clamp(52px, 5vw, 68px);
     border: 0;
@@ -2618,12 +2596,31 @@ a.element-action:hover {
 }
 
 .task-menu-page #coinCounterTask img {
+    width: clamp(48px, 5.5vw, 76px);
+    height: clamp(48px, 5.5vw, 76px);
     transform: translateY(-2px);
 }
 
+.task-menu-page #coinCounterTask #coin-count {
+    font-size: clamp(40px, 4.5vw, 64px);
+}
+
 @media (max-width: 800px) {
+    .task-menu-page .xp-track-level,
+    .quiz-menu-page .xp-track-level {
+        display: none;
+    }
+
     .task-menu-page #coinCounterTask .coin-total small {
         display: none;
+    }
+
+    .task-menu-page .task-icon {
+        display: none;
+    }
+
+    .task-menu-page .task-row {
+        grid-template-columns: minmax(0, 1fr) clamp(112px, 8.5vw, 124px);
     }
 }
 

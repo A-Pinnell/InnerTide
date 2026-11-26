@@ -193,6 +193,45 @@ function animateCoinReward(taskRow, amount) {
     return Promise.all(arrivals).then(results => results.every(Boolean));
 }
 
+function animateTaskChestOpening(chest) {
+    const openChestSource = "img/menu_chest_open.png";
+    if (typeof Element.prototype.animate !== "function" || isReducedMotionEnabled()) {
+        chest.src = openChestSource;
+        return Promise.resolve();
+    }
+
+    return new Promise(resolve => {
+        const squashAnimation = chest.animate(
+            [{ transform: "scaleY(1)" }, { transform: "scaleY(.62)" }],
+            { duration: 130, easing: "ease-in", fill: "forwards" }
+        );
+        squashAnimation.onfinish = () => {
+            if (!chest.isConnected) {
+                resolve();
+                return;
+            }
+
+            chest.src = openChestSource;
+            const openingAnimation = chest.animate(
+                [
+                    { transform: "scaleY(.62)" },
+                    { transform: "scaleY(1.12)", offset: .72 },
+                    { transform: "scaleY(1)" }
+                ],
+                { duration: 250, easing: "cubic-bezier(.16, 1, .3, 1)" }
+            );
+            openingAnimation.onfinish = resolve;
+            openingAnimation.oncancel = resolve;
+            squashAnimation.oncancel = null;
+            squashAnimation.cancel();
+        };
+        squashAnimation.oncancel = () => {
+            if (chest.isConnected) chest.src = openChestSource;
+            resolve();
+        };
+    });
+}
+
 function renderTasks(period, fadeIn = false) {
     if (!taskList) return;// Safe Guard for When on Other Pages
 
@@ -241,7 +280,7 @@ function renderTasks(period, fadeIn = false) {
         chestWrap.className = "chest-wrap";
         const chest = document.createElement("img");
         chest.className = "chest";
-        chest.src = "img/menu_chest.png";
+        chest.src = task.completed ? "img/menu_chest_open.png" : "img/menu_chest.png";
         chest.alt = "";
         chestWrap.append(chest);
         reward.append(chestWrap);
@@ -262,12 +301,6 @@ function renderTasks(period, fadeIn = false) {
         }
 
         row.append(icon, title, reward);
-        if (task.completed) {
-            const check = document.createElement("span");
-            check.className = "task-check";
-            check.textContent = "✓";
-            chestWrap.append(check);
-        }
 
         const complete = async () => {
             if (task.completed || task.completing) return;
@@ -296,6 +329,8 @@ function renderTasks(period, fadeIn = false) {
 
                 const result = await response.json();
                 task.completed = true;
+                row.classList.add("completed");
+                const chestAnimation = animateTaskChestOpening(chest);
                 showExperienceReward(result.experienceAwarded);
                 const playerLevel = document.querySelector(".player-level");
                 const previousLevel = Number(playerLevel?.textContent.match(/\d+/)?.[0]);
@@ -306,6 +341,7 @@ function renderTasks(period, fadeIn = false) {
                     ? Number.parseFloat(getComputedStyle(playerLevel).getPropertyValue("--level-progress"))
                     : NaN;
                 if (playerLevel && Number.isInteger(result.level)) {
+                    playerLevel.dataset.level = String(result.level);
                     playerLevel.textContent = `LEVEL ${result.level}`;
                 }
                 let progress = NaN;
@@ -353,6 +389,7 @@ function renderTasks(period, fadeIn = false) {
                 const coinChange = beginCoinChangeAnimation(result.coins);
                 const coinAnimation = animateCoinReward(row, result.reward);
                 await updateDisplayedCoinBalance(result.coins, coinAnimation, coinChange);
+                await chestAnimation;
                 renderTasks(period);
             } catch (error) {
                 task.completing = false;

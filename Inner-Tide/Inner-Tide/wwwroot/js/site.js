@@ -4,7 +4,9 @@ let taskData = {
     weekly: []
 };
 
-const mobileLetterboxMedia = window.matchMedia("(max-width: 768px)");
+const mobileLetterboxMedia = window.matchMedia(
+    "(max-width: 768px), (max-height: 600px) and (orientation: landscape)"
+);
 function syncMobileLetterboxing() {
     const enabled = localStorage.getItem("innerTide.mobileLetterboxed") === "true";
     document.documentElement.classList.toggle("mobile-letterboxed", enabled && mobileLetterboxMedia.matches);
