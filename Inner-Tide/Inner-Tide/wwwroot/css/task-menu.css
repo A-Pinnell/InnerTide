@@ -91,11 +91,15 @@ html.graphical-advanced body.aquarium-page .aquarium-scene::before {
     z-index: 1000;
 }
 
+body.task-menu-page .player-card,
+body.quiz-menu-page .player-card {
+    --collapsed-player-card-size: clamp(92px, min(14vw, 18vh), 180px);
+    height: var(--collapsed-player-card-size);
+}
+
 body.task-menu-page .player-card.profile-collapsed,
 body.quiz-menu-page .player-card.profile-collapsed {
-    --collapsed-player-card-size: clamp(92px, min(14vw, 18vh), 180px);
     width: var(--collapsed-player-card-size);
-    height: var(--collapsed-player-card-size);
 }
 
 .player-card.profile-open {
