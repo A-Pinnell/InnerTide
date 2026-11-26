@@ -1023,6 +1023,16 @@ html.graphical-advanced body.question-page .question-background {
     background: rgba(102,74,139,.2);
 }
 
+.mobile-letterboxed-setting {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-letterboxed-setting {
+        display: flex;
+    }
+}
+
 .graphical-presentation legend {
     padding: 0 12px;
     color: #fff;

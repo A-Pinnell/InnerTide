@@ -454,6 +454,10 @@ if (gameShell) {
     reduceMotionOptions.forEach(option => {
         option.checked = (option.value === "on") === reducedMotionEnabled;
     });
+    const mobileLetterboxedEnabled = localStorage.getItem(mobileLetterboxedKey) === "true";
+    mobileLetterboxedOptions.forEach(option => {
+        option.checked = (option.value === "on") === mobileLetterboxedEnabled;
+    });
 
     let activeInfoPanel = null;
     let optionsTransitionTimeout;
@@ -525,6 +529,19 @@ if (gameShell) {
     reduceMotionOptions.forEach(option => {
         option.addEventListener("change", () => {
             if (option.checked) playSideNavigationSound("right");
+        });
+    });
+    mobileLetterboxedOptions.forEach(option => {
+        option.addEventListener("change", () => {
+            if (!option.checked) return;
+
+            const enabled = option.value === "on";
+            localStorage.setItem(mobileLetterboxedKey, String(enabled));
+            document.documentElement.classList.toggle(
+                "mobile-letterboxed",
+                enabled && mobileLetterboxMedia.matches
+            );
+            playSideNavigationSound("right");
         });
     });
     optionsPanel.querySelector("form")?.addEventListener("submit", () => {

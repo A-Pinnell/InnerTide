@@ -6,6 +6,10 @@
         <title>@ViewData["Title"] - Inner Tide</title>
         <script>
             document.documentElement.classList.add("page-assets-loading");
+            if (window.matchMedia("(max-width: 768px)").matches
+                && localStorage.getItem("innerTide.mobileLetterboxed") === "true") {
+                document.documentElement.classList.add("mobile-letterboxed");
+            }
             if (sessionStorage.getItem("innerTide.quizExitTransition") === "true") {
                 document.documentElement.classList.add("quiz-return-pending");
             }
