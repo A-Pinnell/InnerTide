@@ -103,7 +103,7 @@ body.quiz-menu-page .player-card.profile-collapsed {
 }
 
 .player-card.profile-open {
-    width: clamp(240px, 36vw, 440px);
+    width: clamp(240px, min(36vw, 45vh), 440px);
     min-width: 0;
     border-radius: 22px;
     box-shadow: inset 0 0 0 3px rgba(255,255,255,.38), 0 7px 22px rgba(66,32,102,.38);
@@ -141,10 +141,10 @@ body.quiz-menu-page .player-card.profile-collapsed {
 }
 
 .coin-counter img {
-    width: 8vw;
-    height: 8vw;
+    width: clamp(48px, 5.5vw, 76px);
+    height: clamp(48px, 5.5vw, 76px);
     object-fit: contain;
-    transform: translateX(30px) translateY(-2px);
+    transform: translateY(-2px);
 }
 
 .coin-total {
@@ -180,7 +180,7 @@ body.quiz-menu-page .player-card.profile-collapsed {
     text-shadow: none;
     transform: scaley(1.2);
     filter: drop-shadow(3px 4px 1px #3a2d34) drop-shadow(-1px -1px 1px #2e2630);
-    font-size: 6vw
+    font-size: clamp(40px, 4.5vw, 64px);
 }
 
 .coin-counter.coin-arrived {
@@ -701,7 +701,7 @@ html.graphical-advanced body.question-page .question-background {
     cursor: pointer;
     pointer-events: auto;
     transform: translateY(-50%);
-    transition: filter .2s ease;
+    transition: left .56s cubic-bezier(.16, 1, .3, 1), right .56s cubic-bezier(.16, 1, .3, 1), transform .56s cubic-bezier(.16, 1, .3, 1), filter .2s ease;
 }
 
 .avatar:hover {
@@ -779,8 +779,8 @@ html.graphical-advanced body.question-page .question-background {
 .quick-tools {
     position: absolute;
     z-index: 5;
-    top: 15vh;
-    left: 1vw;
+    top: 20vh;
+    left: 6.50vw;
     display: grid;
 }
 
@@ -1981,7 +1981,7 @@ html.task-menu-return .game-shell {
     display: grid;
     width: 73%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: clamp(54px, 9vw, 69px);
+    grid-auto-rows: clamp(48px, min(8vw, 8vh), 72px);
     gap: 24px 22px;
     visibility: hidden;
     opacity: 0;
@@ -2587,23 +2587,15 @@ a.element-action:hover {
     position: absolute;
 }
 
-.task-menu-page #coinCounterTask img {
-    width: clamp(48px, 5.5vw, 76px);
-    height: clamp(48px, 5.5vw, 76px);
-    transform: translateY(-2px);
-}
-
-.task-menu-page #coinCounterTask #coin-count {
-    font-size: clamp(40px, 4.5vw, 64px);
-}
-
 @media (max-width: 800px) {
     .task-menu-page .xp-track-level,
     .quiz-menu-page .xp-track-level {
         display: none;
     }
 
-    .task-menu-page #coinCounterTask .coin-total small {
+    .task-menu-page .coin-total small,
+    .quiz-menu-page .coin-total small,
+    .aquarium-page .coin-total small {
         display: none;
     }
 

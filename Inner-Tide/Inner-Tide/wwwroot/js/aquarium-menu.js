@@ -1476,6 +1476,12 @@ function randomRange(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+function getResponsiveFishWidth(baseWidth) {
+    const widthVw = Number(((baseWidth / 1920) * 100).toFixed(4));
+    const heightVh = Number(((baseWidth / 1080) * 100).toFixed(4));
+    return `min(${widthVw}vw, ${heightVh}vh)`;
+}
+
 function startAquariumAnimation() {
     if (aquariumAnimationRunning || !fishList.some(fish => fish.moving)) return;
 
@@ -1557,21 +1563,21 @@ function appendAquariumFish(f, x, y, startMoving = false) {
 
     switch (size) {
         case "tiny":
-            img.style.width = "120px";
+            img.style.width = getResponsiveFishWidth(120);
             speed = randomRange(150, 200);
             break;
         case "small":
-            img.style.width = "150px";
+            img.style.width = getResponsiveFishWidth(150);
             speed = randomRange(70, 100);
             break;
 
         case "medium":
-            img.style.width = "250px";
+            img.style.width = getResponsiveFishWidth(250);
             speed = randomRange(40, 70);
             break;
 
         case "large":
-            img.style.width = "300px";
+            img.style.width = getResponsiveFishWidth(300);
             speed = randomRange(20, 40);
             break;
     }
