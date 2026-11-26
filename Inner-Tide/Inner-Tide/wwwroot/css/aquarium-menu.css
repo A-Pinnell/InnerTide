@@ -549,6 +549,14 @@ html.reduced-motion .editor-inventory-priority.is-visible.is-new-purchase {
     display: none;
 }
 
+.aquarium-page.editor-mode .aquarium-object.is-diver img {
+    animation: none;
+}
+
+.aquarium-page.editor-mode .scuba-diver-bubble {
+    display: none;
+}
+
 @keyframes scuba-diver-float {
     0%, 100% {
         translate: 0 0;

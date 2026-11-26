@@ -4,6 +4,14 @@ let taskData = {
     weekly: []
 };
 
+const mobileLetterboxMedia = window.matchMedia("(max-width: 768px)");
+function syncMobileLetterboxing() {
+    const enabled = localStorage.getItem("innerTide.mobileLetterboxed") === "true";
+    document.documentElement.classList.toggle("mobile-letterboxed", enabled && mobileLetterboxMedia.matches);
+}
+syncMobileLetterboxing();
+mobileLetterboxMedia.addEventListener("change", syncMobileLetterboxing);
+
 let errorPageRedirectStarted = false;
 
 function redirectToErrorPage(message) {
@@ -478,6 +486,7 @@ const creditsPanel = document.querySelector("#creditsPanel");
 const creditsCloseButton = document.querySelector("#creditsCloseButton");
 const graphicalPresentationOptions = document.querySelectorAll('input[name="graphicalPresentation"]');
 const reduceMotionOptions = document.querySelectorAll('input[name="reduceMotion"]');
+const mobileLetterboxedOptions = document.querySelectorAll('input[name="letterboxed"]');
 const elementsToggle = document.querySelector(".elements-toggle");
 const aquariumPanel = document.querySelector("#elements-panel");
 const aquariumBackdrop = document.querySelector("#elements-backdrop");
@@ -494,6 +503,7 @@ const aquariumSelector = document.querySelector("#aquariumSelector");
 const coinStorageKey = "innerTide.coinBalance";
 const graphicalPresentationKey = "innerTide.graphicalPresentation";
 const reduceMotionKey = "innerTide.reduceMotion";
+const mobileLetterboxedKey = "innerTide.mobileLetterboxed";
 const musicVolumeStorageKey = "innerTide.musicVolume";
 const sfxVolumeStorageKey = "innerTide.sfxVolume";
 

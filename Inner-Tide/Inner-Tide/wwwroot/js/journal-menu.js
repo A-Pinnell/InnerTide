@@ -6,6 +6,10 @@ const viewFullBtn = document.querySelector("#viewFullBtn");
 const journalButtonContainer = document.querySelector("#journalButtonContainer");
 const journalEntryTitle = document.querySelector("#journalEntryTitle");
 const journalEntryText = document.querySelector("#journalEntryText");
+const journalEntryContent = document.querySelector("#journalEntryContent");
+const journalEntryScrollbar = document.querySelector("#journalEntryScrollbar");
+const journalEntryScrollbarHitArea = journalEntryScrollbar?.querySelector(".journal-entry-scrollbar-hit-area");
+const journalEntryScrollbarThumb = journalEntryScrollbar?.querySelector("#journalEntryScrollbarThumb");
 const journalDeleteDialog = document.querySelector("#journalDeleteDialog");
 const journalDeleteCancel = document.querySelector("#journalDeleteCancel");
 const journalDeleteConfirm = document.querySelector("#journalDeleteConfirm");
@@ -20,6 +24,63 @@ const journalBottleShardShapes = [
     "polygon(50% 50%, 100% 100%, 50% 100%)"
 ];
 var currentlySelectedJournal = 0;
+
+function updateJournalEntryScrollbar() {
+    if (!(journalEntryText instanceof HTMLElement)
+        || !(journalEntryScrollbar instanceof SVGSVGElement)
+        || !(journalEntryScrollbarThumb instanceof SVGPathElement)) {
+        return;
+    }
+
+    const maxScroll = Math.max(0, journalEntryText.scrollHeight - journalEntryText.clientHeight);
+    const scrollRatio = maxScroll > 0 ? journalEntryText.scrollTop / maxScroll : 0;
+    const thumbLength = maxScroll > 0
+        ? Math.max(100, (journalEntryText.clientHeight / journalEntryText.scrollHeight) * 950)
+        : 1000;
+
+    journalEntryScrollbar.style.visibility = maxScroll > 0 ? "visible" : "hidden";
+    journalEntryScrollbarThumb.setAttribute("stroke-dasharray", `${thumbLength} ${1000 - thumbLength}`);
+    journalEntryScrollbarThumb.setAttribute("stroke-dashoffset", String(-scrollRatio * (1000 - thumbLength)));
+}
+
+if (journalEntryText instanceof HTMLElement
+    && journalEntryScrollbar instanceof SVGSVGElement
+    && journalEntryScrollbarHitArea instanceof SVGPathElement
+    && journalEntryScrollbarThumb instanceof SVGPathElement) {
+    let dragStartY = 0;
+    let dragStartScrollTop = 0;
+
+    journalEntryText.addEventListener("scroll", updateJournalEntryScrollbar, { passive: true });
+    window.addEventListener("resize", updateJournalEntryScrollbar);
+    journalEntryScrollbar.addEventListener("pointerdown", event => {
+        if (event.button !== 0) return;
+
+        const maxScroll = Math.max(0, journalEntryText.scrollHeight - journalEntryText.clientHeight);
+        const bounds = journalEntryScrollbar.getBoundingClientRect();
+        if (maxScroll <= 0 || bounds.height <= 0) return;
+
+        event.preventDefault();
+        if (event.target !== journalEntryScrollbarThumb) {
+            const clickRatio = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
+            journalEntryText.scrollTop = clickRatio * maxScroll;
+        }
+
+        dragStartY = event.clientY;
+        dragStartScrollTop = journalEntryText.scrollTop;
+        journalEntryScrollbar.setPointerCapture(event.pointerId);
+    });
+    journalEntryScrollbar.addEventListener("pointermove", event => {
+        if (!journalEntryScrollbar.hasPointerCapture(event.pointerId)) return;
+
+        const maxScroll = Math.max(0, journalEntryText.scrollHeight - journalEntryText.clientHeight);
+        const bounds = journalEntryScrollbar.getBoundingClientRect();
+        if (maxScroll <= 0 || bounds.height <= 0) return;
+
+        const scrollDelta = ((event.clientY - dragStartY) / bounds.height) * maxScroll;
+        journalEntryText.scrollTop = Math.max(0, Math.min(maxScroll, dragStartScrollTop + scrollDelta));
+    });
+    updateJournalEntryScrollbar();
+}
 
 async function breakJournalBottle(bottle) {
     if (!(bottle instanceof HTMLElement)
@@ -122,7 +183,9 @@ async function RenderJournalEntries() {
             var h3 = document.createElement("h3");
             h3.textContent = "No Journals Found";
             journalEntryTitle.textContent = "";
-            journalEntryText.textContent = "Write a Journal Entry to get Started";
+            journalEntryContent.textContent = "Write a Journal Entry to get Started";
+            journalEntryText.scrollTop = 0;
+            updateJournalEntryScrollbar();
             journalHistoryContainer.appendChild(h3);
 
             journalButtonContainer.classList.remove("showViewAndDelete");
@@ -219,7 +282,9 @@ document.addEventListener("click", async event => {
         }
 
         journalEntryTitle.textContent = journal.journalTitle;
-        journalEntryText.textContent = journal.journalContent;
+        journalEntryContent.textContent = journal.journalContent;
+        journalEntryText.scrollTop = 0;
+        updateJournalEntryScrollbar();
 
         journalButtonContainer.classList.add("showViewAndDelete");
     }
@@ -264,7 +329,9 @@ deleteJournalBtn.addEventListener("click", async event => {
 
         await breakJournalBottle(selectedBottle);
         journalEntryTitle.textContent = "";
-        journalEntryText.textContent = "Click a Journal to Read its Contents";
+        journalEntryContent.textContent = "Click a Journal to Read its Contents";
+        journalEntryText.scrollTop = 0;
+        updateJournalEntryScrollbar();
         currentlySelectedJournal = 0;
 
         await RenderJournalEntries();

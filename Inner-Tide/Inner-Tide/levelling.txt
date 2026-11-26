@@ -1,0 +1,18 @@
+1 - Daily Task
+3 - Weekly Task
+5 - Monthly Task
+
+2 - Daily Task (Priority)
+6 - Weekly Task (Priority)
+10 - Monthly Task (Priority)
+
+5 - Additional Quiz
+
+1 - Feeding a smal pellet
+3 - Feeding a giant pellet
+
+1 - Viewing a fish's info tab for the first time
+
+Price of Fish / 10 (rounded up) - Buying a fish
+
+

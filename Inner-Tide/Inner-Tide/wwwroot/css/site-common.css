@@ -46,6 +46,36 @@ html::after {
     transition: opacity .18s linear;
 }
 
+@media (max-width: 768px) {
+    html.mobile-letterboxed {
+        background: #000;
+    }
+
+    html.mobile-letterboxed body.task-menu-page,
+    html.mobile-letterboxed body.quiz-menu-page,
+    html.mobile-letterboxed body.question-page,
+    html.mobile-letterboxed body.aquarium-page {
+        background: #000;
+    }
+
+    html.mobile-letterboxed body.task-menu-page .game-shell,
+    html.mobile-letterboxed body.quiz-menu-page .quiz-page,
+    html.mobile-letterboxed body.question-page .question-screen,
+    html.mobile-letterboxed body.aquarium-page > main {
+        position: absolute;
+        inset: 0;
+        width: min(100vw, 177.7778vh);
+        height: min(56.25vw, 100vh);
+        min-width: 0;
+        min-height: 0;
+        margin: auto;
+    }
+
+    html.mobile-letterboxed body.aquarium-page #aquarium {
+        height: 100%;
+    }
+}
+
 html.task-quiz-transition-exiting::after,
 html.task-quiz-transition-pending:has(body.quiz-menu-page)::after,
 html.task-quiz-transition-revealing:has(body.quiz-menu-page)::after {
@@ -175,7 +205,8 @@ html.journal-aquarium-transition-pending:has(body.aquarium-page) body > main {
 
 body.journal-menu-page.journal-aquarium-exiting #journalMain {
     animation: none;
-    opacity: 0;
+    opacity: 1;
+    transition: none;
 }
 
 html.page-assets-loading.aquarium-transition-return::before,

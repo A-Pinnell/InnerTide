@@ -293,7 +293,7 @@ a#backArrowJournal {
     scrollbar-color: #FFFFFF #DF34AB ;
     direction: rtl;
     position: absolute;
-    top: 20%;
+    top: max(11rem, 22vh);
     bottom: 0;
     width: 43%;
     border: 0;
@@ -366,10 +366,10 @@ a#backArrowJournal {
     top: 10%;
 
     width: 50%;
-    height: 100%;
 }
 
 #journalTextBackground {
+    box-sizing: border-box;
     background: var(--journal-sand-middle);
     border-radius: 15%;
     transform: translateX(100%);
@@ -378,10 +378,96 @@ a#backArrowJournal {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
 
     width: 100%;
     height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    padding: clamp(6rem, 12vh, 8rem) 1rem 1rem;
+}
+
+body.journal-menu-page #JournalHistoryContainer,
+body.journal-menu-page #journalTextBackground {
+    scrollbar-color: #fff rgba(255, 255, 255, .18);
+    scrollbar-width: thin;
+}
+
+body.journal-menu-page #JournalHistoryContainer::-webkit-scrollbar,
+body.journal-menu-page #journalTextBackground::-webkit-scrollbar {
+    width: 12px;
+}
+
+body.journal-menu-page #JournalHistoryContainer::-webkit-scrollbar-track,
+body.journal-menu-page #journalTextBackground::-webkit-scrollbar-track {
+    border: 2px solid rgba(255, 255, 255, .45);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .18);
+}
+
+body.journal-menu-page #JournalHistoryContainer::-webkit-scrollbar-thumb,
+body.journal-menu-page #journalTextBackground::-webkit-scrollbar-thumb {
+    min-height: 32px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: #fff;
+    background-clip: padding-box;
+    box-shadow: 0 1px 5px rgba(77, 55, 0, .25);
+}
+
+body.journal-menu-page #JournalHistoryContainer::-webkit-scrollbar-thumb:hover,
+body.journal-menu-page #journalTextBackground::-webkit-scrollbar-thumb:hover {
+    background: #fff;
+    background-clip: padding-box;
+}
+
+.journal-entry-frame {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 85%;
+}
+
+.journal-entry-scrollbar {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    transform: translateX(8px);
+}
+
+.journal-entry-scrollbar-hit-area {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 16px;
+    pointer-events: stroke;
+    cursor: pointer;
+    touch-action: none;
+}
+
+.journal-entry-scrollbar-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, .42);
+    stroke-linecap: round;
+    stroke-width: 1.5px;
+    pointer-events: none;
+}
+
+.journal-entry-scrollbar-thumb {
+    fill: none;
+    stroke: #fff;
+    stroke-linecap: round;
+    stroke-width: 3px;
+    pointer-events: stroke;
+    cursor: grab;
+    touch-action: none;
+}
+
+.journal-entry-scrollbar:focus-visible .journal-entry-scrollbar-thumb {
+    stroke-width: 4.5px;
 }
 
 body.journal-menu-page.journal-menu-revealed #journalTextBackground {
@@ -402,6 +488,12 @@ body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #j
     transform: translateY(8px);
 }
 
+body.journal-menu-page.journal-aquarium-exiting #JournalHistoryContainer,
+body.journal-menu-page.journal-aquarium-exiting #journalTextBackground {
+    animation: journal-aquarium-panels-fade-out .85s ease both;
+    pointer-events: none;
+}
+
 body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #journalH1,
 body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #backToAquariumButtonContainer,
 body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #createJournalButtonContainer {
@@ -416,6 +508,30 @@ body.journal-menu-page.journal-return-from-create:not(.journal-menu-revealed) #s
     transform: translateY(-140px) rotate(180deg);
 }
 
+body.journal-menu-page:not(.journal-return-from-create) #backToAquariumButtonContainer,
+body.journal-menu-page:not(.journal-return-from-create) #createJournalButtonContainer {
+    opacity: 0;
+    transition: opacity .8s ease;
+}
+
+body.journal-menu-page.journal-menu-revealed:not(.journal-return-from-create) #backToAquariumButtonContainer,
+body.journal-menu-page.journal-menu-revealed:not(.journal-return-from-create) #createJournalButtonContainer {
+    opacity: 1;
+}
+
+html.reduced-motion body.journal-menu-page:not(.journal-return-from-create) #backToAquariumButtonContainer,
+html.reduced-motion body.journal-menu-page:not(.journal-return-from-create) #createJournalButtonContainer {
+    opacity: 1;
+    transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.journal-menu-page:not(.journal-return-from-create) #backToAquariumButtonContainer,
+    body.journal-menu-page:not(.journal-return-from-create) #createJournalButtonContainer {
+        opacity: 1;
+    }
+}
+
 body.journal-menu-page.journal-to-create-exiting #JournalHistoryContainer {
     animation: journal-bottles-slide-left var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
     pointer-events: none;
@@ -425,7 +541,7 @@ body.journal-menu-page.journal-to-create-exiting #journalTextBackground {
     animation: journal-panel-center var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
     pointer-events: none;
     --journal-panel-center-x: -50%;
-    --journal-panel-center-y: -10vh;
+    --journal-panel-center-y: calc(0rem - max(5rem, 9vh));
 }
 
 body.journal-menu-page.journal-to-create-exiting #journalTextBackground > * {
@@ -454,7 +570,7 @@ body.journal-create-page.journal-create-revealed.journal-create-exiting #backToJ
 
 body.journal-create-page.journal-create-revealed.journal-create-exiting #journalTextBackground {
     --journal-panel-menu-x: 50%;
-    --journal-panel-menu-y: 10vh;
+    --journal-panel-menu-y: max(5rem, 9vh);
     animation: journal-panel-to-menu var(--journal-menu-transition-duration) var(--journal-menu-transition-easing) both;
     pointer-events: none;
 }
@@ -568,6 +684,12 @@ body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #san
     }
 }
 
+@keyframes journal-aquarium-panels-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
 @keyframes journal-panel-content-fade {
     to {
         opacity: 0;
@@ -607,13 +729,26 @@ body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #san
     overflow-y: auto;
     border: 3px white solid;
     border-radius: 15%;
-    padding: 25px;
+    margin: 0 0 1rem;
+    padding: 25px 3rem 25px 25px;
+    scrollbar-width: none;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
 
+#journalEntryContent {
+    flex: 0 0 auto;
+    margin-block: auto;
+    font-size: clamp(1.25rem, 1.3vw, 1.6rem);
+}
+
+#journalEntryText::-webkit-scrollbar {
+    display: none;
+}
+
 #journalEntryTitle {
     width: 85%;
+    flex: 0 0 auto;
     margin: 0 0 1rem;
     text-align: center;
 }
@@ -625,6 +760,7 @@ body.journal-menu-page.journal-return-from-create.journal-to-create-exiting #san
 #journalButtonContainer {
     display: flex;
     flex-direction: row;
+    flex: 0 0 auto;
 }
 
 #journalButtonContainer button {
@@ -727,11 +863,14 @@ body.journal-create-page #journalCreationMain {
 }
 
 body.journal-create-page #journalTextContainer {
-    bottom: 0;
+    position: fixed;
+    top: max(5rem, 9vh);
+    right: auto;
+    bottom: max(5rem, 9vh);
+    left: 25vw;
     z-index: 4;
     box-sizing: border-box;
     width: 50vw;
-    height: 600px;
 }
 
 .journalViewer {
@@ -750,7 +889,6 @@ body.journal-create-page #journalTextBackground {
     overflow-y: auto;
     padding: 2rem clamp(1.25rem, 3vw, 2rem);
     background: var(--journal-sand-middle);
-    box-shadow: 0 1.5rem 3rem rgba(19, 47, 59, .25), inset 0 1px 0 rgba(255, 255, 255, .5);
     transform: none;
     transition: none;
 }
@@ -905,9 +1043,27 @@ body.journal-create-page #journalCreationForm textarea:focus-visible {
     box-shadow: 0 0 0 4px rgba(49, 141, 145, .2);
 }
 
+body.journal-create-page #journalCreationForm textarea {
+    border: 3px solid #fff;
+    border-radius: 15%;
+    background: transparent;
+    color: #fff;
+    padding: 25px 3rem 25px 25px;
+}
+
+body.journal-create-page #journalCreationForm textarea:focus-visible {
+    border-color: #fff;
+    background: transparent;
+    box-shadow: none;
+}
+
 body.journal-create-page #journalCreationForm input::placeholder,
 body.journal-create-page #journalCreationForm textarea::placeholder {
     color: #70858a;
+}
+
+body.journal-create-page #journalCreationForm textarea::placeholder {
+    color: rgba(255, 255, 255, .75);
 }
 
 body.journal-create-page #journalCreationForm .auth-error {
@@ -949,19 +1105,19 @@ body.journal-create-page #journalCreationForm .auth-submit:focus-visible {
 
 @media (max-width: 600px) {
     body.journal-menu-page #journalTextContainer {
-        top: 0;
+        top: max(10rem, 18vh);
+        bottom: 0;
         width: 100%;
-        height: 100%;
     }
 
     body.journal-menu-page.journal-to-create-exiting #journalTextBackground {
         --journal-panel-center-x: 0;
-        --journal-panel-center-y: 0;
+        --journal-panel-center-y: calc(0rem - max(5rem, 9vh));
     }
 
     body.journal-create-page.journal-create-revealed.journal-create-exiting #journalTextBackground {
         --journal-panel-menu-x: 0;
-        --journal-panel-menu-y: 0;
+        --journal-panel-menu-y: max(5rem, 9vh);
     }
 
     body.journal-menu-page #journalTextBackground,
@@ -970,9 +1126,11 @@ body.journal-create-page #journalCreationForm .auth-submit:focus-visible {
     }
 
     body.journal-create-page #journalTextContainer {
+        top: max(5rem, 9vh);
+        right: auto;
+        bottom: max(5rem, 9vh);
         left: 0;
         width: 100%;
-        height: 100%;
     }
 
     body.journal-create-page #journalTextBackground {
