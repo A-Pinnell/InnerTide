@@ -1034,7 +1034,6 @@ html.reduced-motion .scuba-diver-bubble {
 
 .aquarium-page #fishContainer,
 .aquarium-page #sand,
-.aquarium-page #sand-layer,
 .aquarium-page #sand2,
 .aquarium-page .sand-object-grid,
 .aquarium-page .aquarium-bubbles {
@@ -1057,10 +1056,16 @@ html.reduced-motion .scuba-diver-bubble {
 }
 
 .aquarium-page.is-fish-focused #sand,
-.aquarium-page.is-fish-focused #sand-layer,
 .aquarium-page.is-fish-focused #sand2,
 .aquarium-page.is-fish-focused .sand-object-grid {
     transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1)) rotate(var(--aquarium-roll-angle, 0deg));
+    transform-origin: 0 0;
+    transition: none;
+    will-change: transform;
+}
+
+.aquarium-page.is-fish-focused #sand-layer {
+    transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1));
     transform-origin: 0 0;
     transition: none;
     will-change: transform;
