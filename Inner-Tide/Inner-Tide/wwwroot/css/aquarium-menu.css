@@ -436,6 +436,16 @@ html.reduced-motion .editor-inventory-priority.is-visible.is-new-purchase {
     pointer-events: none;
 }
 
+.aquarium-page:not(.editor-mode) .aquarium-object.is-record-player {
+    pointer-events: auto;
+    cursor: zoom-in;
+    touch-action: manipulation;
+}
+
+.aquarium-page:not(.editor-mode) .sand-object-grid.is-record-player-layer {
+    z-index: 8;
+}
+
 .inventoryObjectGrabbable {
     cursor: grab;
     touch-action: none;
@@ -771,6 +781,10 @@ html.reduced-motion .scuba-diver-bubble {
     letter-spacing: .12em;
 }
 
+.aquarium-fish-info-eyebrow[hidden] {
+    display: none;
+}
+
 .aquarium-fish-info h2 {
     margin: 0;
     padding-right: 30px;
@@ -784,6 +798,51 @@ html.reduced-motion .scuba-diver-bubble {
     margin: 0;
     font-size: 16px;
     line-height: 1.55;
+}
+
+.aquarium-fish-info.is-music-panel {
+    box-sizing: border-box;
+}
+
+.aquarium-music-track-list {
+    display: grid;
+    gap: 10px;
+}
+
+.aquarium-music-track-list[hidden] {
+    display: none;
+}
+
+#aquariumMusicNowPlaying[hidden] {
+    display: none;
+}
+
+.aquarium-music-track {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 2px solid rgba(198, 250, 255, .4);
+    border-radius: 14px;
+    color: #fff;
+    background: rgba(5, 65, 99, .7);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.aquarium-music-track:hover,
+.aquarium-music-track.is-playing {
+    border-color: #a8f4ff;
+    background: rgba(20, 125, 155, .88);
+}
+
+.aquarium-music-track:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
 }
 
 .aquarium-fish-info-facts[hidden] {
@@ -838,6 +897,10 @@ html.reduced-motion .scuba-diver-bubble {
 .aquarium-page.is-fish-focused #fishContainer {
     z-index: 60;
     pointer-events: none;
+}
+
+.aquarium-page.is-fish-focused .sand-object-grid.is-music-focus-layer {
+    z-index: 61;
 }
 
 .aquarium-page.is-fish-focused .aquariumFish:not(.is-focused-fish) {
@@ -2470,6 +2533,11 @@ html.reduced-motion .fish-love-heart {
 @media (max-width: 560px) {
     .feeding-controls {
         gap: 8px;
+    }
+
+    .aquarium-fish-info.is-music-panel {
+        width: min(420px, 62vw);
+        padding: 28px 18px;
     }
 
     .aquarium-page.editor-mode .aquarium-hide-button {

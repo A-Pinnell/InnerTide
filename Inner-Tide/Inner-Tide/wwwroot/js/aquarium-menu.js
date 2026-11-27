@@ -1,5 +1,8 @@
 const taskMenuLink = document.querySelector(".task-tab a");
 let fishList = [];
+let aquariumTiltBaseline = null;
+let aquariumTiltX = 0;
+let aquariumTiltY = 0;
 let aquariumFoodPellets = [];
 let heldFeedingPelletType = null;
 let dropFeedingPellet = null;
@@ -15,14 +18,99 @@ let pendingObjectPlacementSaves = 0;
 let refreshObjectsAfterPlacementSave = false;
 let objectPlacementNoticeTimeout;
 
+window.setAquariumTilt = function (x, y, orientation) {
+    if (!document.body.classList.contains("aquarium-page") ||
+        document.body.classList.contains("editor-mode")) {
+        aquariumTiltBaseline = null;
+        aquariumTiltX = 0;
+        aquariumTiltY = 0;
+        return;
+    }
+
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(orientation)) return;
+    if (aquariumTiltBaseline === null || aquariumTiltBaseline.orientation !== orientation) {
+        aquariumTiltBaseline = { x, y, orientation };
+        aquariumTiltX = 0;
+        aquariumTiltY = 0;
+        return;
+    }
+
+    const normalizeTilt = value => {
+        const deadZone = 0.08;
+        const magnitude = Math.abs(value);
+        if (magnitude <= deadZone) return 0;
+        return Math.sign(value) * Math.min(1, (magnitude - deadZone) / (1 - deadZone));
+    };
+
+    aquariumTiltX = normalizeTilt(x - aquariumTiltBaseline.x);
+    aquariumTiltY = normalizeTilt(y - aquariumTiltBaseline.y);
+};
+
 const aquariumObjectGridColumns = 28;
 const aquariumObjectGridRows = 4;
 const aquariumObjectGridVisualRows = 16;
 const aquariumObjectGridSandRowOffset = aquariumObjectGridVisualRows - aquariumObjectGridRows;
 let pelletInventory = { small: 0, large: 0 };
+const aquariumMusicTrackOptions = [
+    { id: "aquarium-1", name: "Aquarium 1", file: "Aquarium_1.mp3" },
+    { id: "aquarium-2", name: "Aquarium 2", file: "Aquarium_2.mp3" },
+    { id: "aquarium-3", name: "Aquarium 3", file: "Aquarium_3.mp3" },
+    { id: "aquarium-4", name: "Aquarium 4", file: "Aquarium_4.mp3" },
+    { id: "aquarium-5", name: "Aquarium 5", file: "Aquarium_5.mp3" },
+    { id: "aquatic", name: "Aquatic", file: "Aquatic.mp3" }
+];
+let currentAquariumMusicTrackId = null;
+let selectAquariumMusicTrack = null;
+let activateAquariumRecordPlayer = null;
+
+function getAquariumMusicTrack(trackId) {
+    return aquariumMusicTrackOptions.find(track => track.id === trackId) ?? null;
+}
+
+function updateAquariumMusicTrackList() {
+    document.querySelectorAll(".aquarium-music-track").forEach(button => {
+        button.classList.toggle("is-playing", button.dataset.trackId === currentAquariumMusicTrackId);
+    });
+
+    const nowPlaying = document.querySelector("#aquariumMusicNowPlaying");
+    const currentTrack = getAquariumMusicTrack(currentAquariumMusicTrackId);
+    if (nowPlaying && currentTrack) {
+        nowPlaying.textContent = `Now playing: ${currentTrack.name}`;
+    }
+}
+
+function renderAquariumMusicTrackList() {
+    const trackList = document.querySelector("#aquariumMusicTrackList");
+    if (!trackList) {
+        throw new Error("Cannot open the aquarium music menu because its track list is missing.");
+    }
+
+    trackList.replaceChildren();
+    aquariumMusicTrackOptions.forEach(track => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "aquarium-music-track";
+        button.dataset.trackId = track.id;
+        button.textContent = track.name;
+        button.addEventListener("click", () => {
+            if (!selectAquariumMusicTrack) {
+                throw new Error("Aquarium music selection is not available.");
+            }
+            selectAquariumMusicTrack(track.id);
+        });
+        trackList.appendChild(button);
+    });
+    updateAquariumMusicTrackList();
+}
 
 function isLittleScubaDiver(name) {
     return typeof name === "string" && name.trim().toLowerCase() === "little scuba diver man";
+}
+
+function isAquariumRecordPlayer(name, sprite) {
+    const itemDescription = `${name ?? ""} ${sprite ?? ""}`;
+    return /\b(?:record[\s_-]*player|turntable|gramophone|phonograph|jukebox|vinyl|radio|stereo|music[\s_-]*(?:player|box))\b/i
+        .test(itemDescription);
 }
 
 function isSandCastle(name) {
@@ -1458,16 +1546,58 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
 if (document.body.classList.contains("aquarium-page")) {
     const aquariumMusic = document.querySelector("#aquarium-music");
     aquariumMusicPlayer = registerAudioPlayer(aquariumMusic, "music");
+    const recordScratchSound = registerAudioPlayer(new Audio(`${soundPathPrefix}recordScratch.wav`), "sfx");
     const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
     const trackNumber = ((aquariumNumber - 1) % 5) + 1;
-    const aquariumTrack = `${musicPathPrefix}Aquarium_${trackNumber}.mp3`;
-    const aquariumTracks = [aquariumTrack, `${musicPathPrefix}Aquatic.mp3`];
+    const aquariumTracks = [
+        getAquariumMusicTrack(`aquarium-${trackNumber}`),
+        getAquariumMusicTrack("aquatic")
+    ];
     let currentAquariumTrackIndex = 0;
+    let manuallySelectedTrack = false;
+    let recordScratchSequence = 0;
     aquariumMusic.loop = false;
 
-    function playAquariumTrack() {
-        const track = aquariumTracks[currentAquariumTrackIndex];
-        aquariumMusic.src = track;
+    function stopAquariumMusic() {
+        document.removeEventListener("pointerdown", resumeAquariumMusic);
+        document.removeEventListener("keydown", resumeAquariumMusic);
+        aquariumMusic.pause();
+    }
+
+    function playRecordScratch() {
+        recordScratchSound.pause();
+        recordScratchSound.currentTime = 0;
+
+        return new Promise((resolve, reject) => {
+            const cleanup = () => {
+                recordScratchSound.removeEventListener("ended", handleEnded);
+                recordScratchSound.removeEventListener("error", handleError);
+            };
+            const handleEnded = () => {
+                cleanup();
+                resolve();
+            };
+            const handleError = () => {
+                cleanup();
+                reject(new Error("Unable to load the record scratch sound."));
+            };
+
+            recordScratchSound.addEventListener("ended", handleEnded, { once: true });
+            recordScratchSound.addEventListener("error", handleError, { once: true });
+            recordScratchSound.play().catch(error => {
+                cleanup();
+                reject(error);
+            });
+        });
+    }
+
+    function playAquariumTrack(track) {
+        if (!track) {
+            throw new Error("Cannot play the selected aquarium music track because it is unavailable.");
+        }
+
+        currentAquariumMusicTrackId = track.id;
+        aquariumMusic.src = `${musicPathPrefix}${track.file}`;
         aquariumMusic.load();
         aquariumMusic.play().catch(error => {
             if (error.name === "NotAllowedError") {
@@ -1475,9 +1605,36 @@ if (document.body.classList.contains("aquarium-page")) {
                 document.addEventListener("keydown", resumeAquariumMusic, { once: true });
                 return;
             }
-            console.error(`Unable to play Aquarium music track "${track}".`, error);
+            console.error(`Unable to play Aquarium music track "${track.file}".`, error);
         });
+        updateAquariumMusicTrackList();
     }
+
+    activateAquariumRecordPlayer = () => {
+        recordScratchSequence++;
+        stopAquariumMusic();
+        void playRecordScratch().catch(error => {
+            console.error("Unable to play the record scratch sound.", error);
+        });
+    };
+
+    selectAquariumMusicTrack = trackId => {
+        const track = getAquariumMusicTrack(trackId);
+        if (!track) {
+            throw new Error(`Cannot play unknown aquarium music track "${trackId}".`);
+        }
+        manuallySelectedTrack = true;
+        aquariumMusic.loop = true;
+        const sequence = ++recordScratchSequence;
+        stopAquariumMusic();
+        void playRecordScratch().then(() => {
+            if (sequence === recordScratchSequence) {
+                playAquariumTrack(track);
+            }
+        }).catch(error => {
+            console.error(`Unable to play record scratch before Aquarium music track "${track.file}".`, error);
+        });
+    };
 
     function resumeAquariumMusic() {
         document.removeEventListener("pointerdown", resumeAquariumMusic);
@@ -1490,13 +1647,15 @@ if (document.body.classList.contains("aquarium-page")) {
     }
 
     aquariumMusic.addEventListener("ended", () => {
+        if (manuallySelectedTrack) return;
         currentAquariumTrackIndex = (currentAquariumTrackIndex + 1) % aquariumTracks.length;
-        playAquariumTrack();
+        playAquariumTrack(aquariumTracks[currentAquariumTrackIndex]);
     });
     aquariumMusic.addEventListener("error", () => {
-        console.error(`Unable to load Aquarium music track "${aquariumTracks[currentAquariumTrackIndex]}".`);
+        const track = getAquariumMusicTrack(currentAquariumMusicTrackId);
+        console.error(`Unable to load Aquarium music track "${track?.file ?? currentAquariumMusicTrackId}".`);
     });
-    playAquariumTrack();
+    playAquariumTrack(aquariumTracks[currentAquariumTrackIndex]);
 }
 
 function randomRange(min, max) {
@@ -1786,7 +1945,10 @@ async function renderAquariumObjects() {
     }
 
     const objects = await response.json();
-    grids.forEach(grid => grid.replaceChildren());
+    grids.forEach(grid => {
+        grid.replaceChildren();
+        grid.classList.remove("is-record-player-layer");
+    });
     objects.forEach(object => {
         const dimensions = parseItemGridSpace(object.gridSpace);
         const layer = grids.find(candidate => Number(candidate.dataset.sandLayer) === Number(object.sandLayer));
@@ -1795,7 +1957,11 @@ async function renderAquariumObjects() {
             return;
         }
 
-        layer.appendChild(createAquariumObjectElement(object, dimensions));
+        const placedObject = createAquariumObjectElement(object, dimensions);
+        layer.appendChild(placedObject);
+        if (placedObject.classList.contains("is-record-player")) {
+            layer.classList.add("is-record-player-layer");
+        }
     });
 }
 
@@ -1808,6 +1974,7 @@ function createAquariumObjectElement(object, dimensions = parseItemGridSpace(obj
     placedObject.classList.toggle("is-anchor", /\banchor\b/i.test(object.name));
     placedObject.classList.toggle("is-sand-castle", isSandCastle(object.name));
     placedObject.classList.toggle("is-diver", isLittleScubaDiver(object.name));
+    placedObject.classList.toggle("is-record-player", isAquariumRecordPlayer(object.name, object.sprite));
     if (placedObject.classList.contains("is-sand-castle")) {
         placedObject.style.setProperty("--sand-castle-sprite", `url("${object.sprite}")`);
         const multiplyTint = document.createElement("span");
@@ -2015,23 +2182,28 @@ function animate(now) {
         }
 
         const step = Math.min(distance, fish.speed * elapsedSeconds);
-        fish.facingX = dx / distance;
-        fish.facingY = dy / distance;
-        fish.x += (dx / distance) * step;
-        fish.y += (dy / distance) * step;
+        const tiltDriftX = aquariumTiltX * 180;
+        const tiltDriftY = aquariumTiltY * 180;
+        const movementX = dx / distance * fish.speed + tiltDriftX;
+        const movementY = dy / distance * fish.speed + tiltDriftY;
+        const movementLength = Math.hypot(movementX, movementY);
+        fish.facingX = movementLength > 0 ? movementX / movementLength : dx / distance;
+        fish.facingY = movementLength > 0 ? movementY / movementLength : dy / distance;
+        fish.x = Math.max(0, Math.min(maxX, fish.x + (dx / distance) * step + tiltDriftX * elapsedSeconds));
+        fish.y = Math.max(0, Math.min(maxY, fish.y + (dy / distance) * step + tiltDriftY * elapsedSeconds));
 
         fish.element.style.left = `${fish.x}px`;
         fish.element.style.top = `${fish.y}px`;
 
-        const direction = Math.atan2(dy, dx) * (180 / Math.PI);
-        const targetRotation = dx > 0 ? direction : direction - 180;
+        const direction = Math.atan2(movementY, movementX) * (180 / Math.PI);
+        const targetRotation = movementX > 0 ? direction : direction - 180;
         if (fish.rotation === null) {
             fish.rotation = targetRotation;
         } else {
             const rotationDelta = ((targetRotation - fish.rotation + 540) % 360) - 180;
             fish.rotation += rotationDelta * (1 - Math.exp(-1.5 * elapsedSeconds));
         }
-        const flip = dx > 0 ? -1 : 1;
+        const flip = movementX > 0 ? -1 : 1;
         fish.element.style.transform = `rotate(${fish.rotation}deg) scaleX(${flip})`;
 
         if (now >= fish.nextBubbleAt) {
@@ -2158,6 +2330,8 @@ const aquariumFishInfoAcquiredAt = document.querySelector("#aquariumFishInfoAcqu
 const aquariumFishInfoDescription = document.querySelector("#aquariumFishInfoDescription");
 const aquariumFishInfoFactsSection = document.querySelector("#aquariumFishInfoFactsSection");
 const aquariumFishInfoFacts = document.querySelector("#aquariumFishInfoFacts");
+const aquariumMusicNowPlaying = document.querySelector("#aquariumMusicNowPlaying");
+const aquariumMusicTrackList = document.querySelector("#aquariumMusicTrackList");
 let fishInfoSelection = null;
 let fishInfoTransition = 0;
 let fishInfoCameraFrame = 0;
@@ -2200,8 +2374,8 @@ function closeAquariumFishInfo(restoreFocus = false) {
     window.cancelAnimationFrame(fishInfoCameraFrame);
     fishInfoCameraFrame = 0;
     fishInfoSelection = null;
-    selection.fish.element.classList.remove("is-focused-fish");
-    aquariumFishInfo?.classList.remove("is-visible");
+    selection.fish.element.classList.remove("is-focused-fish", "is-focused-music-player");
+    aquariumFishInfo?.classList.remove("is-visible", "is-music-panel");
     if (aquariumFishInfoBackdrop) aquariumFishInfoBackdrop.classList.remove("is-visible");
 
     const clearCamera = () => {
@@ -2212,6 +2386,7 @@ function closeAquariumFishInfo(restoreFocus = false) {
             layer.style.removeProperty("--fish-camera-layer-x");
             layer.style.removeProperty("--fish-camera-layer-y");
         });
+        selection.fish.element.parentElement?.classList.remove("is-music-focus-layer");
         fishInfoCameraFrame = 0;
     };
 
@@ -2273,6 +2448,7 @@ async function showAquariumFishInfo(fish) {
         return;
     }
     if (fishInfoSelection?.fish === fish) return;
+    const isMusicPlayer = fish.isMusicPlayer === true;
     if (Number.isInteger(fish.userFishId)) {
         const token = document.querySelector("#pelletActionToken input[name='__RequestVerificationToken']")?.value;
         if (token) {
@@ -2302,12 +2478,18 @@ async function showAquariumFishInfo(fish) {
         !aquariumFishInfoAcquiredAt ||
         !aquariumFishInfoDescription ||
         !aquariumFishInfoFactsSection ||
-        !aquariumFishInfoFacts
+        !aquariumFishInfoFacts ||
+        !aquariumMusicNowPlaying ||
+        !aquariumMusicTrackList
     ) {
-        throw new Error("Cannot show fish details because the information panel is incomplete.");
+        throw new Error("Cannot show aquarium details because the information panel is incomplete.");
     }
 
-    const infoPanelWidth = Math.min(420, window.innerWidth * 0.36) + 68;
+    aquariumFishInfo.classList.toggle("is-music-panel", isMusicPlayer);
+    const wasPanelHidden = aquariumFishInfo.hidden;
+    aquariumFishInfo.hidden = false;
+    const infoPanelWidth = aquariumFishInfo.getBoundingClientRect().width;
+    aquariumFishInfo.hidden = wasPanelHidden;
     const infoPanelRight = Math.max(16, Math.min(window.innerWidth * 0.03, 48));
     const focusWidth = Math.max(
         fish.element.offsetWidth,
@@ -2319,8 +2501,13 @@ async function showAquariumFishInfo(fish) {
         focusWidth,
         startedAt: performance.now()
     };
-    playElementsTransitionSound("in");
-    fish.element.classList.add("is-focused-fish");
+    if (!isMusicPlayer) {
+        playElementsTransitionSound("in");
+    }
+    fish.element.classList.add(isMusicPlayer ? "is-focused-music-player" : "is-focused-fish");
+    if (isMusicPlayer) {
+        fish.element.parentElement?.classList.add("is-music-focus-layer");
+    }
     document.body.classList.add("is-fish-focused");
 
     aquariumFishInfoBackdrop.hidden = false;
@@ -2328,27 +2515,37 @@ async function showAquariumFishInfo(fish) {
     aquariumFishInfoBackdrop.classList.add("is-visible");
     aquariumFishInfo.hidden = true;
 
-    aquariumFishInfoTitle.textContent = fish.species;
-    const acquiredDate = fish.acquiredAt ? new Date(fish.acquiredAt) : null;
-    const acquiredDateLabel = acquiredDate && Number.isFinite(acquiredDate.getTime())
-        ? acquiredDate.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
-        : "Acquisition date unavailable";
-    aquariumFishInfoAcquiredAt.textContent = fish.isFirstPlaced
-        ? `First fish · ${acquiredDateLabel}`
-        : acquiredDateLabel;
-    aquariumFishInfoDescription.textContent = fish.description || "No description is available for this fish.";
+    aquariumFishInfoTitle.textContent = isMusicPlayer ? "Record Player" : fish.species;
+    aquariumMusicNowPlaying.hidden = !isMusicPlayer;
+    aquariumMusicTrackList.hidden = !isMusicPlayer;
+    aquariumFishInfoAcquiredAt.hidden = isMusicPlayer;
+    if (isMusicPlayer) {
+        aquariumFishInfoDescription.textContent = "Choose a track to play in your aquarium.";
+        aquariumFishInfoFacts.replaceChildren();
+        aquariumFishInfoFactsSection.hidden = true;
+        renderAquariumMusicTrackList();
+    } else {
+        const acquiredDate = fish.acquiredAt ? new Date(fish.acquiredAt) : null;
+        const acquiredDateLabel = acquiredDate && Number.isFinite(acquiredDate.getTime())
+            ? acquiredDate.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+            : "Acquisition date unavailable";
+        aquariumFishInfoAcquiredAt.textContent = fish.isFirstPlaced
+            ? `First fish · ${acquiredDateLabel}`
+            : acquiredDateLabel;
+        aquariumFishInfoDescription.textContent = fish.description || "No description is available for this fish.";
 
-    aquariumFishInfoFacts.replaceChildren();
-    const facts = Array.isArray(fish.funFacts)
-        ? fish.funFacts.map(fact => typeof fact === "string" ? fact : fact?.fact).filter(Boolean)
-        : [];
-    const availableFacts = facts.slice(0, 3);
-    aquariumFishInfoFactsSection.hidden = availableFacts.length === 0;
-    if (availableFacts.length > 0) {
-        const fact = availableFacts[Math.floor(Math.random() * availableFacts.length)];
-        const listItem = document.createElement("li");
-        listItem.textContent = fact;
-        aquariumFishInfoFacts.appendChild(listItem);
+        aquariumFishInfoFacts.replaceChildren();
+        const facts = Array.isArray(fish.funFacts)
+            ? fish.funFacts.map(fact => typeof fact === "string" ? fact : fact?.fact).filter(Boolean)
+            : [];
+        const availableFacts = facts.slice(0, 3);
+        aquariumFishInfoFactsSection.hidden = availableFacts.length === 0;
+        if (availableFacts.length > 0) {
+            const fact = availableFacts[Math.floor(Math.random() * availableFacts.length)];
+            const listItem = document.createElement("li");
+            listItem.textContent = fact;
+            aquariumFishInfoFacts.appendChild(listItem);
+        }
     }
 
     const transition = ++fishInfoTransition;
@@ -2412,6 +2609,33 @@ async function showAquariumFishInfo(fish) {
     };
     fishInfoCameraFrame = window.requestAnimationFrame(updateCamera);
 }
+
+const aquariumRootForMusic = document.querySelector("#aquarium");
+aquariumRootForMusic?.addEventListener("click", event => {
+    if (document.body.classList.contains("editor-mode") || !aquariumFishContainer) return;
+
+    const target = event.target instanceof Element
+        ? event.target.closest(".aquarium-object.is-record-player")
+        : null;
+    if (!(target instanceof HTMLButtonElement)) return;
+    if (!activateAquariumRecordPlayer) {
+        console.error("The aquarium record player audio is not available.");
+        return;
+    }
+
+    const targetBounds = target.getBoundingClientRect();
+    const containerBounds = aquariumFishContainer.getBoundingClientRect();
+    activateAquariumRecordPlayer();
+    const player = {
+        element: target,
+        x: targetBounds.left - containerBounds.left,
+        y: targetBounds.top - containerBounds.top,
+        isMusicPlayer: true
+    };
+    void showAquariumFishInfo(player).catch(error => {
+        console.error("Could not open the aquarium record player.", error);
+    });
+});
 
 if (aquariumFishContainer) {
     aquariumFishContainer.addEventListener("click", event => {
