@@ -215,6 +215,15 @@
             const subtitle = document.querySelector("#helpPopupSubtitle");
             const sections = [...popup.querySelectorAll("[data-help-page]")];
             const main = document.querySelector("main");
+            const pageSubtitles = {
+                "aquarium-editor": "Aquarium Editor",
+                "aquarium-actions": "Aquarium Actions",
+                aquarium: "Aquarium",
+                "quiz-question": "Quiz Question",
+                "quiz-menu": "Quiz Menu",
+                "task-menu": "Task Menu"
+            };
+
             function getActivePage() {
                 if (document.body.classList.contains("aquarium-page")) {
                     if (document.body.classList.contains("editor-mode")) return "aquarium-editor";
@@ -222,25 +231,15 @@
                     return "aquarium";
                 }
                 return document.body.classList.contains("question-page")
-                ? "quiz-question"
-                : document.body.classList.contains("quiz-menu-page")
-                ? "quiz-menu"
-                : "task-menu";
+                    ? "quiz-question"
+                    : document.body.classList.contains("quiz-menu-page")
+                        ? "quiz-menu"
+                        : "task-menu";
             }
 
             function updateGuideContent() {
                 const activePage = getActivePage();
-                subtitle.textContent = activePage === "aquarium-editor"
-                    ? "Aquarium Editor"
-                    : activePage === "aquarium-actions"
-                    ? "Aquarium Actions"
-                    : activePage === "aquarium"
-                    ? "Aquarium"
-                    : activePage === "quiz-question"
-                ? "Quiz Question"
-                : activePage === "quiz-menu"
-                ? "Quiz Menu"
-                : "Task Menu";
+                subtitle.textContent = pageSubtitles[activePage] ?? "Task Menu";
                 sections.forEach(section => {
                     section.hidden = section.dataset.helpPage !== activePage;
                 });
