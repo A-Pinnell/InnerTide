@@ -86,6 +86,33 @@ function clearEditorItemSlots() {
     });
 }
 
+const editorLayerList = document.querySelector(".editor-layer-list");
+const editorItemSlotTemplate = editorLayerList?.querySelector(".editor-item-slot")?.cloneNode(false);
+const editorItemSlotMediaQuery = window.matchMedia("(max-height: 739.99px)");
+
+function updateEditorItemSlotCount() {
+    if (!editorLayerList || !(editorItemSlotTemplate instanceof HTMLButtonElement)) return;
+
+    const desiredSlotCount = editorItemSlotMediaQuery.matches ? 6 : 8;
+    const slots = [...editorLayerList.querySelectorAll(".editor-item-slot")];
+    while (slots.length > desiredSlotCount) {
+        slots.pop().remove();
+    }
+
+    const moreButton = editorLayerList.querySelector(".editor-layer-more");
+    while (slots.length < desiredSlotCount) {
+        const slot = editorItemSlotTemplate.cloneNode(false);
+        editorLayerList.insertBefore(slot, moreButton);
+        slots.push(slot);
+    }
+}
+
+updateEditorItemSlotCount();
+editorItemSlotMediaQuery.addEventListener("change", () => {
+    updateEditorItemSlotCount();
+    renderEditorRecentShortcuts();
+});
+
 function renderRecentFishShortcut(inventoryFish) {
     if (!Array.isArray(inventoryFish)) return;
 
@@ -1476,6 +1503,13 @@ function randomRange(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+function getResponsiveFishWidth(baseWidth) {
+    const widthVw = Number(((baseWidth / 1920) * 100).toFixed(4));
+    const heightVh = Number(((baseWidth / 1080) * 100).toFixed(4));
+    const minimumWidth = Math.round(baseWidth * 0.24);
+    return `max(min(${widthVw}vw, ${heightVh}vh), ${minimumWidth}px)`;
+}
+
 function startAquariumAnimation() {
     if (aquariumAnimationRunning || !fishList.some(fish => fish.moving)) return;
 
@@ -1557,21 +1591,21 @@ function appendAquariumFish(f, x, y, startMoving = false) {
 
     switch (size) {
         case "tiny":
-            img.style.width = "120px";
+            img.style.width = getResponsiveFishWidth(120);
             speed = randomRange(150, 200);
             break;
         case "small":
-            img.style.width = "150px";
+            img.style.width = getResponsiveFishWidth(150);
             speed = randomRange(70, 100);
             break;
 
         case "medium":
-            img.style.width = "250px";
+            img.style.width = getResponsiveFishWidth(250);
             speed = randomRange(40, 70);
             break;
 
         case "large":
-            img.style.width = "300px";
+            img.style.width = getResponsiveFishWidth(300);
             speed = randomRange(20, 40);
             break;
     }
@@ -2399,6 +2433,7 @@ if (aquariumFishContainer) {
         if (event.detail === 0 || target !== aquariumFishContainer) return;
 
         showGlassTapRipple(event, aquariumFishContainer);
+        window.triggerHapticFeedback("glass");
         playAquariumGlassTapSound();
         if (fishList.length === 0) return;
 

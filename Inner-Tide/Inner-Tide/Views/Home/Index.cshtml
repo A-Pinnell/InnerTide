@@ -71,7 +71,7 @@
             </div>
             <button class="avatar" type="button">
                 <img src="img/placeholder.webp" alt="">
-                <span class="player-level" style="--level-progress: @experienceProgress%">LEVEL @currentLevel</span>
+                <span class="player-level" data-level="@currentLevel" style="--level-progress: @experienceProgress%">LEVEL @currentLevel</span>
             </button>
             <div class="coin-counter" id="coinCounterTask">
                 <img src="img/coin.png" alt="">
@@ -245,9 +245,6 @@
                     <span class="element-action-icon element-icon"><img src="img/refresh_tasks.png" alt=""></span>
                     <span>Refresh Tasks</span>
                 </button>
-                <form id="regenerateTasksForm" hidden>
-                    @Html.AntiForgeryToken()
-                </form>
                 <a class="element-action task-quiz-link" asp-area="" asp-controller="Quiz" asp-action="Index" asp-route-from="task">
                     <span class="element-action-icon element-icon"><img src="img/additional_quiz.png" alt=""></span>
                     <span>Additional Quizzes</span>
@@ -261,6 +258,9 @@
                     <span>Aquarium List</span>
                 </button>
             </div>
+            <form id="regenerateTasksForm" hidden>
+                @Html.AntiForgeryToken()
+            </form>
 
             <div class="elements-status" data-percent="0">
                 <div class="status-tank">

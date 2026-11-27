@@ -4,13 +4,62 @@ let taskData = {
     weekly: []
 };
 
-const mobileLetterboxMedia = window.matchMedia("(max-width: 768px)");
-function syncMobileLetterboxing() {
+window.triggerHapticFeedback = function (type = "menu") {
+    const nativeHaptics = window.InnerTideHaptics;
+    if (nativeHaptics && typeof nativeHaptics.perform === "function") {
+        nativeHaptics.perform(type);
+        return;
+    }
+
+    if (typeof navigator.vibrate === "function") {
+        const durations = { coin: 18, glass: 10, menu: 14 };
+        const duration = durations[type];
+        if (duration) navigator.vibrate(duration);
+    }
+};
+
+const mobileLetterboxDevice = document.documentElement.classList.contains("mobile-device");
+function syncMobileLetterboxing(forceViewportScale = false) {
     const enabled = localStorage.getItem("innerTide.mobileLetterboxed") === "true";
-    document.documentElement.classList.toggle("mobile-letterboxed", enabled && mobileLetterboxMedia.matches);
+    const active = enabled;
+    document.documentElement.classList.toggle("mobile-letterboxed", active);
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        if (active && mobileLetterboxDevice) {
+            document.documentElement.style.setProperty("--letterbox-scale", "1");
+            if (forceViewportScale || !viewport.content.includes("width=1920")) {
+                const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                viewport.content = `width=1920,height=1080,initial-scale=${scale}`;
+            }
+        } else {
+            viewport.content = "width=device-width, initial-scale=1.0";
+            if (active) {
+                const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                document.documentElement.style.setProperty("--letterbox-scale", String(scale));
+            } else {
+                document.documentElement.style.setProperty("--letterbox-scale", "1");
+            }
+        }
+    }
 }
 syncMobileLetterboxing();
-mobileLetterboxMedia.addEventListener("change", syncMobileLetterboxing);
+window.addEventListener("orientationchange", () => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    const enabled = localStorage.getItem("innerTide.mobileLetterboxed") === "true";
+    if (mobileLetterboxDevice && enabled && viewport) {
+        viewport.content = "width=device-width, initial-scale=1.0";
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => syncMobileLetterboxing(true));
+        });
+    } else {
+        syncMobileLetterboxing(true);
+    }
+});
+window.addEventListener("resize", () => {
+    if (!mobileLetterboxDevice && localStorage.getItem("innerTide.mobileLetterboxed") === "true") {
+        syncMobileLetterboxing(true);
+    }
+});
 
 let errorPageRedirectStarted = false;
 
@@ -969,6 +1018,7 @@ function incrementDisplayedCoinCount() {
     }
 
     coinCount.textContent = String(displayedBalance + 1);
+    window.triggerHapticFeedback("coin");
     playCoinChangeSound();
     pulseCoinCounter();
 }
@@ -1439,6 +1489,7 @@ document.addEventListener("click", event => {
 
     const destination = new URL(link.href, window.location.href);
     if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+    window.triggerHapticFeedback("menu");
     if (link.closest(".aquarium-tab") || link.closest("#journalButton")) {
         playSideNavigationSound("right");
     } else if (link.closest(".task-tab")) {
