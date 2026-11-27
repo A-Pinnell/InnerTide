@@ -43,7 +43,8 @@ window.setAquariumTilt = function (x, y, orientation) {
         return Math.sign(value) * Math.min(1, (magnitude - deadZone) / (1 - deadZone));
     };
 
-    aquariumTiltX = normalizeTilt(x - aquariumTiltBaseline.x, 0.3);
+    const horizontalTiltDirection = window.innerWidth < 800 ? -1 : 1;
+    aquariumTiltX = normalizeTilt(x - aquariumTiltBaseline.x, 0.3) * horizontalTiltDirection;
     aquariumTiltY = normalizeTilt(y - aquariumTiltBaseline.y, 0.08);
     document.querySelector("#aquarium")?.style.setProperty(
         "--aquarium-roll-angle",
@@ -85,6 +86,7 @@ const aquariumMusicTrackOptions = [
 let currentAquariumMusicTrackId = null;
 let selectAquariumMusicTrack = null;
 let activateAquariumRecordPlayer = null;
+let resumeAquariumMusicAfterRecordPlayer = null;
 let showAquariumCompletionPopup = null;
 let aquariumCompletionPending = false;
 
@@ -1609,6 +1611,7 @@ if (document.body.classList.contains("aquarium-page")) {
     let currentAquariumTrackIndex = 0;
     let manuallySelectedTrack = false;
     let recordScratchSequence = 0;
+    let recordPlayerTrackSelected = false;
     let aquariumCompletionActive = false;
     let aquariumCompletionSequence = 0;
     let aquariumCompletionOpenTransition = Promise.resolve();
@@ -1674,6 +1677,7 @@ if (document.body.classList.contains("aquarium-page")) {
     }
 
     activateAquariumRecordPlayer = () => {
+        recordPlayerTrackSelected = false;
         recordScratchSequence++;
         stopAquariumMusic();
         void playRecordScratch().catch(error => {
@@ -1686,6 +1690,7 @@ if (document.body.classList.contains("aquarium-page")) {
         if (!track) {
             throw new Error(`Cannot play unknown aquarium music track "${trackId}".`);
         }
+        recordPlayerTrackSelected = true;
         manuallySelectedTrack = true;
         aquariumMusic.loop = true;
         const sequence = ++recordScratchSequence;
@@ -1697,6 +1702,11 @@ if (document.body.classList.contains("aquarium-page")) {
         }).catch(error => {
             console.error(`Unable to play record scratch before Aquarium music track "${track.file}".`, error);
         });
+    };
+
+    resumeAquariumMusicAfterRecordPlayer = () => {
+        if (recordPlayerTrackSelected) return;
+        resumeAquariumMusic();
     };
 
     function resumeAquariumMusic() {
@@ -2528,6 +2538,9 @@ function closeAquariumFishInfo(restoreFocus = false) {
     window.clearTimeout(pendingFishInfoExperienceTimer);
 
     const selection = fishInfoSelection;
+    if (selection.fish.isMusicPlayer) {
+        resumeAquariumMusicAfterRecordPlayer?.();
+    }
     playElementsTransitionSound("out");
     const transition = ++fishInfoTransition;
     window.cancelAnimationFrame(fishInfoCameraFrame);

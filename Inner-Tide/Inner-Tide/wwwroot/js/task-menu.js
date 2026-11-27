@@ -449,6 +449,9 @@ function setProfileOpen(open) {
 }
 
 function setAquariumOpen(open) {
+    if (open && !gameShell.classList.contains("elements-open")) {
+        window.triggerHapticFeedback("menu");
+    }
     playElementsTransitionSound(open ? "in" : "out");
     if (open) {
         aquariumTank.style.setProperty("--water-level", "0%");

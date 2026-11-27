@@ -33,3 +33,13 @@ P4 - Version 3.0
 - Various visual improvements and bug fixes
 - Pearls can now be earned from tasks, additional quizzes, feeding fish, viewing fish information for the first time, and purchasing fish
 - Level-up and reward popups now appear when earning pearls in the quiz and aquarium menus
+
+P5 - Version 4.0
+- Inner Tide has been ported to Android, with some exclusive features such as haptic feedback and other fun secrets
+- Responsiveness on all menus have been added
+- Added a letterbox scaling option, if you prefer a 1920x1080 view on your device
+- The aquarium record player is now an object. This object is unique as it is a track selector, allowing you to choose what aquarium track you want
+- Tanks reaching 100% completion now show a completion popup with music and options to continue or start a new aquarium
+- Aquarium 5 theming has been enhanced with rising twinkling stars, blue-tinted fish helmets, floating fish, and new glass-tap sounds
+- Changed music and sound effects
+- Additional visual improvements and bug fixes
