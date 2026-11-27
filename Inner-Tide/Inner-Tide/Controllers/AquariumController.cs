@@ -956,7 +956,8 @@ namespace Inner_Tide.Controllers {
 
                     return Ok(new {
                         acquiredAt = userFish.AcquiredAt,
-                        isFirstPlaced = aquarium.FirstPlacedUserFishId == userFish.UserFishId
+                        isFirstPlaced = aquarium.FirstPlacedUserFishId == userFish.UserFishId,
+                        completionPercentage = GetAquariumCompletionPercentage(aquarium)
                     });
                     
                 } else {

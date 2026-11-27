@@ -696,7 +696,9 @@ if (gameShell) {
             createdAquariumCount = entries.length;
             selectedAquariumNumber = Number(localStorage.getItem(selectedAquariumStorageKey));
             if (!isValidAquariumNumber(selectedAquariumNumber)) selectedAquariumNumber = 1;
-            selectedAquariumNumber = Math.min(selectedAquariumNumber, createdAquariumCount + 1);
+            selectedAquariumNumber = new URLSearchParams(window.location.search).get("startNewAquarium") === "true"
+                ? createdAquariumCount + 1
+                : Math.min(selectedAquariumNumber, createdAquariumCount + 1);
         }
 
         function updateAquariumStatusProgress() {
@@ -919,6 +921,9 @@ if (gameShell) {
             .catch(error => console.error("Could not load aquarium status progress.", error));
 
         aquariumSelector.inert = true;
+        if (new URLSearchParams(window.location.search).get("openAquariumList") === "true") {
+            aquariumListButton.click();
+        }
     }
 
     positionTabCarousel("daily");

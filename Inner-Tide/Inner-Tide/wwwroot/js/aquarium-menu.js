@@ -67,6 +67,31 @@ const aquariumMusicTrackOptions = [
 let currentAquariumMusicTrackId = null;
 let selectAquariumMusicTrack = null;
 let activateAquariumRecordPlayer = null;
+let showAquariumCompletionPopup = null;
+let aquariumCompletionPending = false;
+
+function showPendingAquariumCompletionPopup() {
+    const editorToolbar = document.querySelector("#editorToolbar");
+    if (
+        !aquariumCompletionPending ||
+        document.body.classList.contains("editor-mode") ||
+        (editorToolbar && !editorToolbar.hidden)
+    ) {
+        return;
+    }
+
+    aquariumCompletionPending = false;
+    if (!showAquariumCompletionPopup) {
+        console.error("Aquarium completion popup is unavailable.");
+        return;
+    }
+
+    try {
+        showAquariumCompletionPopup();
+    } catch (error) {
+        console.error("Could not show the aquarium completion popup.", error);
+    }
+}
 
 function getAquariumMusicTrack(trackId) {
     return aquariumMusicTrackOptions.find(track => track.id === trackId) ?? null;
@@ -1475,6 +1500,7 @@ if (editorBtn && editorToolbar && editorCloseButton && editorLayerMenu && editor
             if (!editorOpen) {
                 editorToolbar.hidden = true;
                 editorLayerMenu.hidden = true;
+                showPendingAquariumCompletionPopup();
             }
         }, isReducedMotionEnabled() ? 180 : 380);
         if (restoreFocus) editorBtn.focus();
@@ -1552,6 +1578,10 @@ if (document.body.classList.contains("aquarium-page")) {
     const aquariumMusic = document.querySelector("#aquarium-music");
     aquariumMusicPlayer = registerAudioPlayer(aquariumMusic, "music");
     const recordScratchSound = registerAudioPlayer(new Audio(`${soundPathPrefix}recordScratch.wav`), "sfx");
+    const aquariumCompletionDialog = document.querySelector("#aquariumCompletionDialog");
+    const aquariumCompletionContinue = document.querySelector("#aquariumCompletionContinue");
+    const aquariumCompletionNewAquarium = document.querySelector("#aquariumCompletionNewAquarium");
+    const aquariumCompletionMusic = registerAudioPlayer(new Audio(`${musicPathPrefix}Completed.mp3`), "music");
     const aquariumNumber = Number(document.body.dataset.aquariumNumber) || 1;
     const trackNumber = ((aquariumNumber - 1) % 5) + 1;
     const aquariumTracks = [
@@ -1561,7 +1591,17 @@ if (document.body.classList.contains("aquarium-page")) {
     let currentAquariumTrackIndex = 0;
     let manuallySelectedTrack = false;
     let recordScratchSequence = 0;
+    let aquariumCompletionActive = false;
+    let aquariumCompletionSequence = 0;
+    let aquariumCompletionOpenTransition = Promise.resolve();
+    let aquariumTrackBeforeCompletion = null;
+    let aquariumCompletionNavigating = false;
     aquariumMusic.loop = false;
+    aquariumCompletionMusic.preload = "auto";
+
+    if (!aquariumCompletionDialog || !aquariumCompletionContinue || !aquariumCompletionNewAquarium) {
+        throw new Error("Cannot show aquarium completion because its dialog is missing.");
+    }
 
     function stopAquariumMusic() {
         document.removeEventListener("pointerdown", resumeAquariumMusic);
@@ -1651,8 +1691,92 @@ if (document.body.classList.contains("aquarium-page")) {
         });
     }
 
+    showAquariumCompletionPopup = () => {
+        if (aquariumCompletionDialog.open) return;
+
+        const sequence = ++aquariumCompletionSequence;
+        const trackBeforeCompletion = {
+            trackId: currentAquariumMusicTrackId,
+            currentTime: aquariumMusic.currentTime,
+            loop: aquariumMusic.loop
+        };
+        aquariumTrackBeforeCompletion = trackBeforeCompletion;
+        aquariumCompletionActive = true;
+        aquariumCompletionDialog.showModal();
+        void aquariumCompletionDialog.offsetWidth;
+        aquariumCompletionDialog.classList.add("is-visible");
+        aquariumCompletionContinue.focus();
+
+        aquariumCompletionOpenTransition = (async () => {
+            await fadeOutAquariumMusic(500);
+            trackBeforeCompletion.currentTime = aquariumMusic.currentTime;
+            if (sequence !== aquariumCompletionSequence || !aquariumCompletionDialog.open) return;
+
+            aquariumCompletionMusic.currentTime = 0;
+            await aquariumCompletionMusic.play();
+        })().catch(error => {
+            console.error("Unable to play the aquarium completion music.", error);
+        });
+    };
+
+    aquariumCompletionContinue.addEventListener("click", () => aquariumCompletionDialog.close());
+    aquariumCompletionNewAquarium.addEventListener("click", () => {
+        if (!(taskMenuLink instanceof HTMLAnchorElement)) {
+            console.error("Cannot open the aquarium list because its Task Menu link is missing.");
+            return;
+        }
+
+        const destination = new URL(taskMenuLink.href);
+        destination.searchParams.set("openAquariumList", "true");
+        destination.searchParams.set("startNewAquarium", "true");
+        taskMenuLink.href = destination.href;
+        aquariumCompletionNavigating = true;
+        aquariumCompletionDialog.close();
+        taskMenuLink.click();
+    });
+    aquariumCompletionDialog.addEventListener("click", event => {
+        if (event.target === aquariumCompletionDialog) {
+            aquariumCompletionDialog.close();
+        }
+    });
+    aquariumCompletionDialog.addEventListener("close", () => {
+        aquariumCompletionDialog.classList.remove("is-visible");
+        const sequence = ++aquariumCompletionSequence;
+        const trackBeforeCompletion = aquariumTrackBeforeCompletion;
+        aquariumTrackBeforeCompletion = null;
+        const openingTransition = aquariumCompletionOpenTransition;
+
+        void (async () => {
+            await openingTransition;
+            if (sequence !== aquariumCompletionSequence) return;
+
+            await fadeOutAudioPlayer(aquariumCompletionMusic, 900);
+            if (sequence !== aquariumCompletionSequence) return;
+
+            aquariumCompletionActive = false;
+            if (aquariumCompletionNavigating) return;
+            if (!trackBeforeCompletion) return;
+            if (!getAquariumMusicTrack(trackBeforeCompletion.trackId)) {
+                throw new Error("Cannot resume Aquarium music because the previous track is unavailable.");
+            }
+
+            aquariumMusic.loop = trackBeforeCompletion.loop;
+            aquariumMusic.currentTime = trackBeforeCompletion.currentTime;
+            aquariumMusic.play().catch(error => {
+                if (error.name === "NotAllowedError") {
+                    document.addEventListener("pointerdown", resumeAquariumMusic, { once: true });
+                    document.addEventListener("keydown", resumeAquariumMusic, { once: true });
+                    return;
+                }
+                console.error("Unable to resume Aquarium music after completion.", error);
+            });
+        })().catch(error => {
+            console.error("Unable to restore Aquarium music after completion.", error);
+        });
+    });
+
     aquariumMusic.addEventListener("ended", () => {
-        if (manuallySelectedTrack) return;
+        if (manuallySelectedTrack || aquariumCompletionActive) return;
         currentAquariumTrackIndex = (currentAquariumTrackIndex + 1) % aquariumTracks.length;
         playAquariumTrack(aquariumTracks[currentAquariumTrackIndex]);
     });
@@ -2948,11 +3072,17 @@ async function placeSelectedInventoryFish(event) {
                 startAquariumAnimation();
             }
         });
-        playElementsTransitionSound("out");
+        if (placement.completionPercentage !== 100) {
+            playElementsTransitionSound("out");
+        }
         preview.remove();
         selectedFish = null;
         dragSource = null;
         void renderInventoryFish();
+        if (placement.completionPercentage === 100) {
+            aquariumCompletionPending = true;
+            showPendingAquariumCompletionPopup();
+        }
     } catch (error) {
         console.error("Fish placement failed:", error);
     } finally {
