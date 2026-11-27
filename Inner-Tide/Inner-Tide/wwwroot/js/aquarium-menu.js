@@ -2866,6 +2866,12 @@ if (aquariumFishContainer) {
 }
 
 const aquariumRoot = document.querySelector("#aquarium");
+document.body.addEventListener("click", event => {
+    const target = event.target instanceof Element ? event.target.closest("button") : null;
+    if (!(target instanceof HTMLButtonElement) || target.disabled) return;
+    window.triggerHapticFeedback("menu");
+}, true);
+
 aquariumRoot?.addEventListener("click", event => {
     if (!document.body.classList.contains("aquarium-feeding-mode")
         || event.button !== 0
