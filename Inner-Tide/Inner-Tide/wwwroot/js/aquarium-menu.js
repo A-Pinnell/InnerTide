@@ -2,7 +2,6 @@ const taskMenuLink = document.querySelector(".task-tab a");
 let fishList = [];
 let aquariumTiltBaseline = null;
 let aquariumTiltX = 0;
-let aquariumTiltY = 0;
 let aquariumFoodPellets = [];
 let heldFeedingPelletType = null;
 let dropFeedingPellet = null;
@@ -18,21 +17,19 @@ let pendingObjectPlacementSaves = 0;
 let refreshObjectsAfterPlacementSave = false;
 let objectPlacementNoticeTimeout;
 
-window.setAquariumTilt = function (x, y, orientation) {
+window.setAquariumTilt = function (x, _y, orientation) {
     if (!document.body.classList.contains("aquarium-page") ||
         document.body.classList.contains("editor-mode")) {
         aquariumTiltBaseline = null;
         aquariumTiltX = 0;
-        aquariumTiltY = 0;
         document.querySelector("#aquarium")?.style.setProperty("--aquarium-roll-angle", "0deg");
         return;
     }
 
-    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(orientation)) return;
+    if (!Number.isFinite(x) || !Number.isFinite(orientation)) return;
     if (aquariumTiltBaseline === null || aquariumTiltBaseline.orientation !== orientation) {
-        aquariumTiltBaseline = { x, y, orientation };
+        aquariumTiltBaseline = { x, orientation };
         aquariumTiltX = 0;
-        aquariumTiltY = 0;
         document.querySelector("#aquarium")?.style.setProperty("--aquarium-roll-angle", "0deg");
         return;
     }
@@ -45,7 +42,6 @@ window.setAquariumTilt = function (x, y, orientation) {
 
     const horizontalTiltDirection = window.innerWidth < 800 ? -1 : 1;
     aquariumTiltX = normalizeTilt(x - aquariumTiltBaseline.x, 0.3) * horizontalTiltDirection;
-    aquariumTiltY = normalizeTilt(y - aquariumTiltBaseline.y, 0.08);
     document.querySelector("#aquarium")?.style.setProperty(
         "--aquarium-roll-angle",
         `${(aquariumTiltX * 6).toFixed(2)}deg`
@@ -2346,14 +2342,13 @@ function animate(now) {
 
         const step = Math.min(distance, fish.speed * elapsedSeconds);
         const tiltDriftX = aquariumTiltX * 180;
-        const tiltDriftY = aquariumTiltY * 180;
         const movementX = dx / distance * fish.speed + tiltDriftX;
-        const movementY = dy / distance * fish.speed + tiltDriftY;
+        const movementY = dy / distance * fish.speed;
         const movementLength = Math.hypot(movementX, movementY);
         fish.facingX = movementLength > 0 ? movementX / movementLength : dx / distance;
         fish.facingY = movementLength > 0 ? movementY / movementLength : dy / distance;
         fish.x = Math.max(0, Math.min(maxX, fish.x + (dx / distance) * step + tiltDriftX * elapsedSeconds));
-        fish.y = Math.max(0, Math.min(maxY, fish.y + (dy / distance) * step + tiltDriftY * elapsedSeconds));
+        fish.y = Math.max(0, Math.min(maxY, fish.y + (dy / distance) * step));
 
         fish.element.style.left = `${fish.x}px`;
         fish.element.style.top = `${fish.y}px`;

@@ -1506,12 +1506,14 @@ html.reduced-motion .glass-tap-ripple {
 }
 
 #coinCounterAquarium {
-    position: initial;
+    position: relative;
     display: flex;
     align-content: center;
     justify-content: center;
     right: 5%;
-    transform: translateX(-10px);
+    top: -24px;
+    margin-right: 48px;
+    transform: none;
 }
 
 #storeCoinDiv {
