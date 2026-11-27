@@ -1,6 +1,7 @@
 const taskMenuLink = document.querySelector(".task-tab a");
 let fishList = [];
 let aquariumTiltBaseline = null;
+let latestAquariumTiltReading = null;
 let aquariumTiltX = 0;
 let aquariumFoodPellets = [];
 let heldFeedingPelletType = null;
@@ -21,12 +22,14 @@ window.setAquariumTilt = function (x, _y, orientation) {
     if (!document.body.classList.contains("aquarium-page") ||
         document.body.classList.contains("editor-mode")) {
         aquariumTiltBaseline = null;
+        latestAquariumTiltReading = null;
         aquariumTiltX = 0;
         document.querySelector("#aquarium")?.style.setProperty("--aquarium-roll-angle", "0deg");
         return;
     }
 
     if (!Number.isFinite(x) || !Number.isFinite(orientation)) return;
+    latestAquariumTiltReading = { x, orientation };
     if (aquariumTiltBaseline === null || aquariumTiltBaseline.orientation !== orientation) {
         aquariumTiltBaseline = { x, orientation };
         aquariumTiltX = 0;
@@ -2866,6 +2869,91 @@ if (aquariumFishContainer) {
 }
 
 const aquariumRoot = document.querySelector("#aquarium");
+let aquariumTiltResetHold = null;
+let suppressTiltResetClick = false;
+let suppressTiltResetClickTimeout;
+
+function cancelAquariumTiltResetHold() {
+    if (!aquariumTiltResetHold) return;
+    window.clearTimeout(aquariumTiltResetHold.timeout);
+    aquariumTiltResetHold = null;
+}
+
+document.addEventListener("pointerdown", event => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (
+        !aquariumRoot?.contains(target) ||
+        event.button !== 0 ||
+        event.isPrimary === false ||
+        document.body.classList.contains("editor-mode") ||
+        document.body.classList.contains("aquarium-feeding-mode") ||
+        target?.closest("button, a, input, select, textarea, [contenteditable='true'], .aquariumGrabbable, .aquarium-object, .aquarium-fish-info, .aquarium-completion-dialog, .tank-store-panel, .feeding-controls, .editor-toolbar, .editor-layer-menu")
+    ) {
+        return;
+    }
+
+    cancelAquariumTiltResetHold();
+    const hold = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        didReset: false,
+        timeout: 0
+    };
+    aquariumTiltResetHold = hold;
+    hold.timeout = window.setTimeout(() => {
+        if (
+            aquariumTiltResetHold === hold &&
+            latestAquariumTiltReading &&
+            !document.body.classList.contains("editor-mode") &&
+            !document.body.classList.contains("aquarium-feeding-mode")
+        ) {
+            aquariumTiltBaseline = { ...latestAquariumTiltReading };
+            aquariumTiltX = 0;
+            document.querySelector("#aquarium")?.style.setProperty("--aquarium-roll-angle", "0deg");
+            hold.didReset = true;
+            playAquariumGlassTapSound();
+        }
+    }, 600);
+}, true);
+
+document.addEventListener("pointermove", event => {
+    if (!aquariumTiltResetHold || event.pointerId !== aquariumTiltResetHold.pointerId) return;
+    if (Math.hypot(
+        event.clientX - aquariumTiltResetHold.startX,
+        event.clientY - aquariumTiltResetHold.startY
+    ) > 12) {
+        cancelAquariumTiltResetHold();
+    }
+}, true);
+
+document.addEventListener("pointerup", event => {
+    if (!aquariumTiltResetHold || event.pointerId !== aquariumTiltResetHold.pointerId) return;
+    const didReset = aquariumTiltResetHold.didReset;
+    cancelAquariumTiltResetHold();
+    if (!didReset) return;
+
+    suppressTiltResetClick = true;
+    window.clearTimeout(suppressTiltResetClickTimeout);
+    suppressTiltResetClickTimeout = window.setTimeout(() => {
+        suppressTiltResetClick = false;
+    }, 750);
+}, true);
+
+document.addEventListener("pointercancel", event => {
+    if (aquariumTiltResetHold?.pointerId === event.pointerId) {
+        cancelAquariumTiltResetHold();
+    }
+}, true);
+document.addEventListener("click", event => {
+    const target = event.target instanceof Node ? event.target : null;
+    if (!suppressTiltResetClick || !target || !aquariumRoot?.contains(target)) return;
+    suppressTiltResetClick = false;
+    window.clearTimeout(suppressTiltResetClickTimeout);
+    event.preventDefault();
+    event.stopImmediatePropagation();
+}, true);
+
 document.body.addEventListener("click", event => {
     const target = event.target instanceof Element ? event.target.closest("button") : null;
     if (!(target instanceof HTMLButtonElement) || target.disabled) return;
