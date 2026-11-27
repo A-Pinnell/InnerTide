@@ -33,7 +33,7 @@
                         </svg>
                     </a>
                 </div>
-                <p id="createJournalButtonText">Create</p>
+                <p class="aquariumBtnText">Create</p>
             </div>
         </section>
 
@@ -45,28 +45,32 @@
             <section id="journalTextContainer" class="journalViewer">
                 <div id="journalTextBackground">
                     <h2 id="journalEntryTitle"></h2>
-                    <div class="journal-entry-frame">
-                        <div id="journalEntryText" tabindex="0">
-                            <div id="journalEntryContent">Click a Journal to Read its Contents</div>
-                        </div>
-                        <svg id="journalEntryScrollbar" class="journal-entry-scrollbar" viewBox="0 0 100 100"
-                             preserveAspectRatio="none">
-                            <path class="journal-entry-scrollbar-hit-area" pathLength="1000"
-                                  d="M 85 0 C 93.284 0 100 6.716 100 15 L 100 85 C 100 93.284 93.284 100 85 100" />
-                            <path class="journal-entry-scrollbar-track" pathLength="1000"
-                                  d="M 85 0 C 93.284 0 100 6.716 100 15 L 100 85 C 100 93.284 93.284 100 85 100" />
-                            <path id="journalEntryScrollbarThumb" class="journal-entry-scrollbar-thumb" pathLength="1000"
-                                  d="M 85 0 C 93.284 0 100 6.716 100 15 L 100 85 C 100 93.284 93.284 100 85 100" />
-                        </svg>
-                    </div>
-
-                    <div id="journalButtonContainer">
-
-                        <div id="deleteButtonContainer">
-                            <div id="deleteJournalBtn" class="journalMenuBubble">
-                                <a id="XIcon"></a>
+                    <div id="containerForJournalContent">
+                        <div class="journal-entry-frame">
+                            <div id="journalEntryText" tabindex="0">
+                                <div id="journalEntryContentDiv">
+                                    <p id="journalEntryContent"> Click a Journal to Read its Contents </p>
+                                </div>
                             </div>
-                            <p class="aquariumBtnText"> Delete </p>
+                            <svg id="journalEntryScrollbar" class="journal-entry-scrollbar" viewBox="0 0 100 100"
+                                 preserveAspectRatio="none">
+                                <path class="journal-entry-scrollbar-hit-area" pathLength="1000"
+                                      d="M 85 0 C 93.284 0 100 6.716 100 15 L 100 85 C 100 93.284 93.284 100 85 100" />
+                                <path class="journal-entry-scrollbar-track" pathLength="1000"
+                                      d="M 85 0 C 93.284 0 100 6.716 100 15 L 100 85 C 100 93.284 93.284 100 85 100" />
+                                <path id="journalEntryScrollbarThumb" class="journal-entry-scrollbar-thumb" pathLength="1000"
+                                      d="M 85 0 C 93.284 0 100 6.716 100 15 L 100 85 C 100 93.284 93.284 100 85 100" />
+                            </svg>
+                        </div>
+
+                        <div id="journalButtonContainer">
+
+                            <div id="deleteButtonContainer">
+                                <div id="deleteJournalBtn" class="journalMenuBubble">
+                                    <a id="XIcon"></a>
+                                </div>
+                                <p class="aquariumBtnText"> Delete </p>
+                            </div>
                         </div>
                     </div>
                 </div>
