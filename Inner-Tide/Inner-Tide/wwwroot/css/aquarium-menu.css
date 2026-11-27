@@ -1098,6 +1098,17 @@ html.reduced-motion .aquarium-completion-card::before {
     animation: none;
 }
 
+html.reduced-motion .aquarium-page[data-aquarium-number="5"] .aquarium-scene .aquarium-bubble,
+html.reduced-motion .aquarium-page[data-aquarium-number="5"] .aquarium-scene .aquarium-bubble::before,
+html.reduced-motion .aquarium-page[data-aquarium-number="5"] .aquariumFish > img {
+    animation: none;
+}
+
+html.reduced-motion .aquarium-page[data-aquarium-number="5"] .aquarium-scene .aquarium-bubble {
+    bottom: var(--star-rest-bottom);
+    opacity: .85;
+}
+
 .aquarium-bubbles {
     position: absolute;
     inset: 0;
@@ -1238,6 +1249,162 @@ html.reduced-motion .glass-tap-ripple {
     --bubble-size: 12px;
     --bubble-duration: 6.5s;
     --bubble-delay: -2s;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .aquarium-bubble {
+    bottom: calc(-1 * var(--star-size));
+    width: var(--star-size);
+    border: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(220, 246, 255, .92) 0 8%, rgba(114, 191, 255, .3) 34%, transparent 74%);
+    box-shadow: none;
+    opacity: .8;
+    animation: aquarium-star-rise var(--bubble-duration) linear var(--bubble-delay) infinite;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .aquarium-bubble::before {
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+    border-radius: 0;
+    background: #e9f8ff;
+    clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%);
+    filter: drop-shadow(0 0 4px rgba(165, 219, 255, .95));
+    transform: none;
+    animation: aquarium-star-twinkle var(--star-twinkle-duration, 2.8s) ease-in-out var(--bubble-delay) infinite;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-one {
+    --star-size: 16px;
+    --star-twinkle-duration: 3.1s;
+    --star-rest-bottom: 70%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-two {
+    --star-size: 23px;
+    --star-twinkle-duration: 4.7s;
+    --star-rest-bottom: 42%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-three {
+    --star-size: 12px;
+    --star-twinkle-duration: 3.8s;
+    --star-rest-bottom: 82%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-four {
+    --star-size: 19px;
+    --star-twinkle-duration: 5.2s;
+    --star-rest-bottom: 55%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-five {
+    --star-size: 14px;
+    --star-twinkle-duration: 3.4s;
+    --star-rest-bottom: 75%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-six {
+    --star-size: 25px;
+    --star-twinkle-duration: 5.8s;
+    --star-rest-bottom: 32%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-seven {
+    --star-size: 17px;
+    --star-twinkle-duration: 4.3s;
+    --star-rest-bottom: 63%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquarium-scene .bubble-eight {
+    --star-size: 11px;
+    --star-twinkle-duration: 4.9s;
+    --star-rest-bottom: 25%;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquariumFish::before {
+    position: absolute;
+    z-index: 2;
+    top: var(--helmet-y, 5%);
+    left: var(--helmet-x, 27%);
+    width: 30%;
+    aspect-ratio: 1;
+    transform: scale(var(--helmet-scale, 1));
+    transform-origin: top left;
+    border: 1.5px solid rgba(208, 240, 255, .88);
+    border-radius: 50%;
+    background:
+        radial-gradient(ellipse at 29% 20%, rgba(255, 255, 255, .72) 0 5%, rgba(224, 246, 255, .32) 12%, transparent 29%),
+        linear-gradient(145deg, rgba(164, 220, 255, .3), rgba(71, 151, 221, .15) 58%, rgba(35, 109, 188, .3));
+    box-shadow: inset 0 0 8px rgba(225, 247, 255, .46), 0 0 8px rgba(111, 190, 255, .42);
+    backdrop-filter: blur(1px);
+    content: "";
+    pointer-events: none;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquariumFish > img {
+    animation: aquarium-space-fish-float 5.8s ease-in-out infinite;
+    transform-origin: center;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquariumFish:nth-of-type(3n + 2) > img {
+    animation-duration: 6.7s;
+    animation-delay: -2.4s;
+}
+
+.aquarium-page[data-aquarium-number="5"] .aquariumFish:nth-of-type(3n) > img {
+    animation-duration: 7.4s;
+    animation-delay: -4.1s;
+}
+
+@keyframes aquarium-star-rise {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 0, 0) scale(.62);
+    }
+
+    10% {
+        opacity: .85;
+    }
+
+    50% {
+        opacity: .75;
+        transform: translate3d(18px, -50vh, 0) scale(1);
+    }
+
+    90% {
+        opacity: .65;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate3d(-12px, -110vh, 0) scale(1.08);
+    }
+}
+
+@keyframes aquarium-star-twinkle {
+    0%, 100% {
+        opacity: .36;
+        transform: scale(.62) rotate(-8deg);
+        filter: drop-shadow(0 0 2px rgba(131, 197, 255, .5));
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.12) rotate(8deg);
+        filter: drop-shadow(0 0 8px rgba(185, 225, 255, .95));
+    }
+}
+
+@keyframes aquarium-space-fish-float {
+    0%, 100% {
+        transform: translateY(0) rotate(-.5deg);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(.5deg);
+    }
 }
 
 @keyframes aquarium-bubble-rise {

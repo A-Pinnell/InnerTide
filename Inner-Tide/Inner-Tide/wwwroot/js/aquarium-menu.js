@@ -55,6 +55,24 @@ const aquariumObjectGridColumns = 28;
 const aquariumObjectGridRows = 4;
 const aquariumObjectGridVisualRows = 16;
 const aquariumObjectGridSandRowOffset = aquariumObjectGridVisualRows - aquariumObjectGridRows;
+const aquariumFiveHelmetDefaults = { x: 5, y: 20, scale: 1.5 };
+// Override by exact species name; x and y are percentages.
+const aquariumFiveHelmetSettingsBySpecies = {
+    "Clownfish": { x: 5, y: 20, scale: 1.5 },
+    "Australian Prowfish": { x: 0, y: 20, scale: 1.2 },
+    "Jewelfish": { x: 5, y: 20, scale: 1.5 },
+    "Beardfish": { x: 5, y: 20, scale: 1.5 },
+    "Boxfish": { x: 5, y: 20, scale: 1.5 },
+    "Brook Trout": { x: 0, y: 30, scale: 1.3 },
+    "Northern Searobin": { x: 0, y: 25, scale: 1.5 },
+    "Starry Flounder": { x: 5, y: 20, scale: 1.5 },
+    "Pink Salmon": { x: 5, y: 20, scale: 1.5 },
+    "Pelican Eel": { x: 0, y: 20, scale: 1.5 },
+    "Paddlefish": { x: 20, y: 30, scale: 0.9 },
+    "Butterfly Ray": { x: 0, y: 40, scale: 1.2 },
+    "Yellowtail Amberjack": { x: 5, y: 20, scale: 1.5 },
+    "Gombessa": { x: 5, y: 20, scale: 1.5 }
+};
 let pelletInventory = { small: 0, large: 0 };
 const aquariumMusicTrackOptions = [
     { id: "aquarium-1", name: "Aquarium 1", file: "Aquarium_1.mp3" },
@@ -1816,6 +1834,12 @@ function appendAquariumFish(f, x, y, startMoving = false) {
     item.tabIndex = 0;
     item.setAttribute("value", f.userFishId);
     item.setAttribute("value2", f.fishId);
+    if (document.body.dataset.aquariumNumber === "5") {
+        const helmetSettings = aquariumFiveHelmetSettingsBySpecies[f.species] ?? aquariumFiveHelmetDefaults;
+        item.style.setProperty("--helmet-x", `${helmetSettings.x}%`);
+        item.style.setProperty("--helmet-y", `${helmetSettings.y}%`);
+        item.style.setProperty("--helmet-scale", helmetSettings.scale);
+    }
 
     const img = document.createElement("img");
     img.draggable = false;
@@ -2139,7 +2163,7 @@ function createAquariumObjectElement(object, dimensions = parseItemGridSpace(obj
         revealObject();
     }, { once: true });
     placedObject.appendChild(image);
-    if (isLittleScubaDiver(object.name)) {
+    if (isLittleScubaDiver(object.name) && document.body.dataset.aquariumNumber !== "5") {
         for (let bubbleIndex = 0; bubbleIndex < 3; bubbleIndex++) {
             const bubble = document.createElement("span");
             bubble.className = `aquarium-bubble bubble-${["one", "two", "three"][bubbleIndex]} scuba-diver-bubble`;
@@ -2335,7 +2359,7 @@ function animate(now) {
         const flip = movementX > 0 ? -1 : 1;
         fish.element.style.transform = `rotate(${fish.rotation}deg) scaleX(${flip})`;
 
-        if (now >= fish.nextBubbleAt) {
+        if (document.body.dataset.aquariumNumber !== "5" && now >= fish.nextBubbleAt) {
             emitFishBubble(fish, direction);
             fish.nextBubbleAt = now + randomRange(500, 900);
         }
@@ -2352,7 +2376,13 @@ const aquariumTapTimes = [];
 let fishStartledUntil = 0;
 let fishStartleMessageTimeout;
 let fishStartleHideTimeout;
-const aquariumGlassTapSound = registerAudioPlayer(new Audio(`${soundPathPrefix}taptheglass.mp3`), "sfx");
+const aquariumGlassTapSoundFile = document.body.dataset.aquariumNumber === "5"
+    ? "sonar.mp3"
+    : "taptheglass.mp3";
+const aquariumGlassTapSound = registerAudioPlayer(
+    new Audio(`${soundPathPrefix}${aquariumGlassTapSoundFile}`),
+    "sfx"
+);
 
 function showGlassTapRipple(event, fishContainer) {
     const fishContainerRect = fishContainer.getBoundingClientRect();
