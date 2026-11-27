@@ -865,31 +865,51 @@ html.reduced-motion .scuba-diver-bubble {
 }
 
 .aquarium-page #fishContainer {
+    transform-origin: center;
+}
+
+.aquarium-page .aquarium-scene {
     transform-origin: 0 0;
     transition: transform .35s cubic-bezier(.22, 1, .36, 1);
 }
 
-.aquarium-page .aquarium-scene,
+.aquarium-page #fishContainer,
 .aquarium-page #sand,
 .aquarium-page #sand-layer,
 .aquarium-page #sand2,
-.aquarium-page .sand-object-grid {
-    transform-origin: 0 0;
-    transition: transform .35s cubic-bezier(.22, 1, .36, 1);
+.aquarium-page .sand-object-grid,
+.aquarium-page .aquarium-bubbles {
+    transform: rotate(var(--aquarium-roll-angle, 0deg));
+    transform-origin: center;
+    transition: transform .14s ease-out;
 }
 
 .aquarium-page.is-fish-focused #fishContainer {
+    transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1)) rotate(var(--aquarium-roll-angle, 0deg));
+    transform-origin: 0 0;
+    transition: none;
+    will-change: transform;
+}
+
+.aquarium-page.is-fish-focused .aquarium-scene {
     transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1));
     transition: none;
     will-change: transform;
 }
 
-.aquarium-page.is-fish-focused .aquarium-scene,
 .aquarium-page.is-fish-focused #sand,
 .aquarium-page.is-fish-focused #sand-layer,
 .aquarium-page.is-fish-focused #sand2,
 .aquarium-page.is-fish-focused .sand-object-grid {
-    transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1));
+    transform: translate3d(var(--fish-camera-layer-x, 0px), var(--fish-camera-layer-y, 0px), 0) scale(var(--fish-camera-scale, 1)) rotate(var(--aquarium-roll-angle, 0deg));
+    transform-origin: 0 0;
+    transition: none;
+    will-change: transform;
+}
+
+.aquarium-page.is-fish-focused .aquarium-bubbles {
+    transform: rotate(var(--aquarium-roll-angle, 0deg));
+    transform-origin: 0 0;
     transition: none;
     will-change: transform;
 }

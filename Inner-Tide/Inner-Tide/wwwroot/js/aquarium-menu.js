@@ -24,6 +24,7 @@ window.setAquariumTilt = function (x, y, orientation) {
         aquariumTiltBaseline = null;
         aquariumTiltX = 0;
         aquariumTiltY = 0;
+        document.querySelector("#aquarium")?.style.setProperty("--aquarium-roll-angle", "0deg");
         return;
     }
 
@@ -32,18 +33,22 @@ window.setAquariumTilt = function (x, y, orientation) {
         aquariumTiltBaseline = { x, y, orientation };
         aquariumTiltX = 0;
         aquariumTiltY = 0;
+        document.querySelector("#aquarium")?.style.setProperty("--aquarium-roll-angle", "0deg");
         return;
     }
 
-    const normalizeTilt = value => {
-        const deadZone = 0.08;
+    const normalizeTilt = (value, deadZone) => {
         const magnitude = Math.abs(value);
         if (magnitude <= deadZone) return 0;
         return Math.sign(value) * Math.min(1, (magnitude - deadZone) / (1 - deadZone));
     };
 
-    aquariumTiltX = normalizeTilt(x - aquariumTiltBaseline.x);
-    aquariumTiltY = normalizeTilt(y - aquariumTiltBaseline.y);
+    aquariumTiltX = normalizeTilt(x - aquariumTiltBaseline.x, 0.3);
+    aquariumTiltY = normalizeTilt(y - aquariumTiltBaseline.y, 0.08);
+    document.querySelector("#aquarium")?.style.setProperty(
+        "--aquarium-roll-angle",
+        `${(aquariumTiltX * 6).toFixed(2)}deg`
+    );
 };
 
 const aquariumObjectGridColumns = 28;
